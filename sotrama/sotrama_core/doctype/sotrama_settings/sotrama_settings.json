@@ -1,0 +1,18 @@
+{
+  "doctype": "DocType",
+  "name": "Sotrama Settings",
+  "module": "Sotrama Core",
+  "custom": 0,
+  "issingle": 1,
+  "track_changes": 1,
+  "fields": [
+    {"fieldname":"country","label":"Country","fieldtype":"Link","options":"Country","default":"Algeria","reqd":1},
+    {"fieldname":"default_company","label":"Default Company","fieldtype":"Link","options":"Company"},
+    {"fieldname":"default_language","label":"Default Language","fieldtype":"Select","options":"French\nArabic\nEnglish","default":"French","reqd":1},
+    {"fieldname":"payroll_review_required","label":"Require Payroll Review","fieldtype":"Check","default":"1","description":"Payroll results must be reviewed before they are treated as approved."},
+    {"fieldname":"legal_rules_review_required","label":"Require Legal Rule Review","fieldtype":"Check","default":"1","description":"Legal rules remain inactive until approved and sourced."}
+  ],
+  "permissions": [
+    {"role":"System Manager","read":1,"write":1}
+  ]
+}

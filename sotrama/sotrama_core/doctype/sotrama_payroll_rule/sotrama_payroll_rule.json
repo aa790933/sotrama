@@ -1,0 +1,39 @@
+{
+  "doctype": "DocType",
+  "name": "Sotrama Payroll Rule",
+  "module": "Sotrama Core",
+  "custom": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "field:rule_code",
+  "title_field": "rule_name",
+  "search_fields": "rule_name,rule_code,legal_reference",
+  "fields": [
+    {"fieldname":"rule_code","label":"Rule Code","fieldtype":"Data","reqd":1,"unique":1,"in_list_view":1},
+    {"fieldname":"rule_version","label":"Rule Version","fieldtype":"Data","reqd":1},
+    {"fieldname":"rule_name","label":"Rule Name","fieldtype":"Data","reqd":1,"in_list_view":1},
+    {"fieldname":"rule_type","label":"Rule Type","fieldtype":"Select","options":"CNAS Employee\nCNAS Employer\nCACOBATPH Paid Leave\nCACOBATPH Weather Unemployment\nIRG\nSNMG\nOther","reqd":1},
+    {"fieldname":"authority","label":"Legal Authority","fieldtype":"Select","options":"Journal Officiel (JORA)\nDGI\nCNAS\nCACOBATPH\nMinistry of Labour\nOther","reqd":1},
+    {"fieldname":"source_title","label":"Source Title","fieldtype":"Data","reqd":1},
+    {"fieldname":"source_url","label":"Official Source URL","fieldtype":"Data","reqd":1},
+    {"fieldname":"assessment_base","label":"Assessment Base","fieldtype":"Select","options":"Gross Salary\nComponent Classification\nTaxable Salary\nFixed Amount\nOther","reqd":1},
+    {"fieldname":"base_definition","label":"Base Definition / Conditions","fieldtype":"Small Text","reqd":1},
+    {"fieldname":"rate_percent","label":"Rate (%)","fieldtype":"Percent"},
+    {"fieldname":"fixed_amount","label":"Fixed Amount (DZD)","fieldtype":"Currency","options":"DZD"},
+    {"fieldname":"minimum_base","label":"Minimum Base (DZD)","fieldtype":"Currency","options":"DZD"},
+    {"fieldname":"maximum_base","label":"Maximum Base (DZD)","fieldtype":"Currency","options":"DZD"},
+    {"fieldname":"effective_from","label":"Effective From","fieldtype":"Date","reqd":1},
+    {"fieldname":"effective_to","label":"Effective To","fieldtype":"Date"},
+    {"fieldname":"legal_source","label":"Legal Source","fieldtype":"Link","options":"Sotrama Legal Source","reqd":1},
+    {"fieldname":"legal_reference","label":"Article / Reference","fieldtype":"Data","reqd":1},
+    {"fieldname":"status","label":"Status","fieldtype":"Select","options":"Draft\nUnder Review\nApproved\nRejected\nRetired","default":"Draft","reqd":1},
+    {"fieldname":"active_for_calculation","label":"Active for Calculation","fieldtype":"Check","default":"0"},
+    {"fieldname":"review_notes","label":"Review Notes","fieldtype":"Small Text"}
+  ],
+  "permissions": [
+    {"role":"System Manager","read":1,"write":1,"create":1,"delete":0,"export":0,"report":1},
+    {"role":"Sotrama Payroll Manager","read":1,"write":1,"create":1,"delete":0,"export":0,"report":1}
+  ],
+  "sort_field":"effective_from",
+  "sort_order":"DESC"
+}

@@ -1,0 +1,1 @@
+"""Jinja templates for Sotrama."""

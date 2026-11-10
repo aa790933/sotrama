@@ -1,0 +1,1 @@
+"""Sotrama Core DocTypes."""

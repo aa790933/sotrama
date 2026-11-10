@@ -1,0 +1,1 @@
+# No additional runtime dependencies. Frappe, ERPNext and HRMS are installed by Bench.

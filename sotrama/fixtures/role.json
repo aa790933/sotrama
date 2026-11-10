@@ -1,0 +1,14 @@
+[
+  {
+    "doctype": "Role",
+    "name": "Sotrama Payroll Manager",
+    "role_name": "Sotrama Payroll Manager",
+    "desk_access": 1
+  },
+  {
+    "doctype": "Role",
+    "name": "Sotrama Compliance Manager",
+    "role_name": "Sotrama Compliance Manager",
+    "desk_access": 1
+  }
+]

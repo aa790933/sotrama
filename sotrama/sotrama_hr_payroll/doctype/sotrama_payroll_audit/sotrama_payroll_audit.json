@@ -1,0 +1,34 @@
+{
+  "doctype": "DocType",
+  "name": "Sotrama Payroll Audit",
+  "module": "Sotrama HR Payroll",
+  "custom": 0,
+  "autoname": "hash",
+  "track_changes": 0,
+  "allow_rename": 0,
+  "is_submittable": 1,
+  "fields": [
+    {"fieldname":"salary_slip","label":"Salary Slip","fieldtype":"Link","options":"Salary Slip","reqd":1,"unique":1},
+    {"fieldname":"employee","label":"Employee","fieldtype":"Link","options":"Employee","reqd":1,"read_only":1},
+    {"fieldname":"company","label":"Company","fieldtype":"Link","options":"Company","reqd":1,"read_only":1},
+    {"fieldname":"payroll_period","label":"Payroll Period","fieldtype":"Link","options":"Payroll Period"},
+    {"fieldname":"section_snapshot","label":"Calculation Snapshot","fieldtype":"Section Break"},
+    {"fieldname":"rule_versions","label":"Rule Versions","fieldtype":"Code","options":"JSON","reqd":1,"read_only":1},
+    {"fieldname":"input_snapshot","label":"Inputs Snapshot","fieldtype":"Code","options":"JSON","reqd":1,"read_only":1},
+    {"fieldname":"calculation_snapshot","label":"Calculation Results","fieldtype":"Code","options":"JSON","reqd":1,"read_only":1},
+    {"fieldname":"variance_summary","label":"Variance Summary","fieldtype":"Small Text","read_only":1},
+    {"fieldname":"section_review","label":"Review","fieldtype":"Section Break"},
+    {"fieldname":"review_status","label":"Review Status","fieldtype":"Select","options":"Pending\nReviewed\nException","default":"Pending","reqd":1},
+    {"fieldname":"reviewed_by","label":"Reviewed By","fieldtype":"Link","options":"User","read_only":1},
+    {"fieldname":"reviewed_on","label":"Reviewed On","fieldtype":"Datetime","read_only":1},
+    {"fieldname":"review_notes","label":"Review Notes","fieldtype":"Small Text"}
+  ],
+  "permissions": [
+    {"role":"System Manager","read":1,"write":1,"create":1,"delete":0,"submit":1,"cancel":0,"amend":0,"report":1,"export":0},
+    {"role":"Sotrama Payroll Manager","read":1,"write":1,"create":1,"delete":0,"submit":1,"cancel":0,"amend":0,"report":1,"export":0}
+  ],
+  "field_order":["salary_slip","employee","company","payroll_period","section_snapshot","rule_versions","input_snapshot","calculation_snapshot","variance_summary","section_review","review_status","reviewed_by","reviewed_on","review_notes"],
+  "sort_field":"creation",
+  "sort_order":"DESC",
+  "engine":"InnoDB"
+}
