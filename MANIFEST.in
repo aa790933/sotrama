@@ -1,0 +1,5 @@
+recursive-include algerian_localization *.py *.txt *.css *.js
+include README.md
+include license.txt
+include requirements.txt
+include package.json

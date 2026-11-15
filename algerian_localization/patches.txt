@@ -1,0 +1,2 @@
+# Patches are run in order during `bench migrate`.
+# Each patch is run only once per site.
