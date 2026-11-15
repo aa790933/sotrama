@@ -1,5 +1,5 @@
 """
-Desktop configuration for the Algerian Localization app.
+Desktop configuration for the Sotrama app.
 
 Defines how the app appears in the Frappe Desk sidebar.
 """
@@ -11,13 +11,13 @@ import frappe
 
 def get_desktop_settings():
     """
-    Returns desktop settings for the Algerian Localization module.
+    Returns desktop settings for the Sotrama module.
     This controls how the app appears in the Frappe Desk sidebar.
     """
     return [
         {
-            "label": "Algerian Localization",
-            "module": "Algerian Localization",
+            "label": "Sotrama",
+            "module": "Sotrama",
             "type": "module",
             "icon": "fas fa-building",
             "hidden": 0,

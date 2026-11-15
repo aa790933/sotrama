@@ -1,30 +1,15 @@
 """
-Setup script for the Algerian Localization app.
+Sotrama setup — Algerian localization for ERPNext.
 
-This is called by ERPNext's regional setup system when a Company is created
-with country = "Algeria". It ensures the custom fields exist and sets up
-any Algeria-specific defaults.
+Called by ERPNext's regional setup system when a Company with
+country='Algeria' is created. Ensures NIF / NIS / RC custom fields
+exist and applies Algeria-specific defaults.
 """
 
 from __future__ import unicode_literals
 
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-
-
-def setup(company, is_setup=True):
-    """
-    Called automatically by ERPNext when a Company with country='Algeria'
-    is created (via erpnext.setup.doctype.company.company.install_country_fixtures).
-
-    Creates the NIF / NIS / RC custom fields if they don't already exist.
-    """
-    # Ensure the custom fields exist (idempotent — safe to call multiple times)
-    create_custom_fields(get_custom_fields(), ignore_submit=True)
-
-    # Set Algeria-specific defaults on the Company record
-    if company:
-        _set_algerian_defaults(company)
 
 
 def get_custom_fields():
@@ -68,9 +53,30 @@ def get_custom_fields():
     }
 
 
+def setup(company, is_setup=True):
+    """
+    Called automatically by ERPNext via
+    `erpnext.setup.doctype.company.company.install_country_fixtures`.
+
+    Ensures the NIF / NIS / RC custom fields exist and applies any
+    Algeria-specific Company defaults.
+    """
+    create_custom_fields(get_custom_fields(), ignore_submit=True)
+
+    if company:
+        _set_algerian_defaults(company)
+
+
 def _set_algerian_defaults(company):
-    """Set Algeria-specific defaults on the Company document."""
-    # Currently no additional defaults beyond the custom fields.
-    # Add currency, tax template, or chart of accounts defaults here
-    # as your requirements grow.
+    """
+    Apply Algeria-specific defaults to a Company record.
+
+    Currently a placeholder — extend with currency, tax template,
+    or chart of accounts defaults as requirements grow.
+    """
+    # Example: set default tax template for Algerian companies
+    # doc = frappe.get_doc("Company", company)
+    # if not doc.default_tax_template:
+    #     doc.default_tax_template = "TVA Algeria"
+    # doc.save()
     pass

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "sotrama"
+dynamic = ["version", "description"]
+license = { text = "MIT" }
+authors = [{ name = "dekukoda41", email = "dekukoda41@users.noreply.github.com" }]
+requires-python = ">=3.10"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Frappe",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.bench.frappe-dependencies]
+frappe = ">=16.0.0"
+erpnext = ">=16.0.0"
+
+[tool.frappe]
+app_name = "sotrama"
+app_title = "Sotrama"
+app_description = "Algerian localization for ERPNext — adds NIF, NIS, RC fields to the Company doctype"
+app_publisher = "dekukoda41"
+app_email = "dekukoda41@users.noreply.github.com"
+app_license = "MIT"
+app_logo = "/assets/sotrama/logo.png"
