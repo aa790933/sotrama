@@ -6,8 +6,6 @@ country='Algeria' is created. Ensures NIF / NIS / RC custom fields
 exist and applies Algeria-specific defaults.
 """
 
-from __future__ import unicode_literals
-
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 

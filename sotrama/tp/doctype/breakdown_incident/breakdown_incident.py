@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -33,8 +31,8 @@ class BreakdownIncident(Document):
 
     def _calculate_downtime(self):
         if self.incident_date and self.resolution_date:
-            delta = frappe.utils.datetime_diff(
-                self.resolution_date, self.incident_date, "hour"
+            delta = frappe.utils.time_diff_in_seconds(
+                self.resolution_date, self.incident_date
             )
             self.downtime_hours = round(delta / 3600, 2)
 

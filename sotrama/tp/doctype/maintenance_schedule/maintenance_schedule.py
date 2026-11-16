@@ -1,8 +1,7 @@
-from __future__ import unicode_literals
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import add_months, today
 
 
 class MaintenanceSchedule(Document):
@@ -43,8 +42,6 @@ class MaintenanceSchedule(Document):
         next_sched.interval_km = self.interval_km
         next_sched.last_service_date = self.last_service_date
         next_sched.last_service_odometer = self.last_service_odometer
-
-        from frappe.utils import add_months, today
 
         if self.schedule_type == "Calendar" and self.interval_months:
             next_sched.next_due_date = add_months(

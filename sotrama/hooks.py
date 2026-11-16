@@ -8,8 +8,6 @@ Maintenance Schedule, Vehicle Inspection, Operational Task,
 Company Classification (Grade I–IX), and supporting masters.
 """
 
-from __future__ import unicode_literals
-
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
@@ -144,8 +142,6 @@ doc_events = {
         "after_insert": "sotrama.sotrama.setup.setup",
         "after_rename": "sotrama.sotrama.setup.on_company_rename",
     },
-    # Vehicle — lifecycle handled via extend_doctype_class (v16 mixin pattern)
-    # No doc_events needed here — methods are mixed into the controller directly
     # Breakdown — auto-create job card, update driver count, mark OOS
     "Breakdown Incident": {
         "on_submit": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.on_submit",
@@ -198,6 +194,7 @@ app_include_js = {
 }
 # No custom CSS — app follows standard Frappe Desk styling
 
+
 # ---------------------------------------------------------------------------
 # DocType JS — per-DocType client-side scripts
 # ---------------------------------------------------------------------------
@@ -212,23 +209,9 @@ doctype_js = {
     "Driver": "/assets/sotrama/js/driver.js",
 }
 
+
 # ---------------------------------------------------------------------------
 # Workflow — none needed (state managed via DocType controller)
 # ---------------------------------------------------------------------------
 
 workflow = {}
-
-# ---------------------------------------------------------------------------
-# Extend Core DocTypes (v16 best practice: extend, don't override)
-# ---------------------------------------------------------------------------
-
-extend_doctype_class = {
-    # Extend core Vehicle with fleet-specific methods
-    "Vehicle": "sotrama.tp.doctype.vehicle.vehicle.Vehicle",
-}
-
-# ---------------------------------------------------------------------------
-# Override Whitelisted Methods — none needed
-# ---------------------------------------------------------------------------
-
-override_whitelisted_methods = {}

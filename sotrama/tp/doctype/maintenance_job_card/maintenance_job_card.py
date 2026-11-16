@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -81,7 +79,9 @@ class MaintenanceJobCard(Document):
 
         vehicle = frappe.get_doc("Vehicle", self.vehicle)
         warehouse = vehicle.cost_center or frappe.get_value(
-            "Company", frappe.defaults.get_user_default("Company"), "default_warehouse"
+            "Company",
+            frappe.defaults.get_user_default("Company") or "",
+            "default_warehouse",
         )
 
         stock_entry = frappe.new_doc("Stock Entry")

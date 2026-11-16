@@ -7,9 +7,8 @@ These run once per day via Frappe's scheduler to:
   - Check for expiring driver licenses
 """
 
-from __future__ import unicode_literals
-
 import frappe
+from frappe import _
 from frappe.utils import today, add_days
 
 
@@ -70,7 +69,7 @@ def check_document_expiries():
                 todo.reference_type = "Vehicle"
                 todo.reference_name = v["name"]
                 todo.priority = "High" if doc["status"] == "Expired" else "Medium"
-                todo.owner = frappe.session.user
+                todo.owner = "Administrator"
                 todo.insert(ignore_permissions=True)
 
 
@@ -111,7 +110,7 @@ def check_maintenance_due():
             todo.reference_type = "Maintenance Schedule"
             todo.reference_name = sched["name"]
             todo.priority = "Medium"
-            todo.owner = frappe.session.user
+            todo.owner = "Administrator"
             todo.insert(ignore_permissions=True)
 
 
@@ -153,7 +152,7 @@ def check_driver_license_expiry():
                 todo.reference_type = "Driver"
                 todo.reference_name = d["name"]
                 todo.priority = "High"
-                todo.owner = frappe.session.user
+                todo.owner = "Administrator"
                 todo.insert(ignore_permissions=True)
 
         if d.medical_expiry and d.medical_expiry <= threshold:
@@ -174,5 +173,5 @@ def check_driver_license_expiry():
                 todo.reference_type = "Driver"
                 todo.reference_name = d["name"]
                 todo.priority = "Medium"
-                todo.owner = frappe.session.user
+                todo.owner = "Administrator"
                 todo.insert(ignore_permissions=True)
