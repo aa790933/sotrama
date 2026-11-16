@@ -1,12 +1,13 @@
 """
 Fleet Cost Analysis Report
 
-Shows per-vehicle cost breakdown: fuel, maintenance, tyres, other expenses,
-depreciation, total cost, and cost per kilometre.
+Shows submitted maintenance costs, additional costs, estimated depreciation,
+distance recorded on submitted operational tasks, and total cost per kilometre.
 """
 
 
 import frappe
+from frappe.utils import flt
 
 
 def execute(filters=None):
@@ -37,12 +38,6 @@ def get_columns():
             "width": 100,
         },
         {
-            "label": "Fuel Cost (DZD)",
-            "fieldname": "fuel_cost",
-            "fieldtype": "Currency",
-            "width": 120,
-        },
-        {
             "label": "Maintenance Cost (DZD)",
             "fieldname": "maintenance_cost",
             "fieldtype": "Currency",
@@ -55,7 +50,7 @@ def get_columns():
             "width": 120,
         },
         {
-            "label": "Depreciation (DZD)",
+            "label": "Estimated Depreciation (DZD)",
             "fieldname": "depreciation",
             "fieldtype": "Currency",
             "width": 120,
@@ -89,11 +84,12 @@ def get_data(filters):
 
     for v in vehicles:
         # Get maintenance costs from submitted job cards
-        maintenance_cost = frappe.db.sql("""
-            SELECT COALESCE(SUM(total_cost), 0)
+        maintenance_cost, other_costs = frappe.db.sql("""
+            SELECT COALESCE(SUM(COALESCE(total_parts_cost, 0) + COALESCE(total_labour_cost, 0)), 0),
+                   COALESCE(SUM(COALESCE(total_other_cost, 0)), 0)
             FROM `tabMaintenance Job Card`
             WHERE vehicle = %s AND docstatus = 1
-        """, v.name)[0][0]
+        """, v.name)[0]
 
         # Get odometer-based distance (simplified - from operational tasks)
         distance = frappe.db.sql("""
@@ -102,23 +98,32 @@ def get_data(filters):
             WHERE vehicle = %s AND docstatus = 1
         """, v.name)[0][0]
 
-        # Calculate depreciation (straight-line, annual)
+        maintenance_cost = flt(maintenance_cost)
+        other_costs = flt(other_costs)
+        distance = flt(distance)
+
+        # Estimate straight-line depreciation, capped at acquisition less salvage.
         depreciation = 0
         if v.acquisition_value and v.depreciation_rate:
             from frappe.utils import date_diff, today
             years = date_diff(today(), v.acquisition_date or today()) / 365.0
-            depreciation = (v.acquisition_value or 0) * (v.depreciation_rate or 0) / 100.0 * max(years, 0)
+            depreciable_value = max(
+                flt(v.acquisition_value) - flt(v.salvage_value), 0
+            )
+            depreciation = min(
+                depreciable_value,
+                depreciable_value * flt(v.depreciation_rate) / 100.0 * max(years, 0),
+            )
 
-        total_cost = maintenance_cost + depreciation
+        total_cost = maintenance_cost + other_costs + depreciation
         cost_per_km = total_cost / distance if distance else 0
 
         data.append({
             "vehicle": v.name,
             "license_plate": v.license_plate,
             "distance_km": distance,
-            "fuel_cost": 0,  # Placeholder - would come from Fuel Log entries
             "maintenance_cost": maintenance_cost,
-            "other_costs": 0,
+            "other_costs": other_costs,
             "depreciation": depreciation,
             "total_cost": total_cost,
             "cost_per_km": round(cost_per_km, 2),

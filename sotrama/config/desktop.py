@@ -6,10 +6,10 @@ for the TP (Travaux Publics) fleet management module.
 """
 
 
-import frappe
+from frappe import _
 
 
-def get_desktop_settings():
+def get_data():
     """
     Returns desktop settings for the Fleet module.
     Creates a dedicated "Fleet" section in the Desk sidebar
@@ -17,10 +17,11 @@ def get_desktop_settings():
     """
     return [
         {
-            "label": "Fleet",
-            "module": "TP",
+            "module_name": "TP",
+            "category": "Modules",
+            "label": _("Public Works Fleet"),
+            "description": _("Vehicles, drivers, maintenance and inspections"),
             "type": "module",
-            "icon": "fas fa-truck",
-            "hidden": 0,
+            "icon": "octicon octicon-truck",
         }
     ]

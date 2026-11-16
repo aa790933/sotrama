@@ -82,16 +82,33 @@ def check_maintenance_due():
     Scan all active Maintenance Schedules for upcoming due dates.
     Creates a ToDo for the Fleet Manager.
     """
-    due_schedules = frappe.get_all(
+    schedules = frappe.get_all(
         "Maintenance Schedule",
-        filters={
-            "status": "Active",
-            "next_due_date": ["<=", add_days(today(), 14)],
-        },
-        fields=["name", "vehicle", "next_due_date", "job_type"],
+        filters={"status": "Active"},
+        fields=[
+            "name", "vehicle", "next_due_date", "next_due_odometer", "job_type"
+        ],
     )
 
-    for sched in due_schedules:
+    for sched in schedules:
+        due_reasons = []
+        if sched.next_due_date and sched.next_due_date <= add_days(today(), 14):
+            due_reasons.append(_("due date {0}").format(sched.next_due_date))
+
+        if sched.next_due_odometer:
+            current_odometer = frappe.db.get_value(
+                "Vehicle", sched.vehicle, "current_odometer"
+            ) or 0
+            if current_odometer >= sched.next_due_odometer:
+                due_reasons.append(
+                    _("odometer {0} km (target {1} km)").format(
+                        current_odometer, sched.next_due_odometer
+                    )
+                )
+
+        if not due_reasons:
+            continue
+
         if not frappe.db.exists(
             "ToDo",
             {
@@ -105,8 +122,8 @@ def check_maintenance_due():
                 "Maintenance Due: {0} (Vehicle: {1})"
             ).format(sched.get("job_type", "Service"), sched.get("vehicle", "Unknown"))
             todo.description = _(
-                "Scheduled maintenance for vehicle {0} is due on {1}."
-            ).format(sched.get("vehicle"), sched.get("next_due_date"))
+                "Scheduled maintenance for vehicle {0} is due: {1}."
+            ).format(sched.get("vehicle"), "; ".join(due_reasons))
             todo.reference_type = "Maintenance Schedule"
             todo.reference_name = sched["name"]
             todo.priority = "Medium"
@@ -170,6 +187,27 @@ def check_driver_license_expiry():
                 todo.description = _(
                     "Driver {0} medical certificate expires on {1}."
                 ).format(d["driver_name"], d["medical_expiry"])
+                todo.reference_type = "Driver"
+                todo.reference_name = d["name"]
+                todo.priority = "Medium"
+                todo.owner = "Administrator"
+                todo.insert(ignore_permissions=True)
+
+        if d.safety_training_expiry and d.safety_training_expiry <= threshold:
+            if not frappe.db.exists(
+                "ToDo",
+                {
+                    "reference_type": "Driver",
+                    "reference_name": d["name"],
+                    "title": ["like", "%Safety Training%"],
+                    "status": "Open",
+                },
+            ):
+                todo = frappe.new_doc("ToDo")
+                todo.title = _("Safety Training Expiring: {0}").format(d["driver_name"])
+                todo.description = _(
+                    "Driver {0} safety training expires on {1}."
+                ).format(d["driver_name"], d["safety_training_expiry"])
                 todo.reference_type = "Driver"
                 todo.reference_name = d["name"]
                 todo.priority = "Medium"

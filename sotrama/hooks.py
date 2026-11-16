@@ -12,6 +12,19 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
+def ensure_roles():
+    """Create the app roles before DocTypes and Role Profile fixtures sync."""
+    for role_name in ("Fleet Manager", "Workshop", "Driver"):
+        if not frappe.db.exists("Role", role_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Role",
+                    "role_name": role_name,
+                    "desk_access": 1,
+                }
+            ).insert(ignore_permissions=True)
+
+
 # ---------------------------------------------------------------------------
 # Custom Field Definitions — Company doctype (Algerian registration)
 # ---------------------------------------------------------------------------
@@ -71,6 +84,7 @@ def get_custom_fields():
 
 def after_install():
     """Called after the app is installed on a site."""
+    ensure_roles()
     create_custom_fields(get_custom_fields(), ignore_submit=True)
 
 
@@ -84,6 +98,7 @@ def before_uninstall():
 
 def after_migrate():
     """Called after `bench migrate` completes. Re-applies custom fields."""
+    ensure_roles()
     create_custom_fields(get_custom_fields(), ignore_submit=True)
 
 
@@ -109,34 +124,7 @@ fixtures = [
     {"dt": "Property Setter", "filters": [["module", "=", "Sotrama"]]},
 ]
 
-
-# ---------------------------------------------------------------------------
-# Doc Events — react to lifecycle events across TP DocTypes
-# ---------------------------------------------------------------------------
-
-doc_events = {
-    # Breakdown — auto-create job card, update driver count, mark OOS
-    "Breakdown Incident": {
-        "on_submit": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.on_submit",
-        "before_cancel": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.before_cancel",
-    },
-    # Maintenance Job Card — auto-post stock, update odometer, gen next schedule
-    "Maintenance Job Card": {
-        "on_submit": "sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.on_submit",
-    },
-    # Vehicle Inspection — auto-create defect issues, update vehicle status
-    "Vehicle Inspection": {
-        "on_submit": "sotrama.tp.doctype.vehicle_inspection.vehicle_inspection.on_submit",
-    },
-    # Operational Task — assign driver to vehicle
-    "Operational Task": {
-        "on_submit": "sotrama.tp.doctype.operational_task.operational_task.on_submit",
-    },
-    # Driver — validate license expiry
-    "Driver": {
-        "validate": "sotrama.tp.doctype.driver.driver.validate",
-    },
-}
+before_install = "sotrama.hooks.ensure_roles"
 
 
 # ---------------------------------------------------------------------------
@@ -157,9 +145,11 @@ scheduler_events = {
 # ---------------------------------------------------------------------------
 
 includes = []
-app_include_js = {
-    "desk": "/assets/sotrama/js/sotrama.js",
-}
+# Frappe's app_include_js hook is a scalar path or a list of paths.
+# A dict here conflicts with the same hook from Frappe/ERPNext/HRMS while
+# the framework merges app hooks, causing append_hook() to call setdefault
+# on a list during site installation.
+app_include_js = "/assets/sotrama/js/sotrama.js"
 # No custom CSS — app follows standard Frappe Desk styling
 
 
@@ -168,13 +158,13 @@ app_include_js = {
 # ---------------------------------------------------------------------------
 
 doctype_js = {
-    "Company": "/assets/sotrama/js/company.js",
-    "Vehicle": "/assets/sotrama/js/vehicle.js",
-    "Breakdown Incident": "/assets/sotrama/js/breakdown.js",
-    "Maintenance Job Card": "/assets/sotrama/js/job_card.js",
-    "Vehicle Inspection": "/assets/sotrama/js/inspection.js",
-    "Operational Task": "/assets/sotrama/js/operational_task.js",
-    "Driver": "/assets/sotrama/js/driver.js",
+    "Company": "public/js/company.js",
+    "Vehicle": "public/js/vehicle.js",
+    "Breakdown Incident": "public/js/breakdown.js",
+    "Maintenance Job Card": "public/js/job_card.js",
+    "Vehicle Inspection": "public/js/inspection.js",
+    "Operational Task": "public/js/operational_task.js",
+    "Driver": "public/js/driver.js",
 }
 
 

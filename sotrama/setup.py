@@ -1,9 +1,12 @@
 """
 Sotrama setup — Algerian localization for ERPNext.
 
-Called by ERPNext's regional setup system when a Company with
-country='Algeria' is created. Ensures NIF / NIS / RC custom fields
-exist and applies Algeria-specific defaults.
+Optional setup helper for an ERPNext regional integration.
+
+ERPNext v16 looks for country setup code under
+``erpnext.regional.<country>.setup.setup``. This module is not discovered
+automatically merely because it exists in a custom app. The Company's NIF,
+NIS and RC fields are created by the app installation/migration hooks instead.
 """
 
 import frappe
@@ -53,11 +56,7 @@ def get_custom_fields():
 
 def setup(company, is_setup=True):
     """
-    Called automatically by ERPNext via
-    `erpnext.setup.doctype.company.company.install_country_fixtures`.
-
-    Ensures the NIF / NIS / RC custom fields exist and applies any
-    Algeria-specific Company defaults.
+    Entry point for a future, explicitly wired Algeria regional setup.
     """
     create_custom_fields(get_custom_fields(), ignore_submit=True)
 

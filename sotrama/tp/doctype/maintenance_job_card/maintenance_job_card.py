@@ -20,7 +20,12 @@ class MaintenanceJobCard(Document):
         self._update_vehicle_odometer()
         self._generate_next_schedule()
 
+    def on_cancel(self):
+        self._cancel_stock_entry()
+
     def before_submit(self):
+        if self.status != "Completed":
+            frappe.throw(_("Set the Maintenance Job Card status to Completed before submitting."))
         self._check_parts_available()
 
     # ------------------------------------------------------------------
@@ -36,6 +41,16 @@ class MaintenanceJobCard(Document):
                 frappe.throw(
                     _("Odometer After ({0}) cannot be less than Odometer Before ({1})").format(
                         self.odometer_after, self.odometer_before
+                    )
+                )
+        if self.vehicle and self.odometer_after:
+            current_odometer = frappe.db.get_value(
+                "Vehicle", self.vehicle, "current_odometer"
+            ) or 0
+            if self.odometer_after < current_odometer:
+                frappe.throw(
+                    _("Odometer After ({0}) cannot be lower than the vehicle's current reading ({1}).").format(
+                        self.odometer_after, current_odometer
                     )
                 )
 
@@ -59,48 +74,75 @@ class MaintenanceJobCard(Document):
 
     def _check_parts_available(self):
         for row in self.parts_used or []:
-            if row.item and not frappe.db.exists(
-                "Item", row.item
-            ):
-                frappe.msgprint(
-                    title=_("Warning"),
-                    indicator="orange",
-                    message=_("Item {0} not found in ERPNext Item master").format(row.item),
-                )
+            if not row.item or not frappe.db.exists("Item", row.item):
+                frappe.throw(_("Select a valid Item for maintenance part row {0}.").format(row.idx))
+            if not frappe.db.get_value("Item", row.item, "is_stock_item"):
+                frappe.throw(_("Item {0} is not a stock item.").format(row.item))
+            if not row.quantity or row.quantity <= 0:
+                frappe.throw(_("Part quantity must be greater than zero."))
 
     def _post_stock_entries(self):
         """
         Auto-post consumed parts as a Stock Entry on submit.
-        Creates a Material Issue Stock Entry linking parts consumed
-        during maintenance to the fleet warehouse.
+        Stock is issued only from an explicitly configured warehouse belonging
+        to the vehicle's company. ERPNext resolves item valuation and accounts.
         """
         if not self.parts_used:
             return
 
         vehicle = frappe.get_doc("Vehicle", self.vehicle)
-        warehouse = vehicle.cost_center or frappe.get_value(
-            "Company",
-            frappe.defaults.get_user_default("Company") or "",
-            "default_warehouse",
+        if not vehicle.company:
+            frappe.throw(
+                _("Set a Company on Vehicle {0} before issuing stock.").format(vehicle.name)
+            )
+        if not vehicle.parts_warehouse:
+            frappe.throw(
+                _("Set a Parts Warehouse on Vehicle {0} before issuing stock.").format(
+                    vehicle.name
+                )
+            )
+
+        warehouse_company = frappe.db.get_value(
+            "Warehouse", vehicle.parts_warehouse, "company"
         )
+        if warehouse_company != vehicle.company:
+            frappe.throw(
+                _("Warehouse {0} does not belong to company {1}.").format(
+                    vehicle.parts_warehouse, vehicle.company
+                )
+            )
 
         stock_entry = frappe.new_doc("Stock Entry")
         stock_entry.stock_entry_type = "Material Issue"
-        stock_entry.company = frappe.defaults.get_user_default("Company")
+        stock_entry.company = vehicle.company
         stock_entry.set_posting_time = 1
         stock_entry.posting_date = self.job_date or frappe.utils.today()
 
         for row in self.parts_used:
+            if not row.item or not frappe.db.exists("Item", row.item):
+                frappe.throw(_("Select a valid stock Item in the Parts Used table."))
+            if not frappe.db.get_value("Item", row.item, "is_stock_item"):
+                frappe.throw(_("Item {0} is not a stock item.").format(row.item))
+            if not row.quantity or row.quantity <= 0:
+                frappe.throw(_("Part quantity must be greater than zero."))
             stock_entry.append("items", {
                 "item_code": row.item,
-                "qty": row.quantity or 1,
-                "s_warehouse": warehouse,
-                "basic_rate": row.rate or 0,
-                "expense_account": "Maintenance Expenses - COA",
+                "qty": row.quantity,
+                "s_warehouse": vehicle.parts_warehouse,
             })
 
         stock_entry.insert(ignore_permissions=True)
         stock_entry.submit()
+        self.db_set("stock_entry", stock_entry.name)
+
+    def _cancel_stock_entry(self):
+        """Cancel the linked stock issue together with its maintenance job card."""
+        if not self.stock_entry or not frappe.db.exists("Stock Entry", self.stock_entry):
+            return
+
+        stock_entry = frappe.get_doc("Stock Entry", self.stock_entry)
+        if stock_entry.docstatus == 1:
+            stock_entry.cancel()
 
     def _update_vehicle_odometer(self):
         """Update the linked Vehicle's current odometer."""
@@ -116,8 +158,6 @@ class MaintenanceJobCard(Document):
         """
         if not self.job_type or not self.vehicle:
             return
-
-        vehicle = frappe.get_doc("Vehicle", self.vehicle)
 
         # Find existing active schedule for this vehicle + job type
         existing = frappe.get_all(
@@ -144,4 +184,13 @@ class MaintenanceJobCard(Document):
                     self.job_date or frappe.utils.today(), sched.interval_months
                 )
 
-            sched.save(ignore_permissions=True)
+            frappe.db.set_value(
+                "Maintenance Schedule",
+                sched.name,
+                {
+                    "last_service_date": self.job_date,
+                    "last_service_odometer": self.odometer_after or 0,
+                    "next_due_odometer": sched.next_due_odometer,
+                    "next_due_date": sched.next_due_date,
+                },
+            )
