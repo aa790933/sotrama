@@ -62,30 +62,8 @@ def get_custom_fields():
 
 
 # ---------------------------------------------------------------------------
-# Setup — called by ERPNext's regional system when a Company with
-# country='Algeria' is created.
+# Setup — fields are installed and kept in sync through app lifecycle hooks.
 # ---------------------------------------------------------------------------
-
-def setup(company, is_setup=True):
-    """
-    Called automatically by ERPNext via
-    `erpnext.setup.doctype.company.company.install_country_fixtures`.
-
-    Ensures the NIF / NIS / RC custom fields exist and applies any
-    Algeria-specific Company defaults.
-    """
-    create_custom_fields(get_custom_fields(), ignore_submit=True)
-
-    if company:
-        _set_algerian_defaults(company)
-
-
-def _set_algerian_defaults(company):
-    """
-    Apply Algeria-specific defaults to a Company record.
-    """
-    pass
-
 
 # ---------------------------------------------------------------------------
 # Lifecycle Hooks
@@ -137,11 +115,6 @@ fixtures = [
 # ---------------------------------------------------------------------------
 
 doc_events = {
-    # Company — Algerian registration fields
-    "Company": {
-        "after_insert": "sotrama.sotrama.setup.setup",
-        "after_rename": "sotrama.sotrama.setup.on_company_rename",
-    },
     # Breakdown — auto-create job card, update driver count, mark OOS
     "Breakdown Incident": {
         "on_submit": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.on_submit",
@@ -164,11 +137,6 @@ doc_events = {
         "validate": "sotrama.tp.doctype.driver.driver.validate",
     },
 }
-
-
-def on_company_rename(doc):
-    """Called after a Company is renamed. No action needed — fields are doctype-level."""
-    pass
 
 
 # ---------------------------------------------------------------------------

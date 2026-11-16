@@ -82,7 +82,7 @@ def get_data(filters):
     # Get vehicles with their cost data
     vehicles = frappe.get_all(
         "Vehicle",
-        fields=["name", "license_plate", "acquisition_value", "depreciation_rate",
+        fields=["name", "license_plate", "acquisition_date", "acquisition_value", "depreciation_rate",
                 "salvage_value", "current_odometer"],
         filters={"vehicle_status": ["!=", "Retired"]},
     )
