@@ -1,11 +1,11 @@
 """
-Sotrama — Algerian Localization for ERPNext
+Sotrama — Algerian Localization & Public Works Fleet Management for ERPNext
 
 Adds NIF, NIS, and RC fields to the Company doctype.
-These are Algerian business registration numbers:
-  - NIF : Numéro d'Identification Fiscale (tax ID)
-  - NIS : Numéro d'Identification Statistique (statistical ID)
-  - RC  : Registre de Commerce (trade registry)
+Also provides a full TP (Travaux Publics) Fleet Management module:
+Vehicle, Driver, Maintenance Job Card, Breakdown Incident,
+Maintenance Schedule, Vehicle Inspection, Operational Task,
+Company Classification (Grade I–IX), and supporting masters.
 """
 
 from __future__ import unicode_literals
@@ -15,7 +15,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 # ---------------------------------------------------------------------------
-# Custom Field Definitions
+# Custom Field Definitions — Company doctype (Algerian registration)
 # ---------------------------------------------------------------------------
 
 def get_custom_fields():
@@ -85,15 +85,7 @@ def setup(company, is_setup=True):
 def _set_algerian_defaults(company):
     """
     Apply Algeria-specific defaults to a Company record.
-
-    Currently a placeholder — extend with currency, tax template,
-    or chart of accounts defaults as requirements grow.
     """
-    # Example: set default tax template for Algerian companies
-    # doc = frappe.get_doc("Company", company)
-    # if not doc.default_tax_template:
-    #     doc.default_tax_template = "TVA Algeria"
-    # doc.save()
     pass
 
 
@@ -143,32 +135,61 @@ fixtures = [
 
 
 # ---------------------------------------------------------------------------
-# Doc Events — react to Company lifecycle events
+# Doc Events — react to lifecycle events across TP DocTypes
 # ---------------------------------------------------------------------------
 
 doc_events = {
+    # Company — Algerian registration fields
     "Company": {
         "after_insert": "sotrama.sotrama.setup.setup",
         "after_rename": "sotrama.sotrama.setup.on_company_rename",
+    },
+    # Vehicle — auto-create initial inspection on submit
+    "Vehicle": {
+        "on_submit": "sotrama.tp.doctype.vehicle.vehicle.create_initial_inspection",
+        "on_cancel": "sotrama.tp.doctype.vehicle.vehicle.cancel_vehicle",
+    },
+    # Breakdown — auto-create job card, update driver count, mark OOS
+    "Breakdown Incident": {
+        "on_submit": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.on_submit",
+        "before_cancel": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.before_cancel",
+    },
+    # Maintenance Job Card — auto-post stock, update odometer, gen next schedule
+    "Maintenance Job Card": {
+        "on_submit": "sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.on_submit",
+    },
+    # Vehicle Inspection — auto-create defect issues, update vehicle status
+    "Vehicle Inspection": {
+        "on_submit": "sotrama.tp.doctype.vehicle_inspection.vehicle_inspection.on_submit",
+    },
+    # Operational Task — assign driver to vehicle
+    "Operational Task": {
+        "on_submit": "sotrama.tp.doctype.operational_task.operational_task.on_submit",
+    },
+    # Driver — validate license expiry
+    "Driver": {
+        "validate": "sotrama.tp.doctype.driver.driver.validate",
     },
 }
 
 
 def on_company_rename(doc):
-    """
-    Called after a Company is renamed.
-    Ensures the custom fields still reference the correct company.
-    """
-    # Custom fields are tied to the doctype, not the company name,
-    # so no action is needed here. Placeholder for future logic.
+    """Called after a Company is renamed. No action needed — fields are doctype-level."""
     pass
 
 
 # ---------------------------------------------------------------------------
-# Scheduler — none needed for this app
+# Scheduler — daily expiry alerts for documents and maintenance
 # ---------------------------------------------------------------------------
 
-scheduler_events = {}
+scheduler_events = {
+    "daily": [
+        "sotrama.tp.scheduler.check_document_expiries",
+        "sotrama.tp.scheduler.check_maintenance_due",
+        "sotrama.tp.scheduler.check_driver_license_expiry",
+    ],
+}
+
 
 # ---------------------------------------------------------------------------
 # Includes — global JS/CSS loaded on the Desk
@@ -188,10 +209,16 @@ app_include_css = {
 
 doctype_js = {
     "Company": "/assets/sotrama/js/company.js",
+    "Vehicle": "/assets/sotrama/js/vehicle.js",
+    "Breakdown Incident": "/assets/sotrama/js/breakdown.js",
+    "Maintenance Job Card": "/assets/sotrama/js/job_card.js",
+    "Vehicle Inspection": "/assets/sotrama/js/inspection.js",
+    "Operational Task": "/assets/sotrama/js/operational_task.js",
+    "Driver": "/assets/sotrama/js/driver.js",
 }
 
 # ---------------------------------------------------------------------------
-# Workflow — none needed
+# Workflow — none needed (state managed via DocType controller)
 # ---------------------------------------------------------------------------
 
 workflow = {}

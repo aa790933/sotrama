@@ -1,0 +1,129 @@
+{
+ "fields": [
+  {
+   "label": "Task Date",
+   "fieldname": "task_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Vehicle",
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "options": "Vehicle",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Task Type",
+   "fieldname": "task_type",
+   "fieldtype": "Select",
+   "options": "\nRoad Paving\nBridge Construction\nEarthmoving\nTransport\nGrading\nDrainage\nSignaling\nSurvey",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "options": "Project",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Driver",
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "options": "Driver",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Supervisor",
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "options": "Employee",
+   "in_list_view": 1
+  },
+  {
+   "label": "Start Date",
+   "fieldname": "start_date",
+   "fieldtype": "Datetime"
+  },
+  {
+   "label": "End Date",
+   "fieldname": "end_date",
+   "fieldtype": "Datetime"
+  },
+  {
+   "label": "Planned Hours",
+   "fieldname": "planned_hours",
+   "fieldtype": "Float"
+  },
+  {
+   "label": "Actual Hours",
+   "fieldname": "actual_hours",
+   "fieldtype": "Float",
+   "read_only": 1
+  },
+  {
+   "label": "Start Odometer",
+   "fieldname": "start_odometer",
+   "fieldtype": "Float"
+  },
+  {
+   "label": "End Odometer",
+   "fieldname": "end_odometer",
+   "fieldtype": "Float"
+  },
+  {
+   "label": "Distance Covered (km)",
+   "fieldname": "distance_covered",
+   "fieldtype": "Float",
+   "read_only": 1
+  },
+  {
+   "label": "Task Description",
+   "fieldname": "task_description",
+   "fieldtype": "Text Editor"
+  },
+  {
+   "label": "Output Quantity",
+   "fieldname": "output_quantity",
+   "fieldtype": "Float",
+   "description": "e.g. m² of asphalt paved, m³ of earth moved"
+  },
+  {
+   "label": "Output Unit",
+   "fieldname": "output_unit",
+   "fieldtype": "Select",
+   "options": "\nm²\nm³\nt\nkm\nHours"
+  },
+  {
+   "label": "Status",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nPlanned\nIn Progress\nCompleted\nCancelled",
+   "default": "Planned",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  }
+ ],
+ "links": [],
+ "istable": 0,
+ "issingle": 0,
+ "is_submittable": 1,
+ "track_changes": 1,
+ "naming_rule": "Expression",
+ "naming_expression": "OT-.YYYY.-.####",
+ "autoname": "format"
+}

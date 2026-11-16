@@ -1,0 +1,113 @@
+{
+ "fields": [
+  {
+   "label": "Incident Date",
+   "fieldname": "incident_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Vehicle",
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "options": "Vehicle",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Driver",
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "options": "Driver",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Location",
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "description": "Where the breakdown occurred"
+  },
+  {
+   "label": "Severity",
+   "fieldname": "severity",
+   "fieldtype": "Select",
+   "options": "\nMinor\nMajor\nCritical",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "default": "Minor"
+  },
+  {
+   "label": "Status",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nReported\nAcknowledged\nIn Progress\nResolved\nClosed",
+   "default": "Reported",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Description",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "reqd": 1,
+   "description": "What happened — symptoms, error codes, observations"
+  },
+  {
+   "label": "System/Component Affected",
+   "fieldname": "system_affected",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "description": "Engine, Transmission, Electrical, etc."
+  },
+  {
+   "label": "Resolution Date",
+   "fieldname": "resolution_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1
+  },
+  {
+   "label": "Resolution Notes",
+   "fieldname": "resolution_notes",
+   "fieldtype": "Text Editor"
+  },
+  {
+   "label": "Downtime (Hours)",
+   "fieldname": "downtime_hours",
+   "fieldtype": "Float",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Hours the vehicle was out of service"
+  },
+  {
+   "label": "Linked Job Card",
+   "fieldname": "linked_job_card",
+   "fieldtype": "Link",
+   "options": "Maintenance Job Card",
+   "read_only": 1,
+   "description": "Auto-created job card for this breakdown"
+  },
+  {
+   "label": "Photos",
+   "fieldname": "photos",
+   "fieldtype": "Table",
+   "options": "Breakdown Photo"
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  }
+ ],
+ "links": [],
+ "istable": 0,
+ "issingle": 0,
+ "is_submittable": 1,
+ "track_changes": 1,
+ "naming_rule": "Expression",
+ "naming_expression": "BRK-.YYYY.-.####",
+ "autoname": "format"
+}

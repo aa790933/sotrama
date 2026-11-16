@@ -1,3 +1,5 @@
 # Patches are run in order during `bench migrate`.
 # Each patch is run only once per site.
 # Add patch files under sotrama/patches/ and reference them here.
+sotrama.tp.patches.v1_0.register_tp_modules
+sotrama.tp.patches.v1_0.register_doctype_masters

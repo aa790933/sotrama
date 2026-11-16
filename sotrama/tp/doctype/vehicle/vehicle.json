@@ -1,0 +1,223 @@
+{
+ "fields": [
+  {
+   "label": "License Plate",
+   "fieldname": "license_plate",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "reqd": 1,
+   "description": "Vehicle registration number (immatriculation)"
+  },
+  {
+   "label": "Vehicle Make",
+   "fieldname": "vehicle_make",
+   "fieldtype": "Link",
+   "options": "Vehicle Make",
+   "description": "Manufacturer (e.g. Mercedes, Volvo, Scania)"
+  },
+  {
+   "label": "Model",
+   "fieldname": "model",
+   "fieldtype": "Link",
+   "options": "Vehicle Model",
+   "description": "Specific model variant"
+  },
+  {
+   "label": "Year of Manufacture",
+   "fieldname": "year_of_manufacture",
+   "fieldtype": "Int",
+   "description": "Year the vehicle was manufactured"
+  },
+  {
+   "label": "Chassis Number",
+   "fieldname": "chassis_no",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "description": "VIN / Chassis Number — unique vehicle identifier"
+  },
+  {
+   "label": "Engine Number",
+   "fieldname": "engine_no",
+   "fieldtype": "Data",
+   "description": "Engine serial number"
+  },
+  {
+   "label": "Vehicle Category",
+   "fieldname": "vehicle_category",
+   "fieldtype": "Select",
+   "options": "\nTruck\nTrailer\nSemi-trailer\nTanker\nGrader\nRoller\nPaver\nBridge Crane\nUtility Vehicle",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Category of public works vehicle"
+  },
+  {
+   "label": "Vehicle Class",
+   "fieldname": "vehicle_class",
+   "fieldtype": "Select",
+   "options": "\nLight\nMedium\nHeavy",
+   "in_standard_filter": 1,
+   "description": "Weight class (Light < 3.5T, Medium 3.5-12T, Heavy > 12T)"
+  },
+  {
+   "label": "Tonnage",
+   "fieldname": "tonnage",
+   "fieldtype": "Float",
+   "description": "Payload capacity in tonnes"
+  },
+  {
+   "label": "Number of Axles",
+   "fieldname": "number_of_axles",
+   "fieldtype": "Int",
+   "description": "Total number of axles"
+  },
+  {
+   "label": "Fuel Type",
+   "fieldname": "fuel_type",
+   "fieldtype": "Select",
+   "options": "\nDiesel\nGasoline\nHybrid\nElectric\nLPG",
+   "default": "Diesel",
+   "in_list_view": 1
+  },
+  {
+   "label": "Fuel Capacity (L)",
+   "fieldname": "fuel_capacity",
+   "fieldtype": "Float",
+   "description": "Fuel tank capacity in litres"
+  },
+  {
+   "label": "Current Odometer (km)",
+   "fieldname": "current_odometer",
+   "fieldtype": "Float",
+   "description": "Latest recorded odometer reading in km"
+  },
+  {
+   "label": "Acquisition Date",
+   "fieldname": "acquisition_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "description": "Date the vehicle was acquired"
+  },
+  {
+   "label": "Acquisition Value (DZD)",
+   "fieldname": "acquisition_value",
+   "fieldtype": "Currency",
+   "description": "Purchase value in Algerian Dinars"
+  },
+  {
+   "label": "Current Value (DZD)",
+   "fieldname": "current_value",
+   "fieldtype": "Currency",
+   "description": "Current book value (after depreciation)"
+  },
+  {
+   "label": "Depreciation Rate (%)",
+   "fieldname": "depreciation_rate",
+   "fieldtype": "Float",
+   "default": "10",
+   "description": "Annual depreciation rate as percentage"
+  },
+  {
+   "label": "Salvage Value (DZD)",
+   "fieldname": "salvage_value",
+   "fieldtype": "Currency",
+   "description": "Estimated residual value at end of useful life"
+  },
+  {
+   "label": "Insurance Value (DZD)",
+   "fieldname": "insurance_value",
+   "fieldtype": "Currency",
+   "description": "Insured value of the vehicle"
+  },
+  {
+   "label": "Status",
+   "fieldname": "vehicle_status",
+   "fieldtype": "Select",
+   "options": "\nActive\nIn Service\nOut of Service\nUnder Repair\nRetired\nScrapped",
+   "default": "Active",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Current Location",
+   "fieldname": "current_location",
+   "fieldtype": "Data",
+   "description": "Base depot or current worksite"
+  },
+  {
+   "label": "Primary Driver",
+   "fieldname": "primary_driver",
+   "fieldtype": "Link",
+   "options": "Driver",
+   "in_list_view": 1,
+   "description": "Assigned primary driver"
+  },
+  {
+   "label": "Company Classification",
+   "fieldname": "company_classification",
+   "fieldtype": "Link",
+   "options": "Company Classification",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1,
+   "description": "Grade classification of the owning company (I-IX)"
+  },
+  {
+   "label": "Department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "options": "Department",
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Cost Center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "options": "Cost Center"
+  },
+  {
+   "label": "Asset",
+   "fieldname": "asset",
+   "fieldtype": "Link",
+   "options": "Asset",
+   "description": "Linked fixed asset record"
+  },
+  {
+   "label": "Registration Document",
+   "fieldname": "registration_document",
+   "fieldtype": "Attach",
+   "description": "Carte grise / registration certificate"
+  },
+  {
+   "label": "Insurance Document",
+   "fieldname": "insurance_document",
+   "fieldtype": "Attach",
+   "description": "Insurance certificate"
+  },
+  {
+   "label": "Pollution Certificate",
+   "fieldname": "pollution_document",
+   "fieldtype": "Attach",
+   "description": "Pollution Under Control certificate"
+  },
+  {
+   "label": "Technical Inspection Certificate",
+   "fieldname": "technical_document",
+   "fieldtype": "Attach",
+   "description": "Technical inspection (visite technique)"
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  }
+ ],
+ "links": [],
+ "istable": 0,
+ "issingle": 0,
+ "is_submittable": 1,
+ "track_changes": 1,
+ "name_field": "license_plate",
+ "naming_rule": "Expression",
+ "naming_expression": "VEH-.YYYY.-.####",
+ "autoname": "format"
+}

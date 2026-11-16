@@ -1,0 +1,88 @@
+{
+ "fields": [
+  {
+   "label": "Vehicle",
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "options": "Vehicle",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Schedule Type",
+   "fieldname": "schedule_type",
+   "fieldtype": "Select",
+   "options": "\nCalendar\nMileage",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Job Type",
+   "fieldname": "job_type",
+   "fieldtype": "Link",
+   "options": "Maintenance Job Type",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Interval Months",
+   "fieldname": "interval_months",
+   "fieldtype": "Int",
+   "depends_on": "eval:doc.schedule_type == 'Calendar'"
+  },
+  {
+   "label": "Interval KM",
+   "fieldname": "interval_km",
+   "fieldtype": "Float",
+   "depends_on": "eval:doc.schedule_type == 'Mileage'"
+  },
+  {
+   "label": "Last Service Date",
+   "fieldname": "last_service_date",
+   "fieldtype": "Date",
+   "in_list_view": 1
+  },
+  {
+   "label": "Last Service Odometer",
+   "fieldname": "last_service_odometer",
+   "fieldtype": "Float"
+  },
+  {
+   "label": "Next Due Date",
+   "fieldname": "next_due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Next Due Odometer",
+   "fieldname": "next_due_odometer",
+   "fieldtype": "Float",
+   "in_list_view": 1
+  },
+  {
+   "label": "Status",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nActive\nPaused\nCompleted",
+   "default": "Active",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  }
+ ],
+ "links": [],
+ "istable": 0,
+ "issingle": 0,
+ "is_submittable": 1,
+ "track_changes": 1,
+ "naming_rule": "Expression",
+ "naming_expression": "SCH-.YYYY.-.####",
+ "autoname": "format"
+}

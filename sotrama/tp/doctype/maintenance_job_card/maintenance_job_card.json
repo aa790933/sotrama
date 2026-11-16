@@ -1,0 +1,178 @@
+{
+ "fields": [
+  {
+   "label": "Job Date",
+   "fieldname": "job_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Vehicle",
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "options": "Vehicle",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Job Nature",
+   "fieldname": "job_nature",
+   "fieldtype": "Select",
+   "options": "\nScheduled Service\nRepair\nBreakdown\nAccident\nInspection\nAccidental",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Job Type",
+   "fieldname": "job_type",
+   "fieldtype": "Link",
+   "options": "Maintenance Job Type",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Status",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nDraft\nPending\nIn Progress\nOn Hold\nCompleted\nCancelled",
+   "default": "Draft",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Supplier",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "options": "Supplier",
+   "in_standard_filter": 1,
+   "description": "Workshop or vendor performing the repair"
+  },
+  {
+   "label": "Reported Issue",
+   "fieldname": "reported_issue",
+   "fieldtype": "Text Editor",
+   "description": "Customer complaint or observed problem"
+  },
+  {
+   "label": "Diagnosis",
+   "fieldname": "diagnosis",
+   "fieldtype": "Text Editor",
+   "description": "Technician findings and root cause"
+  },
+  {
+   "label": "Work Performed",
+   "fieldname": "work_performed",
+   "fieldtype": "Text Editor"
+  },
+  {
+   "label": "Odometer Before (km)",
+   "fieldname": "odometer_before",
+   "fieldtype": "Float",
+   "description": "Odometer reading when vehicle arrived"
+  },
+  {
+   "label": "Odometer After (km)",
+   "fieldname": "odometer_after",
+   "fieldtype": "Float",
+   "description": "Odometer reading when vehicle left"
+  },
+  {
+   "label": "Completion Date",
+   "fieldname": "completion_date",
+   "fieldtype": "Date",
+   "in_list_view": 1
+  },
+  {
+   "label": "Driver at Time of Issue",
+   "fieldname": "driver_at_time",
+   "fieldtype": "Link",
+   "options": "Driver"
+  },
+  {
+   "label": "Linked Breakdown",
+   "fieldname": "linked_breakdown",
+   "fieldtype": "Link",
+   "options": "Breakdown Incident",
+   "description": "If this job was triggered by a breakdown"
+  },
+  {
+   "label": "Linked Breakdown Incident",
+   "fieldname": "linked_breakdown_incident",
+   "fieldtype": "Link",
+   "options": "Breakdown Incident",
+   "description": "Breakdown that triggered this job card"
+  },
+  {
+   "label": "Total Parts Cost (DZD)",
+   "fieldname": "total_parts_cost",
+   "fieldtype": "Currency",
+   "read_only": 1
+  },
+  {
+   "label": "Total Labour Cost (DZD)",
+   "fieldname": "total_labour_cost",
+   "fieldtype": "Currency",
+   "read_only": 1
+  },
+  {
+   "label": "Total Other Cost (DZD)",
+   "fieldname": "total_other_cost",
+   "fieldtype": "Currency",
+   "read_only": 1
+  },
+  {
+   "label": "Total Cost (DZD)",
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "label": "Downtime (Hours)",
+   "fieldname": "downtime_hours",
+   "fieldtype": "Float",
+   "read_only": 1,
+   "description": "Hours the vehicle was out of service"
+  },
+  {
+   "label": "Parts Used",
+   "fieldname": "parts_used",
+   "fieldtype": "Table",
+   "options": "Job Card Part"
+  },
+  {
+   "label": "Labour Lines",
+   "fieldname": "labour_lines",
+   "fieldtype": "Table",
+   "options": "Job Card Labour"
+  },
+  {
+   "label": "Other Costs",
+   "fieldname": "other_costs",
+   "fieldtype": "Table",
+   "options": "Job Card Other Cost"
+  },
+  {
+   "label": "Photos",
+   "fieldname": "photos",
+   "fieldtype": "Table",
+   "options": "Job Card Photo"
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  }
+ ],
+ "links": [],
+ "istable": 0,
+ "issingle": 0,
+ "is_submittable": 1,
+ "track_changes": 1,
+ "naming_rule": "Expression",
+ "naming_expression": "JC-.YYYY.-.####",
+ "autoname": "format"
+}
