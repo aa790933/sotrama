@@ -4,7 +4,6 @@ Registers the TP module and all its DocTypes in Frappe's Module Def system.
 Run once during bench migrate.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 

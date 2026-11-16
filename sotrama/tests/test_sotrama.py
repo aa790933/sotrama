@@ -4,7 +4,6 @@ Test suite for Sotrama — Algerian Localization & TP Fleet Management.
 Run with: bench --site your-site run-tests --app sotrama
 """
 
-from __future__ import unicode_literals
 
 import frappe
 import unittest

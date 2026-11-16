@@ -5,7 +5,6 @@ Defines a dedicated Fleet section in the Frappe Desk sidebar
 for the TP (Travaux Publics) fleet management module.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 

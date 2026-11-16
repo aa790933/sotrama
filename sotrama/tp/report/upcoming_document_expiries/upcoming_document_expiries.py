@@ -5,7 +5,6 @@ Shows vehicle documents (registration, insurance, pollution, technical inspectio
 etc.) that are expiring within a configurable number of days.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 from frappe.utils import today, add_days

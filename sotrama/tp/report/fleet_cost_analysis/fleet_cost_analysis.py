@@ -5,7 +5,6 @@ Shows per-vehicle cost breakdown: fuel, maintenance, tyres, other expenses,
 depreciation, total cost, and cost per kilometre.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 

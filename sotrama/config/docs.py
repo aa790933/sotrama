@@ -2,7 +2,6 @@
 Documentation configuration for the Sotrama app.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 

@@ -4,7 +4,6 @@ Creates master records (Vehicle Make, Vehicle Model, Maintenance Job Type)
 that are needed for the TP Fleet Management module.
 """
 
-from __future__ import unicode_literals
 
 import frappe
 
