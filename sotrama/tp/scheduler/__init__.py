@@ -20,36 +20,58 @@ from frappe.utils import today, add_days
 def check_document_expiries():
     """
     Scan all Vehicles for documents expiring within 30 days.
-    Creates a ToDo and sends an in-app notification for each.
+    Uses the Vehicle Document child table for expiry tracking.
+    Creates a ToDo for each expiring document.
     """
     alert_days = 30
     threshold = add_days(today(), alert_days)
 
     vehicles = frappe.get_all(
         "Vehicle",
-        fields=[
-            "name", "license_plate", "vehicle_status",
-            "registration_document", "insurance_document",
-            "pollution_document", "technical_document",
-        ],
+        fields=["name", "license_plate", "vehicle_status"],
         filters={"vehicle_status": ["!=", "Retired"]},
     )
 
     for v in vehicles:
-        _check_doc_expiry(v, "registration_document", "Registration")
-        _check_doc_expiry(v, "insurance_document", "Insurance")
-        _check_doc_expiry(v, "pollution_document", "Pollution Certificate")
-        _check_doc_expiry(v, "technical_document", "Technical Inspection")
+        # Get all documents for this vehicle that are expiring soon or expired
+        docs = frappe.get_all(
+            "Vehicle Document",
+            filters={
+                "parent": v["name"],
+                "parenttype": "Vehicle",
+                "expiry_date": ["<=", threshold],
+            },
+            fields=["document_type", "expiry_date", "status"],
+        )
 
-
-def _check_doc_expiry(vehicle, field, label):
-    """Check a single document field for expiry. Creates alert if within threshold."""
-    doc_name = vehicle.get(field)
-    if not doc_name:
-        return
-    # In production, link to a Vehicle Document child table with expiry tracking.
-    # This is a placeholder for the full implementation.
-    pass
+        for doc in docs:
+            # Avoid duplicate ToDos
+            if not frappe.db.exists(
+                "ToDo",
+                {
+                    "reference_type": "Vehicle",
+                    "reference_name": v["name"],
+                    "title": ["like", f"%{doc['document_type']}%"],
+                    "status": "Open",
+                },
+            ):
+                todo = frappe.new_doc("ToDo")
+                todo.title = _(
+                    "Vehicle Document Expiring: {0} (Vehicle: {1})"
+                ).format(doc["document_type"], v["license_plate"] or v["name"])
+                todo.description = _(
+                    "Document '{0}' for vehicle {1} expires on {2}. Status: {3}"
+                ).format(
+                    doc["document_type"],
+                    v["license_plate"] or v["name"],
+                    doc["expiry_date"],
+                    doc["status"],
+                )
+                todo.reference_type = "Vehicle"
+                todo.reference_name = v["name"]
+                todo.priority = "High" if doc["status"] == "Expired" else "Medium"
+                todo.owner = frappe.session.user
+                todo.insert(ignore_permissions=True)
 
 
 # ---------------------------------------------------------------------------

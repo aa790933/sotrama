@@ -1,7 +1,8 @@
 """
 Desktop configuration for the Sotrama app.
 
-Defines how the app appears in the Frappe Desk sidebar.
+Defines a dedicated Fleet section in the Frappe Desk sidebar
+for the TP (Travaux Publics) fleet management module.
 """
 
 from __future__ import unicode_literals
@@ -11,15 +12,16 @@ import frappe
 
 def get_desktop_settings():
     """
-    Returns desktop settings for the Sotrama module.
-    This controls how the app appears in the Frappe Desk sidebar.
+    Returns desktop settings for the Fleet module.
+    Creates a dedicated "Fleet" section in the Desk sidebar
+    with icons for Vehicle, Driver, Maintenance, and other fleet DocTypes.
     """
     return [
         {
-            "label": "Sotrama",
-            "module": "Sotrama",
+            "label": "Fleet",
+            "module": "TP Fleet Management",
             "type": "module",
-            "icon": "fas fa-building",
+            "icon": "fas fa-truck",
             "hidden": 0,
         }
     ]

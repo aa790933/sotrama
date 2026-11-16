@@ -209,6 +209,14 @@
    "label": "Notes",
    "fieldname": "notes",
    "fieldtype": "Text Editor"
+  },
+  {
+   "label": "Vehicle Documents",
+   "fieldname": "vehicle_documents",
+   "fieldtype": "Table",
+   "options": "Vehicle Document",
+   "in_standard_filter": 1,
+   "description": "Vehicle documents with expiry tracking (registration, insurance, pollution, etc.)"
   }
  ],
  "links": [],

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
@@ -27,9 +28,29 @@ class MaintenanceSchedule(Document):
 
     def _create_next_occurrence(self):
         """Generate the next Maintenance Schedule based on interval."""
-        if not self.vehicle:
+        if not self.vehicle or not self.job_type:
             return
-        # Logic: calculate next due date/km and create a new schedule
-        # This is a placeholder — full implementation creates the next
-        # schedule document with updated due_date / due_odometer.
-        pass
+
+        # Only auto-generate if this schedule was just completed
+        if self.status != "Completed":
+            return
+
+        next_sched = frappe.new_doc("Maintenance Schedule")
+        next_sched.vehicle = self.vehicle
+        next_sched.schedule_type = self.schedule_type
+        next_sched.job_type = self.job_type
+        next_sched.interval_months = self.interval_months
+        next_sched.interval_km = self.interval_km
+        next_sched.last_service_date = self.last_service_date
+        next_sched.last_service_odometer = self.last_service_odometer
+
+        from frappe.utils import add_months, today
+
+        if self.schedule_type == "Calendar" and self.interval_months:
+            next_sched.next_due_date = add_months(
+                self.last_service_date or today(), self.interval_months
+            )
+        elif self.schedule_type == "Mileage" and self.interval_km and self.last_service_odometer:
+            next_sched.next_due_odometer = self.last_service_odometer + self.interval_km
+
+        next_sched.insert(ignore_permissions=True)

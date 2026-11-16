@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
@@ -70,12 +71,36 @@ class MaintenanceJobCard(Document):
                 )
 
     def _post_stock_entries(self):
-        """Auto-post consumed parts as a Stock Entry on submit."""
+        """
+        Auto-post consumed parts as a Stock Entry on submit.
+        Creates a Material Issue Stock Entry linking parts consumed
+        during maintenance to the fleet warehouse.
+        """
         if not self.parts_used:
             return
-        # Placeholder — full implementation creates a Stock Entry
-        # with warehouse, item, qty, and serial/batch tracking.
-        pass
+
+        vehicle = frappe.get_doc("Vehicle", self.vehicle)
+        warehouse = vehicle.cost_center or frappe.get_value(
+            "Company", frappe.defaults.get_user_default("Company"), "default_warehouse"
+        )
+
+        stock_entry = frappe.new_doc("Stock Entry")
+        stock_entry.stock_entry_type = "Material Issue"
+        stock_entry.company = frappe.defaults.get_user_default("Company")
+        stock_entry.set_posting_time = 1
+        stock_entry.posting_date = self.job_date or frappe.utils.today()
+
+        for row in self.parts_used:
+            stock_entry.append("items", {
+                "item_code": row.item,
+                "qty": row.quantity or 1,
+                "s_warehouse": warehouse,
+                "basic_rate": row.rate or 0,
+                "expense_account": "Maintenance Expenses - COA",
+            })
+
+        stock_entry.insert(ignore_permissions=True)
+        stock_entry.submit()
 
     def _update_vehicle_odometer(self):
         """Update the linked Vehicle's current odometer."""
@@ -85,7 +110,38 @@ class MaintenanceJobCard(Document):
             )
 
     def _generate_next_schedule(self):
-        """If this job is a scheduled service, create the next Maintenance Schedule."""
-        if self.job_type and self.vehicle:
-            # Logic to find/create next schedule based on job_type interval
-            pass
+        """
+        If this job is a scheduled service, create the next Maintenance Schedule
+        occurrence based on the job type interval.
+        """
+        if not self.job_type or not self.vehicle:
+            return
+
+        vehicle = frappe.get_doc("Vehicle", self.vehicle)
+
+        # Find existing active schedule for this vehicle + job type
+        existing = frappe.get_all(
+            "Maintenance Schedule",
+            filters={
+                "vehicle": self.vehicle,
+                "job_type": self.job_type,
+                "status": "Active",
+            },
+            fields=["name", "next_due_odometer"],
+        )
+
+        if existing:
+            sched = frappe.get_doc("Maintenance Schedule", existing[0]["name"])
+            sched.last_service_date = self.job_date
+            sched.last_service_odometer = self.odometer_after or 0
+
+            # Calculate next due based on mileage interval
+            if sched.schedule_type == "Mileage" and sched.interval_km:
+                sched.next_due_odometer = (self.odometer_after or 0) + sched.interval_km
+            elif sched.schedule_type == "Calendar" and sched.interval_months:
+                from frappe.utils import add_months
+                sched.next_due_date = add_months(
+                    self.job_date or frappe.utils.today(), sched.interval_months
+                )
+
+            sched.save(ignore_permissions=True)
