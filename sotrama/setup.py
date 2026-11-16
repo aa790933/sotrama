@@ -9,7 +9,6 @@ automatically merely because it exists in a custom app. The Company's NIF,
 NIS and RC fields are created by the app installation/migration hooks instead.
 """
 
-import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
@@ -76,4 +75,3 @@ def _set_algerian_defaults(company):
     # if not doc.default_tax_template:
     #     doc.default_tax_template = "TVA Algeria"
     # doc.save()
-    pass

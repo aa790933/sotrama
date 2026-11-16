@@ -3,7 +3,6 @@ Documentation configuration for the Sotrama app.
 """
 
 
-import frappe
 
 
 def get_docs_context(context):

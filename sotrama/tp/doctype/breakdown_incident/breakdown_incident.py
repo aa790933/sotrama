@@ -25,9 +25,12 @@ class BreakdownIncident(Document):
     # ------------------------------------------------------------------
 
     def _validate_dates(self):
-        if self.incident_date and self.resolution_date:
-            if self.resolution_date < self.incident_date:
-                frappe.throw(_("Resolution Date cannot be before Incident Date"))
+        if (
+            self.incident_date
+            and self.resolution_date
+            and self.resolution_date < self.incident_date
+        ):
+            frappe.throw(_("Resolution Date cannot be before Incident Date"))
 
     def _calculate_downtime(self):
         if self.incident_date and self.resolution_date:

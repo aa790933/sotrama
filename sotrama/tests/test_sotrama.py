@@ -5,10 +5,11 @@ Run with: bench --site your-site run-tests --app sotrama
 """
 
 
-import frappe
 import unittest
 import uuid
-from frappe.utils import today, add_days
+
+import frappe
+from frappe.utils import add_days, today
 
 
 class TestSotramaHooks(unittest.TestCase):

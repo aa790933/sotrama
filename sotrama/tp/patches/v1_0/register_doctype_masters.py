@@ -18,7 +18,7 @@ def execute():
             doc = frappe.new_doc("Vehicle Make")
             doc.make_name = make
             doc.insert(ignore_permissions=True)
-            print("Created Vehicle Make: {0}".format(make))
+            print(f"Created Vehicle Make: {make}")
 
     # Default maintenance job types
     default_job_types = [
@@ -42,6 +42,6 @@ def execute():
             doc.standard_labour_hours = std_hours
             doc.default_rate = default_rate
             doc.insert(ignore_permissions=True)
-            print("Created Maintenance Job Type: {0}".format(job_type_name))
+            print(f"Created Maintenance Job Type: {job_type_name}")
 
     print("Default masters registered successfully.")

@@ -17,4 +17,4 @@ def execute():
             module = frappe.new_doc("Module Def")
             module.module_name = module_name
             module.insert(ignore_permissions=True)
-            print("Created Module Def: {0}".format(module_name))
+            print(f"Created Module Def: {module_name}")

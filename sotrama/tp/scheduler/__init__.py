@@ -9,8 +9,7 @@ These run once per day via Frappe's scheduler to:
 
 import frappe
 from frappe import _
-from frappe.utils import today, add_days
-
+from frappe.utils import add_days, today
 
 # ---------------------------------------------------------------------------
 # Document expiry alerts
@@ -151,8 +150,10 @@ def check_driver_license_expiry():
     )
 
     for d in drivers:
-        if d.license_expiry and d.license_expiry <= threshold:
-            if not frappe.db.exists(
+        if (
+            d.license_expiry
+            and d.license_expiry <= threshold
+            and not frappe.db.exists(
                 "ToDo",
                 {
                     "reference_type": "Driver",
@@ -160,20 +161,23 @@ def check_driver_license_expiry():
                     "title": ["like", "%License%"],
                     "status": "Open",
                 },
-            ):
-                todo = frappe.new_doc("ToDo")
-                todo.title = _("Driver License Expiring: {0}").format(d["driver_name"])
-                todo.description = _(
-                    "Driver {0} (License: {1}) license expires on {2}."
-                ).format(d["driver_name"], d["license_number"], d["license_expiry"])
-                todo.reference_type = "Driver"
-                todo.reference_name = d["name"]
-                todo.priority = "High"
-                todo.owner = "Administrator"
-                todo.insert(ignore_permissions=True)
+            )
+        ):
+            todo = frappe.new_doc("ToDo")
+            todo.title = _("Driver License Expiring: {0}").format(d["driver_name"])
+            todo.description = _(
+                "Driver {0} (License: {1}) license expires on {2}."
+            ).format(d["driver_name"], d["license_number"], d["license_expiry"])
+            todo.reference_type = "Driver"
+            todo.reference_name = d["name"]
+            todo.priority = "High"
+            todo.owner = "Administrator"
+            todo.insert(ignore_permissions=True)
 
-        if d.medical_expiry and d.medical_expiry <= threshold:
-            if not frappe.db.exists(
+        if (
+            d.medical_expiry
+            and d.medical_expiry <= threshold
+            and not frappe.db.exists(
                 "ToDo",
                 {
                     "reference_type": "Driver",
@@ -181,20 +185,23 @@ def check_driver_license_expiry():
                     "title": ["like", "%Medical%"],
                     "status": "Open",
                 },
-            ):
-                todo = frappe.new_doc("ToDo")
-                todo.title = _("Medical Certificate Expiring: {0}").format(d["driver_name"])
-                todo.description = _(
-                    "Driver {0} medical certificate expires on {1}."
-                ).format(d["driver_name"], d["medical_expiry"])
-                todo.reference_type = "Driver"
-                todo.reference_name = d["name"]
-                todo.priority = "Medium"
-                todo.owner = "Administrator"
-                todo.insert(ignore_permissions=True)
+            )
+        ):
+            todo = frappe.new_doc("ToDo")
+            todo.title = _("Medical Certificate Expiring: {0}").format(d["driver_name"])
+            todo.description = _(
+                "Driver {0} medical certificate expires on {1}."
+            ).format(d["driver_name"], d["medical_expiry"])
+            todo.reference_type = "Driver"
+            todo.reference_name = d["name"]
+            todo.priority = "Medium"
+            todo.owner = "Administrator"
+            todo.insert(ignore_permissions=True)
 
-        if d.safety_training_expiry and d.safety_training_expiry <= threshold:
-            if not frappe.db.exists(
+        if (
+            d.safety_training_expiry
+            and d.safety_training_expiry <= threshold
+            and not frappe.db.exists(
                 "ToDo",
                 {
                     "reference_type": "Driver",
@@ -202,14 +209,15 @@ def check_driver_license_expiry():
                     "title": ["like", "%Safety Training%"],
                     "status": "Open",
                 },
-            ):
-                todo = frappe.new_doc("ToDo")
-                todo.title = _("Safety Training Expiring: {0}").format(d["driver_name"])
-                todo.description = _(
-                    "Driver {0} safety training expires on {1}."
-                ).format(d["driver_name"], d["safety_training_expiry"])
-                todo.reference_type = "Driver"
-                todo.reference_name = d["name"]
-                todo.priority = "Medium"
-                todo.owner = "Administrator"
-                todo.insert(ignore_permissions=True)
+            )
+        ):
+            todo = frappe.new_doc("ToDo")
+            todo.title = _("Safety Training Expiring: {0}").format(d["driver_name"])
+            todo.description = _(
+                "Driver {0} safety training expires on {1}."
+            ).format(d["driver_name"], d["safety_training_expiry"])
+            todo.reference_type = "Driver"
+            todo.reference_name = d["name"]
+            todo.priority = "Medium"
+            todo.owner = "Administrator"
+            todo.insert(ignore_permissions=True)

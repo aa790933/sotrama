@@ -20,9 +20,8 @@ class OperationalTask(Document):
         self._assign_driver()
 
     def _validate_dates(self):
-        if self.start_date and self.end_date:
-            if self.end_date < self.start_date:
-                frappe.throw(_("End Date cannot be before Start Date"))
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            frappe.throw(_("End Date cannot be before Start Date"))
 
     def _calculate_actuals(self):
         if self.start_date and self.end_date:

@@ -31,18 +31,20 @@ class MaintenanceJobCard(Document):
     # ------------------------------------------------------------------
 
     def _validate_dates(self):
-        if self.job_date and self.completion_date:
-            if self.completion_date < self.job_date:
-                frappe.throw(_("Completion Date cannot be before Job Date"))
+        if self.job_date and self.completion_date and self.completion_date < self.job_date:
+            frappe.throw(_("Completion Date cannot be before Job Date"))
 
     def _validate_odometer(self):
-        if self.odometer_before and self.odometer_after:
-            if self.odometer_after < self.odometer_before:
-                frappe.throw(
-                    _("Odometer After ({0}) cannot be less than Odometer Before ({1})").format(
-                        self.odometer_after, self.odometer_before
-                    )
+        if (
+            self.odometer_before
+            and self.odometer_after
+            and self.odometer_after < self.odometer_before
+        ):
+            frappe.throw(
+                _("Odometer After ({0}) cannot be less than Odometer Before ({1})").format(
+                    self.odometer_after, self.odometer_before
                 )
+            )
         if self.vehicle and self.odometer_after:
             current_odometer = frappe.db.get_value(
                 "Vehicle", self.vehicle, "current_odometer"
