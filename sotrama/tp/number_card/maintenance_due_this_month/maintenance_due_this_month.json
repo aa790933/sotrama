@@ -1,0 +1,22 @@
+{
+ "creation": "2026-11-16 00:00:00",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "idx": 0,
+ "modified": "2026-11-16 00:00:00",
+ "module": "TP Fleet Management",
+ "name": "Maintenance Due This Month",
+ "owner": "Administrator",
+ "aggregate_function": "count",
+ "document_type": "Maintenance Schedule",
+ "filters_json": "[[\"Maintenance Schedule\",\"next_due_date\",\"<\",\"add_days(today(), 30)\"],[\"Maintenance Schedule\",\"status\",\"=\",\"Active\"]]",
+ "fieldname": "name",
+ "show_percentage_stats": 1,
+ "hide_cache": 0,
+ "background_color": "orange",
+ "color": "#ff9d4d",
+ "period": "All",
+ "time_series": 0,
+ "time_series_frequency": "Yearly",
+ "time_series_duration": "5 years"
+}

@@ -6,9 +6,11 @@ from frappe.model.document import Document
 class CompanyClassification(Document):
     """
     Company Classification — Algerian public works company grade
-    (Catégorie I through IX) per Décret Exécutif n° 14-139.
+    (Catégorie I through IX) per Décret Exécutif n° 14-139 and
+    Arrêté Interministeriel du 3 janvier 2024.
 
     Grade 8 (Class VIII) is the user's target classification.
+    Validity: 5 years per MTPIB.
     """
 
     def validate(self):
@@ -25,26 +27,42 @@ class CompanyClassification(Document):
             )
 
     def _calculate_total_score(self):
-        """Calculate the total classification score per the ministerial formula."""
+        """
+        Calculate the total classification score per the 2024 Arrêté formula:
+
+        NT = [(CB1×EF) × (CB2×E) + (CB3×RA) + (CB4×FR)] + (CB5×VM)
+             + [(CB6×CS) + (CB7×CA)] + (CB8×ABE)
+
+        Where:
+        - EF = Effectif (staff size), CB1 = coefficient, E = Encadrement (management), CB2 = coefficient
+        - RA = Apprentices, CB3 = coefficient
+        - FR = Training (Formation/Perfectionnement/Recyclage), CB4 = coefficient
+        - VM = Material Value (equipment), CB5 = coefficient
+        - CS = Capital Social, CB6 = coefficient
+        - CA = Chiffre d'Affaires (revenue), CB7 = coefficient
+        - ABE = Attestations de Bonne Exécution (good execution certificates), CB8 = coefficient, score 1-1.8
+        """
         nt = 0
-        if self.effectif_score:
-            nt += (self.effectif_coefficient or 1) * self.effectif_score
-        if self.encadrement_score:
-            nt += (self.encadrement_coefficient or 1) * self.encadrement_score
-        if self.apprentice_score:
-            nt += (self.apprentice_coefficient or 1) * self.apprentice_score
-        if self.training_score:
-            nt += (self.training_coefficient or 1) * self.training_score
-        if self.material_value_score:
-            nt += (self.material_value_coefficient or 1) * self.material_value_score
-        if self.capital_score:
-            nt += (self.capital_coefficient or 1) * self.capital_score
-        if self.revenue_score:
-            nt += (self.revenue_coefficient or 1) * self.revenue_score
-        if self.docs_score:
-            nt += (self.docs_coefficient or 1) * self.docs_score
-        if self.certification_score:
-            nt += (self.certification_coefficient or 1) * self.certification_score
+
+        # Human Resources: [(CB1×EF) × (CB2×E) + (CB3×RA) + (CB4×FR)]
+        hr_base = (self.effectif_coefficient or 1) * (self.effectif_score or 0)
+        hr_base *= (self.encadrement_coefficient or 1) * (self.encadrement_score or 0)
+        hr_base += (self.apprentice_coefficient or 1) * (self.apprentice_score or 0)
+        hr_base += (self.training_coefficient or 1) * (self.training_score or 0)
+
+        # Material Value: CB5 × VM
+        material = (self.material_value_coefficient or 1) * (self.material_value_score or 0)
+
+        # Financial: (CB6 × CS) + (CB7 × CA)
+        financial = (
+            (self.capital_coefficient or 1) * (self.capital_score or 0)
+            + (self.revenue_coefficient or 1) * (self.revenue_score or 0)
+        )
+
+        # Good Execution: CB8 × ABE (score 1 to 1.8)
+        execution = (self.abe_coefficient or 1) * (self.abe_score or 1)
+
+        nt = hr_base + material + financial + execution
         self.total_score = round(nt, 2)
 
         # Verify the grade matches the score range
@@ -52,6 +70,7 @@ class CompanyClassification(Document):
 
     def _verify_grade_range(self):
         """Check that the calculated score falls within the grade's range."""
+        # Grade score ranges per Arrêté Interministeriel (categories I-IX)
         ranges = {
             1: (0, 9.8),
             2: (9.8, 18.3),
@@ -71,7 +90,7 @@ class CompanyClassification(Document):
                     title=_("Score Mismatch"),
                     indicator="orange",
                     message=_(
-                        "Total score {0} falls outside Grade {1} range ({1}–{2}). "
+                        "Total score {0} falls outside Grade {1} range ({2}–{3}). "
                         "Please verify the classification criteria."
-                    ).format(self.total_score, low, high),
+                    ).format(self.total_score, grade, low, high),
                 )

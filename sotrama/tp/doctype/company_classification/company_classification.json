@@ -7,7 +7,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "reqd": 1,
-   "description": "Classification grade I–IX per Arrêté Interministériel"
+   "description": "Classification grade I–IX per Arrêté Interministeriel"
   },
   {
    "label": "Category",
@@ -38,6 +38,13 @@
    "in_list_view": 1
   },
   {
+   "label": "Validity Period",
+   "fieldname": "validity_period",
+   "fieldtype": "Int",
+   "default": "5",
+   "description": "Validity period in years (5 years per MTPIB)"
+  },
+  {
    "label": "Active",
    "fieldname": "active",
    "fieldtype": "Check",
@@ -61,7 +68,6 @@
    "fieldname": "encadrement_score",
    "fieldtype": "Int",
    "default": "1",
-   "depends_on": "eval:doc.effectif_score",
    "description": "Management staff score (0 or 1)"
   },
   {
@@ -83,10 +89,11 @@
    "default": "1.0"
   },
   {
-   "label": "Training (PF) Score",
+   "label": "Training (FR) Score",
    "fieldname": "training_score",
    "fieldtype": "Int",
-   "default": "1"
+   "default": "1",
+   "description": "Training/perfectionnement/recyclage score (1–9)"
   },
   {
    "label": "Training Coefficient (CB4)",
@@ -124,7 +131,7 @@
    "fieldname": "revenue_score",
    "fieldtype": "Int",
    "default": "1",
-   "description": "Turnover score (1–9)"
+   "description": "Turnover score over 3 years (1–9)"
   },
   {
    "label": "Revenue Coefficient (CB7)",
@@ -133,26 +140,15 @@
    "default": "1.0"
   },
   {
-   "label": "Administrative Docs (DA) Score",
-   "fieldname": "docs_score",
-   "fieldtype": "Int",
-   "default": "1"
-  },
-  {
-   "label": "Administrative Docs Coefficient (CB8)",
-   "fieldname": "docs_coefficient",
+   "label": "Good Execution (ABE) Score",
+   "fieldname": "abe_score",
    "fieldtype": "Float",
-   "default": "1.0"
+   "default": "1.0",
+   "description": "Attestations de Bonne Exécution score (1–1.8)"
   },
   {
-   "label": "Certifications (CMN) Score",
-   "fieldname": "certification_score",
-   "fieldtype": "Int",
-   "default": "1"
-  },
-  {
-   "label": "Certifications Coefficient (CB9)",
-   "fieldname": "certification_coefficient",
+   "label": "Good Execution Coefficient (CB8)",
+   "fieldname": "abe_coefficient",
    "fieldtype": "Float",
    "default": "1.0"
   },
@@ -162,7 +158,7 @@
    "fieldtype": "Float",
    "read_only": 1,
    "in_list_view": 1,
-   "description": "NT = Σ(coefficient × score) per Arrêté formula"
+   "description": "NT = [(CB1×EF)×(CB2×E) + CB3×RA + CB4×FR] + CB5×VM + (CB6×CS + CB7×CA) + CB8×ABE"
   }
  ],
  "links": [],

@@ -1,0 +1,19 @@
+{
+ "creation": "2026-11-16 00:00:00",
+ "docstatus": 0,
+ "doctype": "Role Profile",
+ "idx": 0,
+ "modified": "2026-11-16 00:00:00",
+ "module": "TP Fleet Management",
+ "name": "Fleet Manager",
+ "owner": "Administrator",
+ "role_profile_name": "Fleet Manager",
+ "roles": [
+  {
+   "role": "Fleet Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

@@ -1,9 +1,39 @@
 {
  "fields": [
-  {"label": "Document Type", "fieldname": "document_type", "fieldtype": "Select", "options": "\nRegistration\nInsurance\nPollution Certificate\nTechnical Inspection\nFitness Certificate\nRoad Permit\nOther", "in_list_view": 1, "reqd": 1},
-  {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "in_list_view": 1, "in_standard_filter": 1},
-  {"label": "Attachment", "fieldname": "attachment", "fieldtype": "Attach"},
-  {"label": "Status", "fieldname": "status", "fieldtype": "Select", "options": "\nValid\nExpiring Soon\nExpired\nPending", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1}
+  {
+   "label": "Document Type",
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "options": "\nCarte Grise (Registration)\nAssurance (Insurance)\nCertificat de Pollution\nVisite Technique\nCertificat de Conformité\nPermis de Circulation\nVignette\nAutre",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Expiry Date",
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Issue Date",
+   "fieldname": "issue_date",
+   "fieldtype": "Date"
+  },
+  {
+   "label": "Attachment",
+   "fieldname": "attachment",
+   "fieldtype": "Attach"
+  },
+  {
+   "label": "Status",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nValid\nExpiring Soon\nExpired\nPending",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  }
  ],
  "istable": 1,
  "links": []
