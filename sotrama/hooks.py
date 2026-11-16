@@ -192,16 +192,14 @@ scheduler_events = {
 
 
 # ---------------------------------------------------------------------------
-# Includes — global JS/CSS loaded on the Desk
+# Includes — global JS loaded on the Desk
 # ---------------------------------------------------------------------------
 
 includes = []
 app_include_js = {
     "desk": "/assets/sotrama/js/sotrama.js",
 }
-app_include_css = {
-    "desk": "/assets/sotrama/css/sotrama.css",
-}
+# No custom CSS — app follows standard Frappe Desk styling
 
 # ---------------------------------------------------------------------------
 # DocType JS — per-DocType client-side scripts

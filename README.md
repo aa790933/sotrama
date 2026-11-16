@@ -40,6 +40,8 @@ classification per Décret Exécutif n° 14-139.
 
 Custom fields added via the Desk UI (Customize Form) live in the database. On `bench update`, they can be wiped or conflicted. Sotrama defines all customizations in **code** — they're version-controlled, reinstall cleanly on new sites, and never conflict with ERPNext upgrades.
 
+**No custom CSS** — the app follows standard Frappe Desk styling and uses only standard Frappe UI components. All client-side behavior is handled through standard DocType JS files.
+
 ## Installation
 
 ```bash

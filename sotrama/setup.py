@@ -17,7 +17,7 @@ def get_custom_fields():
     return {
         "Company": [
             {
-                "fieldname": "nif",
+                "fieldname": "custom_nif",
                 "fieldtype": "Data",
                 "label": "NIF (Tax ID)",
                 "insert_after": "tax_id",
@@ -28,10 +28,10 @@ def get_custom_fields():
                 "description": "Numéro d'Identification Fiscale — Algerian tax registration number",
             },
             {
-                "fieldname": "nis",
+                "fieldname": "custom_nis",
                 "fieldtype": "Data",
                 "label": "NIS (Statistical ID)",
-                "insert_after": "nif",
+                "insert_after": "custom_nif",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
@@ -39,10 +39,10 @@ def get_custom_fields():
                 "description": "Numéro d'Identification Statistique — Algerian statistical registration number",
             },
             {
-                "fieldname": "rc",
+                "fieldname": "custom_rc",
                 "fieldtype": "Data",
                 "label": "RC (Trade Registry)",
-                "insert_after": "nis",
+                "insert_after": "custom_nis",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
