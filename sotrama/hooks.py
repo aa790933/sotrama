@@ -144,11 +144,8 @@ doc_events = {
         "after_insert": "sotrama.sotrama.setup.setup",
         "after_rename": "sotrama.sotrama.setup.on_company_rename",
     },
-    # Vehicle — auto-create initial inspection on submit (via controller)
-    "Vehicle": {
-        "on_submit": "sotrama.tp.doctype.vehicle.vehicle.Vehicle.on_submit",
-        "on_cancel": "sotrama.tp.doctype.vehicle.vehicle.Vehicle.on_cancel",
-    },
+    # Vehicle — lifecycle handled via extend_doctype_class (v16 mixin pattern)
+    # No doc_events needed here — methods are mixed into the controller directly
     # Breakdown — auto-create job card, update driver count, mark OOS
     "Breakdown Incident": {
         "on_submit": "sotrama.tp.doctype.breakdown_incident.breakdown_incident.on_submit",

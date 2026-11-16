@@ -1,0 +1,24 @@
+{
+ "creation": "2026-11-15 00:00:00",
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"alert_days\": 30}",
+ "letter_head": null,
+ "modified": "2026-11-15 00:00:00",
+ "module": "TP Fleet Management",
+ "name": "Upcoming Document Expiries",
+ "owner": "Administrator",
+ "query_report": "sotrama.tp.report.upcoming_document_expiries.upcoming_document_expiries.execute",
+ "ref_report_type": "Script Report",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Fleet Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}
