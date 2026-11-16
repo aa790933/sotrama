@@ -1,8 +1,26 @@
 {
+ "doctype": "DocType",
+ "name": "Vehicle Make",
+ "module": "TP",
  "fields": [
-  {"label": "Make Name", "fieldname": "make_name", "fieldtype": "Data", "in_list_view": 1, "reqd": 1},
-  {"label": "Description", "fieldname": "description", "fieldtype": "Small Text"},
-  {"label": "Active", "fieldname": "active", "fieldtype": "Check", "default": "1"}
+  {
+   "label": "Make Name",
+   "fieldname": "make_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Description",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "label": "Active",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "default": "1"
+  }
  ],
  "links": [],
  "istable": 0,

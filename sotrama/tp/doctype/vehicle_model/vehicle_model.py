@@ -1,14 +1,6 @@
-
 import frappe
+from frappe import _
 from frappe.model.document import Document
-
-
-class VehicleMake(Document):
-    """Vehicle Make — manufacturer master (Mercedes, Volvo, Scania, etc.)."""
-
-    def validate(self):
-        if not self.make_name:
-            frappe.throw(_("Make Name is required"))
 
 
 class VehicleModel(Document):

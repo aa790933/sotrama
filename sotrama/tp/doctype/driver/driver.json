@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Driver",
+ "module": "TP",
  "fields": [
   {
    "label": "Driver Name",

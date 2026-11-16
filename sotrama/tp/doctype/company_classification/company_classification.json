@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Company Classification",
+ "module": "TP",
  "fields": [
   {
    "label": "Grade",

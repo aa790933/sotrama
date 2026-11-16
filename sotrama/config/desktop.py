@@ -18,7 +18,7 @@ def get_desktop_settings():
     return [
         {
             "label": "Fleet",
-            "module": "TP Fleet Management",
+            "module": "TP",
             "type": "module",
             "icon": "fas fa-truck",
             "hidden": 0,

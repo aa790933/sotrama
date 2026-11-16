@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Vehicle Document",
+ "module": "TP",
  "fields": [
   {
    "label": "Document Type",

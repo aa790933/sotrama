@@ -7,7 +7,7 @@
  "json": "{}",
  "letter_head": null,
  "modified": "2026-11-15 00:00:00",
- "module": "TP Fleet Management",
+ "module": "TP",
  "name": "Fleet Cost Analysis",
  "owner": "Administrator",
  "query_report": "sotrama.tp.report.fleet_cost_analysis.fleet_cost_analysis.execute",

@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Maintenance Job Card",
+ "module": "TP",
  "fields": [
   {
    "label": "Job Date",

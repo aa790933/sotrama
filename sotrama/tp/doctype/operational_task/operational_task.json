@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Operational Task",
+ "module": "TP",
  "fields": [
   {
    "label": "Task Date",

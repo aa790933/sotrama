@@ -9,8 +9,8 @@ import frappe
 
 
 def execute():
-    """Register the TP Fleet Management module."""
-    modules = ["TP Fleet Management"]
+    """Register the TP module backed by the ``sotrama.tp`` package."""
+    modules = ["TP"]
 
     for module_name in modules:
         if not frappe.db.exists("Module Def", module_name):

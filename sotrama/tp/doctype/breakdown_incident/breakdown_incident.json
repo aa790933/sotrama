@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Breakdown Incident",
+ "module": "TP",
  "fields": [
   {
    "label": "Incident Date",

@@ -1,10 +1,40 @@
 {
+ "doctype": "DocType",
+ "name": "Vehicle Model",
+ "module": "TP",
  "fields": [
-  {"label": "Vehicle Make", "fieldname": "vehicle_make", "fieldtype": "Link", "options": "Vehicle Make", "in_list_view": 1, "reqd": 1},
-  {"label": "Make", "fieldname": "make", "fieldtype": "Data", "read_only": 1},
-  {"label": "Model Name", "fieldname": "model_name", "fieldtype": "Data", "in_list_view": 1, "reqd": 1},
-  {"label": "Description", "fieldname": "description", "fieldtype": "Small Text"},
-  {"label": "Active", "fieldname": "active", "fieldtype": "Check", "default": "1"}
+  {
+   "label": "Vehicle Make",
+   "fieldname": "vehicle_make",
+   "fieldtype": "Link",
+   "options": "Vehicle Make",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Make",
+   "fieldname": "make",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "label": "Model Name",
+   "fieldname": "model_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Description",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "label": "Active",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "default": "1"
+  }
  ],
  "links": [],
  "istable": 0,

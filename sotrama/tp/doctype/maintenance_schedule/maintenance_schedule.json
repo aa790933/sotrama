@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Maintenance Schedule",
+ "module": "TP",
  "fields": [
   {
    "label": "Vehicle",

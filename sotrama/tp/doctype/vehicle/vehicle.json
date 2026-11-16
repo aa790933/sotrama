@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Vehicle",
+ "module": "TP",
  "fields": [
   {
    "label": "License Plate",

@@ -1,13 +1,59 @@
 {
+ "doctype": "DocType",
+ "name": "Job Card Part",
+ "module": "TP",
  "fields": [
-  {"label": "Item", "fieldname": "item", "fieldtype": "Link", "options": "Item", "in_list_view": 1, "reqd": 1},
-  {"label": "Item Name", "fieldname": "item_name", "fieldtype": "Data", "read_only": 1},
-  {"label": "Quantity", "fieldname": "quantity", "fieldtype": "Float", "reqd": 1, "default": "1"},
-  {"label": "UOM", "fieldname": "uom", "fieldtype": "Link", "options": "UOM"},
-  {"label": "Rate (DZD)", "fieldname": "rate", "fieldtype": "Currency", "reqd": 1},
-  {"label": "Amount (DZD)", "fieldname": "amount", "fieldtype": "Currency", "read_only": 1},
-  {"label": "Serial/Batch", "fieldname": "serial_batch", "fieldtype": "Data", "description": "Serial or batch number if tracked"},
-  {"label": "Condition", "fieldname": "condition", "fieldtype": "Select", "options": "\nNew\nUsed\nRefurbished"}
+  {
+   "label": "Item",
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "options": "Item",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Item Name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "label": "Quantity",
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "reqd": 1,
+   "default": "1"
+  },
+  {
+   "label": "UOM",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "options": "UOM"
+  },
+  {
+   "label": "Rate (DZD)",
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "reqd": 1
+  },
+  {
+   "label": "Amount (DZD)",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "read_only": 1
+  },
+  {
+   "label": "Serial/Batch",
+   "fieldname": "serial_batch",
+   "fieldtype": "Data",
+   "description": "Serial or batch number if tracked"
+  },
+  {
+   "label": "Condition",
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "options": "\nNew\nUsed\nRefurbished"
+  }
  ],
  "istable": 1,
  "links": []
