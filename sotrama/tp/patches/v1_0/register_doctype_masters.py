@@ -14,11 +14,11 @@ def execute():
     default_makes = ["Mercedes-Benz", "Volvo", "Scania", "Renault Trucks", "IVECO", "MAN", "Tata"]
 
     for make in default_makes:
-        if not frappe.db.exists("Vehicle Make", make):
+        if not frappe.db.exists("Vehicle Make", {"make_name": make}):
             doc = frappe.new_doc("Vehicle Make")
             doc.make_name = make
             doc.insert(ignore_permissions=True)
-            print("Created Vehicle Make: {0}".format(make))
+            print(f"Created Vehicle Make: {make}")
 
     # Default maintenance job types
     default_job_types = [
@@ -33,14 +33,15 @@ def execute():
     ]
 
     for job_type_name, category, std_hours, default_rate in default_job_types:
-        if not frappe.db.exists("Maintenance Job Type", job_type_name):
+        if not frappe.db.exists(
+            "Maintenance Job Type", {"job_type_name": job_type_name}
+        ):
             doc = frappe.new_doc("Maintenance Job Type")
             doc.job_type_name = job_type_name
             doc.job_category = category
             doc.standard_labour_hours = std_hours
             doc.default_rate = default_rate
             doc.insert(ignore_permissions=True)
-            print("Created Maintenance Job Type: {0}".format(job_type_name))
+            print(f"Created Maintenance Job Type: {job_type_name}")
 
-    frappe.db.commit()
     print("Default masters registered successfully.")

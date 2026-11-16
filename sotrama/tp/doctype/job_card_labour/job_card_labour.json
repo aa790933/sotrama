@@ -1,11 +1,46 @@
 {
+ "doctype": "DocType",
+ "name": "Job Card Labour",
+ "module": "TP",
  "fields": [
-  {"label": "Mechanic", "fieldname": "mechanic", "fieldtype": "Link", "options": "Employee", "in_list_view": 1, "reqd": 1},
-  {"label": "Mechanic Name", "fieldname": "mechanic_name", "fieldtype": "Data", "read_only": 1},
-  {"label": "Hours", "fieldname": "hours", "fieldtype": "Float", "reqd": 1, "default": "1"},
-  {"label": "Rate (DZD/hr)", "fieldname": "rate", "fieldtype": "Currency", "reqd": 1},
-  {"label": "Amount (DZD)", "fieldname": "amount", "fieldtype": "Currency", "read_only": 1},
-  {"label": "Description", "fieldname": "description", "fieldtype": "Small Text"}
+  {
+   "label": "Mechanic",
+   "fieldname": "mechanic",
+   "fieldtype": "Link",
+   "options": "Employee",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Mechanic Name",
+   "fieldname": "mechanic_name",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "label": "Hours",
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "reqd": 1,
+   "default": "1"
+  },
+  {
+   "label": "Rate (DZD/hr)",
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "reqd": 1
+  },
+  {
+   "label": "Amount (DZD)",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "read_only": 1
+  },
+  {
+   "label": "Description",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  }
  ],
  "istable": 1,
  "links": []

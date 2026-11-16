@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Company Classification",
+ "module": "TP",
  "fields": [
   {
    "label": "Grade",
@@ -167,6 +170,40 @@
  "is_submittable": 1,
  "track_changes": 1,
  "naming_rule": "Expression",
- "naming_expression": "CLAS-{grade}-{category}",
- "autoname": "format"
+ "naming_expression": "CLAS-.YYYY.-.####",
+ "autoname": "format",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  }
+ ]
 }

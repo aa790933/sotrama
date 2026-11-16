@@ -7,7 +7,7 @@ name = "sotrama"
 dynamic = ["version", "description"]
 license = { text = "MIT" }
 authors = [{ name = "dekukoda41", email = "dekukoda41@users.noreply.github.com" }]
-requires-python = ">=3.10"
+requires-python = ">=3.14,<3.15"
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -16,9 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [tool.bench.frappe-dependencies]
@@ -32,4 +30,3 @@ app_description = "Algerian Localization & TP Fleet Management for ERPNext — a
 app_publisher = "dekukoda41"
 app_email = "dekukoda41@users.noreply.github.com"
 app_license = "MIT"
-app_logo = "/assets/sotrama/logo.png"

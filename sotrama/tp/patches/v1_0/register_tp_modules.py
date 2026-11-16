@@ -9,13 +9,12 @@ import frappe
 
 
 def execute():
-    """Register the TP Fleet Management module."""
-    modules = ["TP Fleet Management"]
+    """Register the TP module backed by the ``sotrama.tp`` package."""
+    modules = ["TP"]
 
     for module_name in modules:
         if not frappe.db.exists("Module Def", module_name):
             module = frappe.new_doc("Module Def")
             module.module_name = module_name
             module.insert(ignore_permissions=True)
-            frappe.db.commit()
-            print("Created Module Def: {0}".format(module_name))
+            print(f"Created Module Def: {module_name}")

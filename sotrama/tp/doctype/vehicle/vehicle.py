@@ -17,9 +17,6 @@ class Vehicle(Document):
         self._validate_chassis()
         self._set_defaults()
 
-    def on_submit(self):
-        self._create_initial_inspection()
-
     def on_cancel(self):
         self._cancel_related_records()
 
@@ -51,17 +48,6 @@ class Vehicle(Document):
     # ------------------------------------------------------------------
     # Lifecycle hooks
     # ------------------------------------------------------------------
-
-    def _create_initial_inspection(self):
-        """Create an initial inspection record when the vehicle is submitted."""
-        if not frappe.db.exists(
-            "Vehicle Inspection",
-            {"vehicle": self.name, "inspection_type": "Initial"},
-        ):
-            inspection = frappe.new_doc("Vehicle Inspection")
-            inspection.vehicle = self.name
-            inspection.inspection_type = "Initial"
-            inspection.insert(ignore_permissions=True)
 
     def _cancel_related_records(self):
         """When a vehicle is cancelled, mark it out of service."""

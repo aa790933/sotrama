@@ -1,3 +1,5 @@
+"""Algerian localization and fleet management extensions for ERPNext."""
+
 __version__ = "1.0.0"
 
 app_title = "Sotrama"

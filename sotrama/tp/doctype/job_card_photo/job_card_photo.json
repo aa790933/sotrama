@@ -1,8 +1,24 @@
 {
+ "doctype": "DocType",
+ "name": "Job Card Photo",
+ "module": "TP",
  "fields": [
-  {"label": "Photo", "fieldname": "photo", "fieldtype": "Attach Image", "reqd": 1},
-  {"label": "Caption", "fieldname": "caption", "fieldtype": "Small Text"},
-  {"label": "Date", "fieldname": "photo_date", "fieldtype": "Date"}
+  {
+   "label": "Photo",
+   "fieldname": "photo",
+   "fieldtype": "Attach Image",
+   "reqd": 1
+  },
+  {
+   "label": "Caption",
+   "fieldname": "caption",
+   "fieldtype": "Small Text"
+  },
+  {
+   "label": "Date",
+   "fieldname": "photo_date",
+   "fieldtype": "Date"
+  }
  ],
  "istable": 1,
  "links": []

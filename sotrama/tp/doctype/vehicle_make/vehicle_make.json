@@ -1,8 +1,26 @@
 {
+ "doctype": "DocType",
+ "name": "Vehicle Make",
+ "module": "TP",
  "fields": [
-  {"label": "Make Name", "fieldname": "make_name", "fieldtype": "Data", "in_list_view": 1, "reqd": 1},
-  {"label": "Description", "fieldname": "description", "fieldtype": "Small Text"},
-  {"label": "Active", "fieldname": "active", "fieldtype": "Check", "default": "1"}
+  {
+   "label": "Make Name",
+   "fieldname": "make_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "reqd": 1
+  },
+  {
+   "label": "Description",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "label": "Active",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "default": "1"
+  }
  ],
  "links": [],
  "istable": 0,
@@ -12,5 +30,55 @@
  "name_field": "make_name",
  "naming_rule": "Expression",
  "naming_expression": "{make_name}",
- "autoname": "format"
+ "autoname": "format",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "Workshop",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 0,
+   "print": 1,
+   "email": 0,
+   "export": 0,
+   "report": 0,
+   "share": 0
+  }
+ ]
 }

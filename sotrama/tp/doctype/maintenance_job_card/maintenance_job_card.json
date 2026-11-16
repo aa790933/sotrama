@@ -1,4 +1,7 @@
 {
+ "doctype": "DocType",
+ "name": "Maintenance Job Card",
+ "module": "TP",
  "fields": [
   {
    "label": "Job Date",
@@ -138,6 +141,14 @@
    "description": "Hours the vehicle was out of service"
   },
   {
+   "label": "Stock Entry",
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "options": "Stock Entry",
+   "read_only": 1,
+   "description": "Material Issue generated for consumed maintenance parts."
+  },
+  {
    "label": "Parts Used",
    "fieldname": "parts_used",
    "fieldtype": "Table",
@@ -174,5 +185,55 @@
  "track_changes": 1,
  "naming_rule": "Expression",
  "naming_expression": "JC-.YYYY.-.####",
- "autoname": "format"
+ "autoname": "format",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "Workshop",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 0,
+   "print": 1,
+   "email": 0,
+   "export": 0,
+   "report": 0,
+   "share": 0
+  }
+ ]
 }

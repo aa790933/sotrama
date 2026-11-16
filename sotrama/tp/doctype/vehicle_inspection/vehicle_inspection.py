@@ -39,15 +39,25 @@ class VehicleInspection(Document):
                 issue.subject = _("[Vehicle Inspection] {0} — {1}").format(
                     self.vehicle, row.category
                 )
-                issue.description = row.remarks
-                issue.inspection = self.name
+                issue.description = _(
+                    "Created from Vehicle Inspection {0}.\n\n{1}"
+                ).format(self.name, row.remarks)
+                company = frappe.db.get_value("Vehicle", self.vehicle, "company")
+                if company:
+                    issue.company = company
                 issue.insert(ignore_permissions=True)
 
     def _update_vehicle_status(self):
         """If critical defects found, mark vehicle Out of Service."""
-        critical = {"Check Mechanical", "Check Braking", "Check NTSA Inspection"}
         has_critical = any(
-            row.category in critical and row.status == "Defective"
+            row.status == "Defective"
+            and any(
+                term in (row.category or "").casefold()
+                for term in (
+                    "mechanical", "brak", "steer", "tyre", "tire",
+                    "chassis", "technical inspection",
+                )
+            )
             for row in (self.inspection_items or [])
         )
         if has_critical and self.vehicle:
