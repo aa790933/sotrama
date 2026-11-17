@@ -39,6 +39,50 @@ class TestSotramaHooks(unittest.TestCase):
         )
         self.assertIsInstance(hooks.get("filters_config"), list)
 
+    def test_app_lifecycle_hooks_are_import_paths(self):
+        app_hooks = frappe.get_hooks(app_name="sotrama")
+        self.assertEqual(app_hooks["before_install"][0], "sotrama.hooks.ensure_roles")
+        self.assertEqual(app_hooks["after_install"][0], "sotrama.hooks.install_company_fields")
+        self.assertEqual(app_hooks["after_migrate"][0], "sotrama.hooks.sync_company_fields")
+        self.assertEqual(app_hooks["before_uninstall"][0], "sotrama.hooks.uninstall_company_fields")
+
+    def test_app_is_registered_on_the_apps_screen(self):
+        app_entry = frappe.get_hooks("add_to_apps_screen", app_name="sotrama")[0]
+        self.assertEqual(app_entry["name"], "sotrama")
+        self.assertEqual(app_entry["title"], "Sotrama")
+        self.assertEqual(app_entry["route"], "/desk/sotrama-fleet")
+        self.assertEqual(app_entry["has_permission"], "sotrama.permissions.has_app_permission")
+
+    def test_fleet_dock_sidebar_and_workspace_are_installed(self):
+        self.assertTrue(frappe.db.exists("Dock", {"app": "sotrama", "standard": 1}))
+        self.assertTrue(frappe.db.exists("Sidebar", "TP"))
+        self.assertTrue(frappe.db.exists("Workspace", "Sotrama Fleet"))
+        workspace = frappe.get_doc("Workspace", "Sotrama Fleet")
+        import json
+
+        blocks = json.loads(workspace.content or "[]")
+        card_names = {
+            block.get("data", {}).get("number_card_name")
+            for block in blocks
+            if block.get("type") == "number_card"
+        }
+        self.assertEqual(
+            card_names,
+            {"Active Vehicles", "Vehicles Out of Service", "Active Maintenance Plans"},
+        )
+        for card_name in card_names:
+            self.assertTrue(frappe.db.exists("Number Card", card_name), f"Missing Number Card: {card_name}")
+
+    def test_fleet_doctypes_have_distinct_icons(self):
+        doctypes = frappe.get_all(
+            "DocType",
+            filters={"module": "TP", "istable": 0},
+            fields=["name", "icon"],
+        )
+        icons = {doctype.name: doctype.icon for doctype in doctypes}
+        self.assertTrue(all(icons.values()), icons)
+        self.assertEqual(len(set(icons.values())), len(icons), icons)
+
     def test_fleet_roles_exist(self):
         for role in ("Fleet Manager", "Workshop", "Driver"):
             self.assertTrue(frappe.db.exists("Role", role), f"Missing role: {role}")
@@ -49,6 +93,7 @@ class TestSotramaCustomFields(unittest.TestCase):
 
     def test_custom_fields_exist(self):
         """Verify that custom_nif, custom_nis, custom_rc fields exist on Company."""
+        company_meta = frappe.get_meta("Company", cached=False)
         for fieldname in ("custom_nif", "custom_nis", "custom_rc"):
             self.assertTrue(
                 frappe.db.exists(
@@ -57,6 +102,15 @@ class TestSotramaCustomFields(unittest.TestCase):
                 ),
                 f"Custom field {fieldname} not found on Company doctype",
             )
+            self.assertIsNotNone(
+                company_meta.get_field(fieldname),
+                f"{fieldname} is in Custom Field but missing from Company metadata",
+            )
+
+        self.assertEqual(
+            frappe.get_value("Custom Field", {"dt": "Company", "fieldname": "custom_nif"}, "module"),
+            "Sotrama",
+        )
 
 
 class TestVehicle(unittest.TestCase):

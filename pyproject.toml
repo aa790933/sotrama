@@ -20,13 +20,14 @@ classifiers = [
 ]
 
 [tool.bench.frappe-dependencies]
-frappe = ">=16.0.0,<17.0.0"
-erpnext = ">=16.0.0,<17.0.0"
+frappe = ">=16.50.0,<17.0.0"
+erpnext = ">=16.50.0,<17.0.0"
+hrms = ">=16.50.0,<17.0.0"
 
 [tool.frappe]
 app_name = "sotrama"
 app_title = "Sotrama"
-app_description = "Algerian Localization & TP Fleet Management for ERPNext — adds NIF, NIS, RC fields to Company and a complete fleet management module for public works companies"
+app_description = "Algerian company localization and public-works fleet management for ERPNext and Frappe HR."
 app_publisher = "dekukoda41"
 app_email = "dekukoda41@users.noreply.github.com"
 app_license = "MIT"

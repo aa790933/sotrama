@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_work_order",
+   "label": "Work Order"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_work_order",
+   "label": "Job Details",
+   "collapsible": 1
+  },
+  {
    "label": "Job Date",
    "fieldname": "job_date",
    "fieldtype": "Date",
@@ -46,12 +57,22 @@
    "in_standard_filter": 1
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_issue"
+  },
+  {
    "label": "Supplier",
    "fieldname": "supplier",
    "fieldtype": "Link",
    "options": "Supplier",
    "in_standard_filter": 1,
    "description": "Workshop or vendor performing the repair"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_diagnosis",
+   "label": "Reported Issue & Diagnosis",
+   "collapsible": 1
   },
   {
    "label": "Reported Issue",
@@ -71,6 +92,17 @@
    "fieldtype": "Text Editor"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_execution",
+   "label": "Execution"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_execution",
+   "label": "Work Execution & Vehicle Readings",
+   "collapsible": 1
+  },
+  {
    "label": "Odometer Before (km)",
    "fieldname": "odometer_before",
    "fieldtype": "Float",
@@ -81,6 +113,10 @@
    "fieldname": "odometer_after",
    "fieldtype": "Float",
    "description": "Odometer reading when vehicle left"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_execution"
   },
   {
    "label": "Completion Date",
@@ -109,10 +145,25 @@
    "description": "Breakdown that triggered this job card"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_costs",
+   "label": "Costs & Materials"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_cost_summary",
+   "label": "Cost Summary & Stock",
+   "collapsible": 1
+  },
+  {
    "label": "Total Parts Cost (DZD)",
    "fieldname": "total_parts_cost",
    "fieldtype": "Currency",
    "read_only": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_cost_summary"
   },
   {
    "label": "Total Labour Cost (DZD)",
@@ -149,6 +200,12 @@
    "description": "Material Issue generated for consumed maintenance parts."
   },
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_parts",
+   "label": "Parts, Labour & Other Costs",
+   "collapsible": 1
+  },
+  {
    "label": "Parts Used",
    "fieldname": "parts_used",
    "fieldtype": "Table",
@@ -165,6 +222,11 @@
    "fieldname": "other_costs",
    "fieldtype": "Table",
    "options": "Job Card Other Cost"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_attachments",
+   "label": "Attachments & Notes"
   },
   {
    "label": "Photos",
@@ -235,5 +297,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "wrench",
+ "description": "Maintenance Job Card records for Sotrama public-works fleet operations."
 }

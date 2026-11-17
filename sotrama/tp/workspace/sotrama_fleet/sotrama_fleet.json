@@ -1,0 +1,182 @@
+{
+ "app": "sotrama",
+ "creation": "2026-11-17 00:00:00",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "content": "[{\"id\":\"sotrama_active_vehicles\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Vehicles\",\"col\":4}},{\"id\":\"sotrama_out_of_service\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Vehicles Out of Service\",\"col\":4}},{\"id\":\"sotrama_active_maintenance\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Maintenance Plans\",\"col\":4}}]",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "truck",
+ "idx": 1,
+ "is_hidden": 0,
+ "label": "Sotrama Fleet",
+ "links": [
+  {
+   "hidden": 0,
+   "label": "Fleet Operations",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "label": "Vehicles",
+   "link_to": "Vehicle",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Drivers",
+   "link_to": "Driver",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Operational Tasks",
+   "link_to": "Operational Task",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Breakdown Incidents",
+   "link_to": "Breakdown Incident",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Maintenance & Safety",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "label": "Maintenance Job Cards",
+   "link_to": "Maintenance Job Card",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Maintenance Schedules",
+   "link_to": "Maintenance Schedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Vehicle Inspections",
+   "link_to": "Vehicle Inspection",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Reports & Analysis",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fleet Cost Analysis",
+   "link_to": "Fleet Cost Analysis",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Upcoming Document Expiries",
+   "link_to": "Upcoming Document Expiries",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Setup & Masters",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "label": "Company Classification",
+   "link_to": "Company Classification",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Vehicle Makes",
+   "link_to": "Vehicle Make",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Vehicle Models",
+   "link_to": "Vehicle Model",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "Maintenance Job Types",
+   "link_to": "Maintenance Job Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-17 00:00:00",
+ "modified_by": "Administrator",
+ "module": "TP",
+ "name": "Sotrama Fleet",
+ "number_cards": [
+  {
+   "label": "Active Vehicles",
+   "number_card_name": "Active Vehicles"
+  },
+  {
+   "label": "Out of Service",
+   "number_card_name": "Vehicles Out of Service"
+  },
+  {
+   "label": "Active Maintenance Plans",
+   "number_card_name": "Active Maintenance Plans"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Fleet Manager"},
+  {"role": "Workshop"}
+ ],
+ "sequence_id": 1.0,
+ "shortcuts": [],
+ "standard": 1,
+ "title": "Sotrama Fleet",
+ "type": "Workspace"
+}

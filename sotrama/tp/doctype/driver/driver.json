@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_identity",
+   "label": "Identity & Employment"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_driver_identity",
+   "label": "Driver Identity",
+   "collapsible": 1
+  },
+  {
    "label": "Driver Name",
    "fieldname": "driver_name",
    "fieldtype": "Data",
@@ -11,11 +22,26 @@
    "reqd": 1
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_employment"
+  },
+  {
    "label": "Employee",
    "fieldname": "employee",
    "fieldtype": "Link",
    "options": "Employee",
    "description": "Linked ERPNext Employee record"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_licences",
+   "label": "Licences & Safety"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_licence",
+   "label": "Driving Licence",
+   "collapsible": 1
   },
   {
    "label": "License Number",
@@ -50,6 +76,10 @@
    "description": "Date the license was issued"
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_medical"
+  },
+  {
    "label": "Medical Certificate Expiry",
    "fieldname": "medical_expiry",
    "fieldtype": "Date",
@@ -75,9 +105,24 @@
    "description": "Carte d'identité nationale number"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_contact",
+   "label": "Contact & Notes"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_contact",
+   "label": "Contact Information",
+   "collapsible": 1
+  },
+  {
    "label": "Address",
    "fieldname": "address",
    "fieldtype": "Text"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_contact"
   },
   {
    "label": "Phone",
@@ -176,5 +221,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "user-round",
+ "description": "Driver records for Sotrama public-works fleet operations."
 }

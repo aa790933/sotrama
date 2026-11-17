@@ -1,9 +1,4 @@
-// Sotrama — global desk JS
-// Loaded on every Frappe Desk page
-
-frappe.pages['sotrama-dashboard'].on_load = function(wrapper) {
-    // Dashboard placeholder — can be extended with fleet KPI cards
-};
+// Sotrama — global Desk utilities.
 
 frappe.provide('sotrama');
 

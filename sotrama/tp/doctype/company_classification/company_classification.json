@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_classification",
+   "label": "Classification"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_certificate",
+   "label": "Certificate & Grade",
+   "collapsible": 1
+  },
+  {
    "label": "Grade",
    "fieldname": "grade",
    "fieldtype": "Int",
@@ -20,6 +31,10 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "reqd": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_certificate"
   },
   {
    "label": "Registration Number",
@@ -52,6 +67,17 @@
    "fieldname": "active",
    "fieldtype": "Check",
    "default": "1"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_workforce",
+   "label": "Workforce & Training"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_workforce",
+   "label": "Human Resources",
+   "collapsible": 1
   },
   {
    "label": "Effectif (EF) Score",
@@ -92,6 +118,10 @@
    "default": "1.0"
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_training"
+  },
+  {
    "label": "Training (FR) Score",
    "fieldname": "training_score",
    "fieldtype": "Int",
@@ -105,6 +135,17 @@
    "default": "1.0"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_resources",
+   "label": "Equipment & Finance"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_resources",
+   "label": "Equipment and Financial Capacity",
+   "collapsible": 1
+  },
+  {
    "label": "Material Value (VM) Score",
    "fieldname": "material_value_score",
    "fieldtype": "Int",
@@ -116,6 +157,10 @@
    "fieldname": "material_value_coefficient",
    "fieldtype": "Float",
    "default": "1.0"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_finance"
   },
   {
    "label": "Capital (CS) Score",
@@ -143,6 +188,17 @@
    "default": "1.0"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_results",
+   "label": "Assessment Results"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_execution",
+   "label": "Execution References & Final Score",
+   "collapsible": 1
+  },
+  {
    "label": "Good Execution (ABE) Score",
    "fieldname": "abe_score",
    "fieldtype": "Float",
@@ -154,6 +210,10 @@
    "fieldname": "abe_coefficient",
    "fieldtype": "Float",
    "default": "1.0"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_total_score"
   },
   {
    "label": "Total Score (NT)",
@@ -205,5 +265,7 @@
    "report": 1,
    "share": 1
   }
- ]
+ ],
+ "icon": "award",
+ "description": "Company Classification records for Sotrama public-works fleet operations."
 }

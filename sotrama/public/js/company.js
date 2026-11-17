@@ -1,21 +1,25 @@
-// Company — Algerian registration fields enhancement
+// Company — Algerian registration fields enhancement.
+const algerianRegistrationFields = [
+    { fieldname: 'custom_nif', label: 'NIF' },
+    { fieldname: 'custom_nis', label: 'NIS' },
+    { fieldname: 'custom_rc', label: 'RC' },
+];
+
 frappe.ui.form.on('Company', {
-    refresh: function(frm) {
-        // Highlight NIF/NIS/RC fields if empty for Algerian companies
-        if (frm.doc.country === 'Algeria') {
-            ['nif', 'nis', 'rc'].forEach(function(field) {
-                if (!frm.doc[field]) {
-                    frm.set_df_property(field, 'reqd', 0);
-                    frm.dashboard.show_alert(__('Please enter Algerian registration number: ' + field), 5000);
-                }
+    refresh(frm) {
+        if (frm.doc.country !== 'Algeria' || frm.is_new()) return;
+
+        const missingFields = algerianRegistrationFields
+            .filter(({ fieldname }) => !frm.doc[fieldname])
+            .filter(({ fieldname }) => frm.fields_dict[fieldname]);
+
+        if (missingFields.length) {
+            frappe.show_alert({
+                message: __('Complete the Algerian company registration identifiers: {0}', [
+                    missingFields.map(({ label }) => label).join(', '),
+                ]),
+                indicator: 'orange',
             });
         }
     },
-
-    country: function(frm) {
-        // When country changes to Algeria, show registration fields
-        if (frm.doc.country === 'Algeria') {
-            frm.dashboard.show_alert(__('Algeria selected — please fill NIF, NIS, and RC'), 3000);
-        }
-    }
 });

@@ -18,11 +18,26 @@ app_title = "Sotrama"
 app_version = _app_version
 app_publisher = "dekukoda41"
 app_description = (
-    "Algerian localization and public-works fleet management for ERPNext, "
-    "including NIF, NIS and RC fields."
+    "Algerian company localization and public-works fleet management "
+    "for ERPNext and Frappe HR."
 )
 app_email = "dekukoda41@users.noreply.github.com"
 app_license = "MIT"
+app_color = "#d94736"
+app_logo_url = "/assets/sotrama/images/sotrama-logo.svg"
+app_home = "/desk/sotrama-fleet"
+required_apps = ["frappe/erpnext", "frappe/hrms"]
+
+add_to_apps_screen = [
+    {
+        "name": app_name,
+        "logo": app_logo_url,
+        "title": app_title,
+        "route": app_home,
+        "has_permission": "sotrama.permissions.has_app_permission",
+        "sequence_id": 3,
+    }
+]
 
 
 def ensure_roles():
@@ -54,6 +69,7 @@ def get_custom_fields():
                 "fieldname": "custom_nif",
                 "fieldtype": "Data",
                 "label": "NIF (Tax ID)",
+                "module": "Sotrama",
                 "insert_after": "tax_id",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
@@ -65,6 +81,7 @@ def get_custom_fields():
                 "fieldname": "custom_nis",
                 "fieldtype": "Data",
                 "label": "NIS (Statistical ID)",
+                "module": "Sotrama",
                 "insert_after": "custom_nif",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
@@ -76,6 +93,7 @@ def get_custom_fields():
                 "fieldname": "custom_rc",
                 "fieldtype": "Data",
                 "label": "RC (Trade Registry)",
+                "module": "Sotrama",
                 "insert_after": "custom_nis",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
@@ -95,28 +113,14 @@ def get_custom_fields():
 # Lifecycle Hooks
 # ---------------------------------------------------------------------------
 
-def after_install():
-    """Called after the app is installed on a site."""
+def install_company_fields():
+    """Create Sotrama's Company fields after the app is installed."""
     ensure_roles()
-    create_custom_fields(get_custom_fields(), ignore_submit=True)
+    create_custom_fields(get_custom_fields())
 
 
-def before_uninstall():
-    """
-    Called before the app is uninstalled.
-    Removes the custom fields we added so the uninstall is clean.
-    """
-    _remove_custom_fields()
-
-
-def after_migrate():
-    """Called after `bench migrate` completes. Re-applies custom fields."""
-    ensure_roles()
-    create_custom_fields(get_custom_fields(), ignore_submit=True)
-
-
-def _remove_custom_fields():
-    """Remove the NIF / NIS / RC custom fields from the Company doctype."""
+def uninstall_company_fields():
+    """Remove Sotrama-owned Company fields when the app is uninstalled."""
     for fieldname in ("custom_nif", "custom_nis", "custom_rc"):
         existing = frappe.db.get_value(
             "Custom Field",
@@ -124,6 +128,12 @@ def _remove_custom_fields():
         )
         if existing:
             frappe.delete_doc("Custom Field", existing, ignore_on_trash=True)
+
+
+def sync_company_fields():
+    """Idempotently create or update the Company fields after migrations."""
+    ensure_roles()
+    create_custom_fields(get_custom_fields())
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +148,9 @@ fixtures = [
 ]
 
 before_install = "sotrama.hooks.ensure_roles"
+after_install = "sotrama.hooks.install_company_fields"
+before_uninstall = "sotrama.hooks.uninstall_company_fields"
+after_migrate = "sotrama.hooks.sync_company_fields"
 
 
 # ---------------------------------------------------------------------------

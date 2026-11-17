@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_incident",
+   "label": "Incident"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_incident",
+   "label": "Incident Details",
+   "collapsible": 1
+  },
+  {
    "label": "Incident Date",
    "fieldname": "incident_date",
    "fieldtype": "Datetime",
@@ -26,6 +37,10 @@
    "options": "Driver",
    "in_list_view": 1,
    "in_standard_filter": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_incident_details"
   },
   {
    "label": "Location",
@@ -67,10 +82,25 @@
    "description": "Engine, Transmission, Electrical, etc."
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_resolution",
+   "label": "Resolution"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_resolution",
+   "label": "Repair & Resolution",
+   "collapsible": 1
+  },
+  {
    "label": "Resolution Date",
    "fieldname": "resolution_date",
    "fieldtype": "Datetime",
    "in_list_view": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_resolution_details"
   },
   {
    "label": "Resolution Notes",
@@ -92,6 +122,17 @@
    "options": "Maintenance Job Card",
    "read_only": 1,
    "description": "Auto-created job card for this breakdown"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_evidence",
+   "label": "Evidence & Notes"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_evidence",
+   "label": "Photos and Supporting Notes",
+   "collapsible": 1
   },
   {
    "label": "Photos",
@@ -171,5 +212,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "triangle-alert",
+ "description": "Breakdown Incident records for Sotrama public-works fleet operations."
 }

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Sotrama</title>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#d94736"/>
+  <path d="M20 78h59V48H50L39 36H20z" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <path d="M79 58h17l13 14v6H79z" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <circle cx="39" cy="88" r="9" fill="#fff"/>
+  <circle cx="94" cy="88" r="9" fill="#fff"/>
+  <path d="M20 99h13m14 0h34m13 0h9" stroke="#fff" stroke-linecap="round" stroke-width="6"/>
+</svg>

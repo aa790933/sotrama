@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_inspection_info",
+   "label": "Inspection Details"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_inspection",
+   "label": "Inspection Assignment",
+   "collapsible": 1
+  },
+  {
    "label": "Vehicle",
    "fieldname": "vehicle",
    "fieldtype": "Link",
@@ -29,6 +40,10 @@
    "reqd": 1
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_inspection"
+  },
+  {
    "label": "Driver",
    "fieldname": "driver",
    "fieldtype": "Link",
@@ -47,6 +62,17 @@
    "fieldtype": "Float"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_inspection_results",
+   "label": "Checklist & Findings"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_inspection_results",
+   "label": "Inspection Result",
+   "collapsible": 1
+  },
+  {
    "label": "Overall Status",
    "fieldname": "overall_status",
    "fieldtype": "Select",
@@ -60,6 +86,10 @@
    "default": "0",
    "read_only": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_inspection_remarks"
   },
   {
    "label": "Overall Comments",
@@ -131,5 +161,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "scan",
+ "description": "Vehicle Inspection records for Sotrama public-works fleet operations."
 }

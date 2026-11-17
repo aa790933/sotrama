@@ -18,7 +18,7 @@ def setup(company, is_setup=True):
     """
     Entry point for a future, explicitly wired Algeria regional setup.
     """
-    create_custom_fields(get_custom_fields(), ignore_submit=True)
+    create_custom_fields(get_custom_fields())
 
     # Company-specific defaults are intentionally not changed here; they
     # require a separately validated Algerian chart of accounts/tax setup.

@@ -4,6 +4,12 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_model",
+   "label": "Model Details",
+   "collapsible": 1
+  },
+  {
    "label": "Vehicle Make",
    "fieldname": "vehicle_make",
    "fieldtype": "Link",
@@ -16,6 +22,10 @@
    "fieldname": "make",
    "fieldtype": "Data",
    "read_only": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_model"
   },
   {
    "label": "Model Name",
@@ -94,5 +104,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "car-front",
+ "description": "Vehicle Model records for Sotrama public-works fleet operations."
 }

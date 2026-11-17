@@ -1,0 +1,141 @@
+{
+ "app": "sotrama",
+ "creation": "2026-11-17 00:00:00",
+ "doctype": "Sidebar",
+ "header_icon": "truck",
+ "items": [
+  {
+   "type": "Link",
+   "label": "Fleet Overview",
+   "link_type": "Workspace",
+   "link_to": "Sotrama Fleet",
+   "icon": "layout-dashboard"
+  },
+  {
+   "type": "Section Break",
+   "label": "Fleet Operations",
+   "icon": "truck",
+   "collapsible": 1,
+   "keep_closed": 0
+  },
+  {
+   "type": "Link",
+   "label": "Vehicles",
+   "link_type": "DocType",
+   "link_to": "Vehicle",
+   "icon": "truck"
+  },
+  {
+   "type": "Link",
+   "label": "Drivers",
+   "link_type": "DocType",
+   "link_to": "Driver",
+   "icon": "users"
+  },
+  {
+   "type": "Link",
+   "label": "Operational Tasks",
+   "link_type": "DocType",
+   "link_to": "Operational Task",
+   "icon": "clipboard-list"
+  },
+  {
+   "type": "Link",
+   "label": "Breakdown Incidents",
+   "link_type": "DocType",
+   "link_to": "Breakdown Incident",
+   "icon": "triangle-alert"
+  },
+  {
+   "type": "Section Break",
+   "label": "Maintenance & Safety",
+   "icon": "wrench",
+   "collapsible": 1,
+   "keep_closed": 0
+  },
+  {
+   "type": "Link",
+   "label": "Maintenance Job Cards",
+   "link_type": "DocType",
+   "link_to": "Maintenance Job Card",
+   "icon": "wrench"
+  },
+  {
+   "type": "Link",
+   "label": "Maintenance Schedules",
+   "link_type": "DocType",
+   "link_to": "Maintenance Schedule",
+   "icon": "calendar-clock"
+  },
+  {
+   "type": "Link",
+   "label": "Vehicle Inspections",
+   "link_type": "DocType",
+   "link_to": "Vehicle Inspection",
+   "icon": "clipboard-check"
+  },
+  {
+   "type": "Section Break",
+   "label": "Reports & Analysis",
+   "icon": "chart-column",
+   "collapsible": 1,
+   "keep_closed": 0
+  },
+  {
+   "type": "Link",
+   "label": "Fleet Cost Analysis",
+   "link_type": "Report",
+   "link_to": "Fleet Cost Analysis",
+   "icon": "chart-column"
+  },
+  {
+   "type": "Link",
+   "label": "Upcoming Document Expiries",
+   "link_type": "Report",
+   "link_to": "Upcoming Document Expiries",
+   "icon": "calendar-clock"
+  },
+  {
+   "type": "Section Break",
+   "label": "Setup & Masters",
+   "icon": "settings",
+   "collapsible": 1,
+   "keep_closed": 1
+  },
+  {
+   "type": "Link",
+   "label": "Company Classification",
+   "link_type": "DocType",
+   "link_to": "Company Classification",
+   "icon": "award"
+  },
+  {
+   "type": "Link",
+   "label": "Vehicle Makes",
+   "link_type": "DocType",
+   "link_to": "Vehicle Make",
+   "icon": "factory"
+  },
+  {
+   "type": "Link",
+   "label": "Vehicle Models",
+   "link_type": "DocType",
+   "link_to": "Vehicle Model",
+   "icon": "car-front"
+  },
+  {
+   "type": "Link",
+   "label": "Maintenance Job Types",
+   "link_type": "DocType",
+   "link_to": "Maintenance Job Type",
+   "icon": "settings"
+  }
+ ],
+ "modified": "2026-11-17 00:00:00",
+ "modified_by": "Administrator",
+ "module": "TP",
+ "name": "TP",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "TP"
+}

@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_vehicle_identity",
+   "label": "Vehicle Identity"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_vehicle_identity",
+   "label": "Identification",
+   "collapsible": 1
+  },
+  {
    "label": "License Plate",
    "fieldname": "license_plate",
    "fieldtype": "Data",
@@ -26,6 +37,10 @@
    "description": "Specific model variant"
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_vehicle_identity"
+  },
+  {
    "label": "Year of Manufacture",
    "fieldname": "year_of_manufacture",
    "fieldtype": "Int",
@@ -43,6 +58,17 @@
    "fieldname": "engine_no",
    "fieldtype": "Data",
    "description": "Engine serial number"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_specifications",
+   "label": "Specifications & Operations"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_specs",
+   "label": "Technical Specifications",
+   "collapsible": 1
   },
   {
    "label": "Vehicle Category",
@@ -74,6 +100,10 @@
    "description": "Total number of axles"
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_specs"
+  },
+  {
    "label": "Fuel Type",
    "fieldname": "fuel_type",
    "fieldtype": "Select",
@@ -92,6 +122,17 @@
    "fieldname": "current_odometer",
    "fieldtype": "Float",
    "description": "Latest recorded odometer reading in km"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_financials",
+   "label": "Ownership & Accounting"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_acquisition",
+   "label": "Acquisition & Valuation",
+   "collapsible": 1
   },
   {
    "label": "Acquisition Date",
@@ -132,6 +173,12 @@
    "description": "Insured value of the vehicle"
   },
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_assignment",
+   "label": "Fleet Assignment",
+   "collapsible": 1
+  },
+  {
    "label": "Status",
    "fieldname": "vehicle_status",
    "fieldtype": "Select",
@@ -145,6 +192,10 @@
    "fieldname": "current_location",
    "fieldtype": "Data",
    "description": "Base depot or current worksite"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_assignment"
   },
   {
    "label": "Company",
@@ -193,11 +244,26 @@
    "options": "Cost Center"
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_asset"
+  },
+  {
    "label": "Asset",
    "fieldname": "asset",
    "fieldtype": "Link",
    "options": "Asset",
    "description": "Linked fixed asset record"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_documents",
+   "label": "Documents & Notes"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_documents",
+   "label": "Vehicle Documents",
+   "collapsible": 1
   },
   {
    "label": "Registration Document",
@@ -295,5 +361,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "truck",
+ "description": "Vehicle records for Sotrama public-works fleet operations."
 }

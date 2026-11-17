@@ -4,11 +4,21 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_make",
+   "label": "Manufacturer Details",
+   "collapsible": 1
+  },
+  {
    "label": "Make Name",
    "fieldname": "make_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "reqd": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_make"
   },
   {
    "label": "Description",
@@ -80,5 +90,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "factory",
+ "description": "Vehicle Make records for Sotrama public-works fleet operations."
 }

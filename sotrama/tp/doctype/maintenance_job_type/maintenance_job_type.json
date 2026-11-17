@@ -4,6 +4,12 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_job_type",
+   "label": "Maintenance Service Definition",
+   "collapsible": 1
+  },
+  {
    "label": "Job Category",
    "fieldname": "job_category",
    "fieldtype": "Select",
@@ -23,6 +29,10 @@
    "label": "Description",
    "fieldname": "description",
    "fieldtype": "Text Editor"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_job_type"
   },
   {
    "label": "Standard Labour Hours",
@@ -99,5 +109,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "settings",
+ "description": "Maintenance Job Type records for Sotrama public-works fleet operations."
 }

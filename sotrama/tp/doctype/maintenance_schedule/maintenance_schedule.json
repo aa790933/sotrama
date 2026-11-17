@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_schedule",
+   "label": "Maintenance Plan"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_plan",
+   "label": "Schedule Configuration",
+   "collapsible": 1
+  },
+  {
    "label": "Vehicle",
    "fieldname": "vehicle",
    "fieldtype": "Link",
@@ -30,6 +41,10 @@
    "reqd": 1
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_intervals"
+  },
+  {
    "label": "Interval Months",
    "fieldname": "interval_months",
    "fieldtype": "Int",
@@ -42,6 +57,17 @@
    "depends_on": "eval:doc.schedule_type == 'Mileage'"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_service_history",
+   "label": "Service History"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_last_service",
+   "label": "Last and Next Service",
+   "collapsible": 1
+  },
+  {
    "label": "Last Service Date",
    "fieldname": "last_service_date",
    "fieldtype": "Date",
@@ -51,6 +77,10 @@
    "label": "Last Service Odometer",
    "fieldname": "last_service_odometer",
    "fieldtype": "Float"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_next_service"
   },
   {
    "label": "Next Due Date",
@@ -73,6 +103,11 @@
    "default": "Active",
    "in_list_view": 1,
    "in_standard_filter": 1
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_schedule_notes",
+   "label": "Notes"
   },
   {
    "label": "Notes",
@@ -137,5 +172,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "calendar-clock",
+ "description": "Maintenance Schedule records for Sotrama public-works fleet operations."
 }

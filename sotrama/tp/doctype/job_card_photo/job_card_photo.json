@@ -4,10 +4,20 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Section Break",
+   "fieldname": "section_job_photo",
+   "label": "Job Card Photo",
+   "collapsible": 1
+  },
+  {
    "label": "Photo",
    "fieldname": "photo",
    "fieldtype": "Attach Image",
    "reqd": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_job_photo"
   },
   {
    "label": "Caption",
@@ -21,5 +31,7 @@
   }
  ],
  "istable": 1,
- "links": []
+ "links": [],
+ "icon": "images",
+ "description": "Job Card Photo records for Sotrama public-works fleet operations."
 }

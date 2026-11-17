@@ -4,6 +4,17 @@
  "module": "TP",
  "fields": [
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_task_assignment",
+   "label": "Task Assignment"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_assignment",
+   "label": "Assignment Details",
+   "collapsible": 1
+  },
+  {
    "label": "Task Date",
    "fieldname": "task_date",
    "fieldtype": "Date",
@@ -27,6 +38,10 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "reqd": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_task_assignment"
   },
   {
    "label": "Project",
@@ -53,6 +68,17 @@
    "in_list_view": 1
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_task_execution",
+   "label": "Time & Equipment"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_time",
+   "label": "Execution Time",
+   "collapsible": 1
+  },
+  {
    "label": "Start Date",
    "fieldname": "start_date",
    "fieldtype": "Datetime"
@@ -74,6 +100,10 @@
    "read_only": 1
   },
   {
+   "fieldtype": "Column Break",
+   "fieldname": "column_odometer"
+  },
+  {
    "label": "Start Odometer",
    "fieldname": "start_odometer",
    "fieldtype": "Float"
@@ -90,9 +120,24 @@
    "read_only": 1
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_task_output",
+   "label": "Output & Notes"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_output",
+   "label": "Production Output",
+   "collapsible": 1
+  },
+  {
    "label": "Task Description",
    "fieldname": "task_description",
    "fieldtype": "Text Editor"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_output"
   },
   {
    "label": "Output Quantity",
@@ -178,5 +223,7 @@
    "report": 0,
    "share": 0
   }
- ]
+ ],
+ "icon": "clipboard-check",
+ "description": "Operational Task records for Sotrama public-works fleet operations."
 }

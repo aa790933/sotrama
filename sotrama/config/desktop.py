@@ -22,6 +22,6 @@ def get_data():
             "label": _("Public Works Fleet"),
             "description": _("Vehicles, drivers, maintenance and inspections"),
             "type": "module",
-            "icon": "octicon octicon-truck",
+            "icon": "truck",
         }
     ]
