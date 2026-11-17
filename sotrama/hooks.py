@@ -11,6 +11,19 @@ Company Classification (Grade I–IX), and supporting masters.
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+from . import __version__ as _app_version
+
+app_name = "sotrama"
+app_title = "Sotrama"
+app_version = _app_version
+app_publisher = "dekukoda41"
+app_description = (
+    "Algerian localization and public-works fleet management for ERPNext, "
+    "including NIF, NIS and RC fields."
+)
+app_email = "dekukoda41@users.noreply.github.com"
+app_license = "MIT"
+
 
 def ensure_roles():
     """Create the app roles before DocTypes and Role Profile fixtures sync."""

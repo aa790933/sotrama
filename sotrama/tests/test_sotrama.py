@@ -15,6 +15,22 @@ from frappe.utils import add_days, today
 class TestSotramaHooks(unittest.TestCase):
     """Protect against incompatible hook value shapes across installed apps."""
 
+    def test_app_metadata_is_complete_for_desk_boot(self):
+        from frappe.utils.change_log import get_versions
+
+        app_hooks = frappe.get_hooks(app_name="sotrama")
+        self.assertTrue(app_hooks.get("app_name"))
+        self.assertTrue(app_hooks.get("app_title"))
+        self.assertTrue(app_hooks.get("app_description"))
+        self.assertTrue(app_hooks.get("app_version"))
+
+        # Reproduce the metadata lookup used by Desk boot and install-app.
+        versions = get_versions()
+        self.assertIn("sotrama", versions)
+        self.assertEqual(versions["sotrama"]["title"], "Sotrama")
+        self.assertTrue(versions["sotrama"]["description"])
+        self.assertEqual(versions["sotrama"]["version"], app_hooks["app_version"][0])
+
     def test_global_hook_merge(self):
         hooks = frappe.get_hooks()
         self.assertIsInstance(hooks.get("app_include_js"), list)
