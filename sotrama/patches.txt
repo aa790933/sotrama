@@ -3,3 +3,4 @@
 # Add patch files under sotrama/patches/ and reference them here.
 sotrama.tp.patches.v1_0.register_tp_modules
 sotrama.tp.patches.v1_0.register_doctype_masters
+sotrama.tp.patches.v1_3.register_algerian_localization_module

@@ -3,8 +3,8 @@ frappe.query_reports["Upcoming Document Expiries"] = {
         {
             fieldname: "company",
             label: __("Company"),
-            fieldtype: "Link",
-            options: "Company",
+            fieldtype: "Data",
+            description: __("Enter the exact ERPNext Company name."),
         },
         {
             fieldname: "vehicle",

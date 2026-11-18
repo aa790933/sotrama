@@ -43,21 +43,56 @@ class TestSotramaHooks(unittest.TestCase):
     def test_app_lifecycle_hooks_are_import_paths(self):
         app_hooks = frappe.get_hooks(app_name="sotrama")
         self.assertEqual(app_hooks["before_install"][0], "sotrama.hooks.ensure_roles")
-        self.assertEqual(app_hooks["after_install"][0], "sotrama.hooks.install_company_fields")
+        self.assertEqual(app_hooks["after_install"][0], "sotrama.hooks.initialize_app")
         self.assertEqual(app_hooks["after_migrate"][0], "sotrama.hooks.sync_company_fields")
-        self.assertEqual(app_hooks["before_uninstall"][0], "sotrama.hooks.uninstall_company_fields")
+        self.assertEqual(
+            app_hooks["before_uninstall"][0],
+            "sotrama.hooks.preserve_company_fields_on_uninstall",
+        )
+
+    def test_optional_company_fields_are_not_imported_as_fixtures(self):
+        fixtures = frappe.get_hooks("fixtures", app_name="sotrama")
+        self.assertFalse(
+            any(
+                (fixture.get("dt") if isinstance(fixture, dict) else fixture) == "Custom Field"
+                for fixture in fixtures
+            ),
+            "Company Custom Fields must remain opt-in and cannot be imported as fixtures.",
+        )
+
+    def test_company_form_does_not_load_legacy_nif_alias_script(self):
+        doctype_js = frappe.get_hooks("doctype_js", app_name="sotrama")
+        self.assertNotIn("Company", doctype_js)
 
     def test_app_is_registered_on_the_apps_screen(self):
         app_entry = frappe.get_hooks("add_to_apps_screen", app_name="sotrama")[0]
         self.assertEqual(app_entry["name"], "sotrama")
         self.assertEqual(app_entry["title"], "Sotrama")
-        self.assertEqual(app_entry["route"], "/desk/sotrama-fleet")
+        self.assertEqual(app_entry["route"], "/desk/sotrama")
         self.assertEqual(app_entry["has_permission"], "sotrama.permissions.has_app_permission")
 
     def test_fleet_dock_sidebar_and_workspace_are_installed(self):
         self.assertTrue(frappe.db.exists("Dock", {"app": "sotrama", "standard": 1}))
         self.assertTrue(frappe.db.exists("Sidebar", "TP"))
         self.assertTrue(frappe.db.exists("Workspace", "Sotrama Fleet"))
+        self.assertTrue(frappe.db.exists("Module Def", "Algerian Localization"))
+        self.assertTrue(frappe.db.exists("Sidebar", "Algerian Localization"))
+        self.assertTrue(frappe.db.exists("Workspace", "Algerian Localization"))
+        self.assertTrue(frappe.db.exists("Workspace", "Sotrama"))
+        localization_module = frappe.get_doc("Module Def", "Algerian Localization")
+        self.assertEqual(localization_module.app_name, "sotrama")
+        self.assertFalse(localization_module.custom)
+        localization_workspace = frappe.get_doc("Workspace", "Algerian Localization")
+        self.assertEqual(
+            {row.role for row in localization_workspace.roles},
+            {"System Manager", "Accounts Manager"},
+        )
+        app_workspace = frappe.get_doc("Workspace", "Sotrama")
+        self.assertEqual(
+            {item.link_to for item in app_workspace.links if item.type == "Link"},
+            {"Sotrama Fleet", "Algerian Localization", "Sotrama Settings"},
+            "Frappe filters child workspaces and DocType links by their own permissions.",
+        )
         workspace = frappe.get_doc("Workspace", "Sotrama Fleet")
         import json
 
@@ -78,6 +113,12 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(any(item.link_to == "TP Settings" for item in sidebar.items))
         self.assertTrue(any(item.link_to == "TP Settings" for item in workspace.links))
         self.assertIn("HR Manager", {row.role for row in workspace.roles})
+
+        app_dock = frappe.get_doc("Dock", {"app": "sotrama", "standard": 1})
+        self.assertEqual(
+            {item.link_to for item in app_dock.items if item.link_type == "Sidebar"},
+            {"TP", "Algerian Localization"},
+        )
 
     def test_fleet_manager_role_profile_does_not_escalate_to_system_manager(self):
         profile = frappe.get_doc("Role Profile", "Fleet Manager")
@@ -290,6 +331,63 @@ class TestSotramaHooks(unittest.TestCase):
             "Vehicle",
         )
 
+    def test_fleet_cost_report_uses_site_default_currency_for_cost_fields(self):
+        from sotrama.tp.report.fleet_cost_analysis.fleet_cost_analysis import (
+            get_columns,
+            get_data,
+        )
+
+        self.assertFalse(frappe.get_value("Report", "Fleet Cost Analysis", "add_total_row"))
+        columns = {column["fieldname"]: column for column in get_columns()}
+        self.assertEqual(columns["company"]["fieldtype"], "Data")
+        self.assertEqual(columns["currency"]["fieldtype"], "Link")
+        self.assertEqual(columns["currency"]["options"], "Currency")
+        for fieldname in (
+            "maintenance_cost",
+            "other_costs",
+            "depreciation",
+            "total_cost",
+            "cost_per_km",
+        ):
+            self.assertEqual(columns[fieldname]["options"], "currency")
+
+        visible_vehicle = frappe._dict(
+            {
+                "name": "VEH-REPORT-TEST",
+                "license_plate": "TEST-REPORT",
+                "company": "Test Company",
+                "acquisition_date": None,
+                "acquisition_value": 0,
+                "depreciation_rate": 0,
+                "salvage_value": 0,
+            }
+        )
+        with (
+            patch.object(
+                frappe,
+                "get_list",
+                side_effect=[[visible_vehicle], [], []],
+            ),
+            patch.object(frappe.db, "get_default", return_value="DZD"),
+        ):
+            rows = get_data(frappe._dict())
+
+        self.assertEqual(rows[0]["currency"], "DZD")
+
+    def test_document_expiry_report_rejects_unbounded_alert_windows(self):
+        from sotrama.tp.report.upcoming_document_expiries.upcoming_document_expiries import (
+            get_data,
+        )
+
+        with (
+            patch(
+                "sotrama.tp.report.upcoming_document_expiries.upcoming_document_expiries.get_tp_setting",
+                return_value=30,
+            ),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            get_data(frappe._dict({"alert_days": 3651}))
+
     def test_fleet_print_formats_use_the_frappe_16_builder(self):
         import json
 
@@ -302,7 +400,11 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertEqual(print_format.doc_type, doctype)
             self.assertTrue(print_format.print_format_builder_beta)
             self.assertFalse(print_format.custom_format)
-            self.assertIn(print_format.pdf_generator, {"PlutoPrint", "Typst", "chrome"})
+            self.assertIn(
+                print_format.pdf_generator or "",
+                {"", "chrome"},
+                "Do not pin Builder Beta formats to PlutoPrint or a non-default renderer.",
+            )
             layout = json.loads(print_format.format_data)
             self.assertIsInstance(layout, dict)
             self.assertTrue(layout.get("sections"))
@@ -366,117 +468,355 @@ class TestSotramaHooks(unittest.TestCase):
 
 
 class TestSotramaCustomFields(unittest.TestCase):
-    """Test that Algerian company fields exist on the standard Company DocType."""
+    """Verify optional Company fields are opt-in and never overwrite site fields."""
 
-    def test_legacy_capital_social_data_field_is_upgraded_before_sync(self):
+    def test_company_fields_are_opt_in_and_reuse_erpnext_tax_id(self):
+        from sotrama import hooks
+
+        settings_meta = frappe.get_meta("Sotrama Settings", cached=False)
+        self.assertTrue(settings_meta.issingle)
+        self.assertIsNotNone(settings_meta.get_field("enable_algerian_company_fields"))
+        permissions = {row.role: row for row in settings_meta.permissions}
+        self.assertTrue(permissions["System Manager"].write)
+        self.assertTrue(permissions["Accounts Manager"].read)
+        self.assertFalse(permissions["Accounts Manager"].write)
+
+        definitions = hooks.get_custom_fields()["Company"]
+        fieldnames = {field["fieldname"] for field in definitions}
+        self.assertIn("custom_article_imposition", fieldnames)
+        self.assertIn("custom_nis", fieldnames)
+        self.assertIn("custom_rc", fieldnames)
+        self.assertIn("custom_capital_social", fieldnames)
+        self.assertNotIn("custom_nif", fieldnames)
+        self.assertTrue(all(field.get("depends_on") for field in definitions))
+        self.assertTrue(all(field["module"] == "Custom" for field in definitions))
+        self.assertTrue(
+            all(hooks.COMPANY_FIELD_OWNERSHIP_MARKER in field["description"] for field in definitions)
+        )
+
+    def test_migration_does_not_create_company_fields_when_setting_is_disabled(self):
+        from sotrama import hooks
+
+        with (
+            patch.object(hooks.frappe.db, "exists", return_value=True),
+            patch.object(hooks.frappe.db, "get_single_value", return_value=0),
+            patch.object(hooks, "_set_company_fields_hidden") as hide_fields,
+            patch.object(hooks, "enable_algerian_company_fields") as enable_fields,
+        ):
+            hooks.sync_company_fields()
+
+        hide_fields.assert_called_once_with(True)
+        enable_fields.assert_not_called()
+
+    def test_migration_does_not_create_company_fields_when_settings_doctype_is_missing(self):
+        from sotrama import hooks
+
+        with (
+            patch.object(hooks.frappe.db, "exists", return_value=False),
+            patch.object(hooks, "enable_algerian_company_fields") as enable_fields,
+            patch.object(hooks, "_set_company_fields_hidden") as hide_fields,
+        ):
+            hooks.sync_company_fields()
+
+        enable_fields.assert_not_called()
+        hide_fields.assert_not_called()
+
+    def test_enabling_creates_only_missing_fields_without_overwriting_existing_fields(self):
+        from sotrama import hooks
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", return_value=None),
+            patch.object(hooks.frappe, "get_all", return_value=[]),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            patch.object(hooks, "_set_company_fields_hidden") as reveal_fields,
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_called_once_with(hooks.get_custom_fields(), update=False)
+        reveal_fields.assert_called_once_with(False)
+
+    def test_legacy_generated_fields_receive_only_missing_country_metadata(self):
+        from sotrama import hooks
+
+        fields = [
+            frappe._dict(
+                {
+                    "name": "Company-custom_article_imposition",
+                    "fieldname": "custom_article_imposition",
+                    "module": "Sotrama",
+                    "description": "Fiscal article",
+                    "is_system_generated": 1,
+                    "depends_on": None,
+                    "insert_after": "custom_nif",
+                }
+            ),
+            frappe._dict(
+                {
+                    "name": "Company-custom_nis",
+                    "fieldname": "custom_nis",
+                    "module": "Custom",
+                    "description": hooks.COMPANY_FIELD_OWNERSHIP_MARKER,
+                    "is_system_generated": 1,
+                    "depends_on": "eval:doc.country == 'Algeria'",
+                    "insert_after": "custom_algerian_registration_column_break",
+                }
+            ),
+        ]
+        with (
+            patch.object(hooks.frappe, "get_all", return_value=fields) as get_all,
+            patch.object(hooks.frappe.db, "set_value") as set_value,
+            patch.object(hooks.frappe, "clear_cache") as clear_cache,
+        ):
+            hooks._detach_legacy_module_fields()
+
+        self.assertEqual(get_all.call_args.kwargs["filters"]["dt"], "Company")
+        updates = {call.args[1]: call.args[2] for call in set_value.call_args_list}
+        self.assertEqual(
+            updates["Company-custom_article_imposition"],
+            {
+                "module": "Custom",
+                "description": f"Fiscal article {hooks.COMPANY_FIELD_OWNERSHIP_MARKER}",
+                "depends_on": 'eval:doc.country=="Algeria"',
+                "insert_after": "custom_sotrama_algerian_registration_section",
+            },
+        )
+        self.assertNotIn("Company-custom_nis", updates)
+        self.assertTrue(all(call.kwargs["update_modified"] is False for call in set_value.call_args_list))
+        clear_cache.assert_called_once_with(doctype="Company")
+
+    def test_enabling_refuses_to_change_a_legacy_fieldtype(self):
         from sotrama import hooks
 
         legacy_field = frappe._dict(
-            {"name": "Company-custom_capital_social", "fieldtype": "Data"}
+            {
+                "name": "Company-custom_capital_social",
+                "fieldtype": "Data",
+                "module": "Sotrama",
+                "is_system_generated": 1,
+            }
         )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            return legacy_field if filters.get("fieldname") == "custom_capital_social" else None
+
         with (
-            patch.object(hooks.frappe.db, "get_value", return_value=legacy_field),
-            patch.object(hooks.frappe.db, "set_value") as set_value,
-            patch.object(hooks.frappe.db, "updatedb") as updatedb,
-            patch.object(hooks.frappe, "clear_cache") as clear_cache,
-        ):
-            hooks.migrate_legacy_company_capital_field()
-
-        set_value.assert_called_once_with(
-            "Custom Field",
-            "Company-custom_capital_social",
-            {"fieldtype": "Currency", "options": "default_currency"},
-            update_modified=False,
-        )
-        clear_cache.assert_called_once_with(doctype="Company")
-        updatedb.assert_called_once_with("Company")
-
-    def test_currency_capital_social_field_does_not_trigger_schema_migration(self):
-        from sotrama import hooks
-
-        current_field = frappe._dict(
-            {"name": "Company-custom_capital_social", "fieldtype": "Currency"}
-        )
-        with (
-            patch.object(hooks.frappe.db, "get_value", return_value=current_field),
-            patch.object(hooks.frappe.db, "set_value") as set_value,
-            patch.object(hooks.frappe.db, "updatedb") as updatedb,
-            patch.object(hooks.frappe, "clear_cache") as clear_cache,
-        ):
-            hooks.migrate_legacy_company_capital_field()
-
-        set_value.assert_not_called()
-        clear_cache.assert_not_called()
-        updatedb.assert_not_called()
-
-    def test_unexpected_capital_social_fieldtype_fails_with_clear_error(self):
-        from sotrama import hooks
-
-        unexpected_field = frappe._dict(
-            {"name": "Company-custom_capital_social", "fieldtype": "Link"}
-        )
-        with (
-            patch.object(hooks.frappe.db, "get_value", return_value=unexpected_field),
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks, "create_custom_fields") as create_fields,
             self.assertRaises(frappe.ValidationError),
         ):
-            hooks.migrate_legacy_company_capital_field()
+            hooks.enable_algerian_company_fields()
 
-    def test_custom_fields_exist(self):
-        """Verify the Algeria localization fields exist on Company metadata."""
-        company_meta = frappe.get_meta("Company", cached=False)
-        fieldnames = (
-            "custom_algerian_registration_section",
-            "custom_nif",
-            "custom_article_imposition",
-            "custom_algerian_registration_column_break",
-            "custom_nis",
-            "custom_rc",
-            "custom_capital_social",
+        create_fields.assert_not_called()
+
+    def test_enabling_refuses_to_take_over_a_field_owned_by_another_module(self):
+        from sotrama import hooks
+
+        foreign_field = frappe._dict(
+            {
+                "name": "Company-custom_nis",
+                "fieldtype": "Data",
+                "module": "Accounts",
+            }
         )
-        for fieldname in fieldnames:
-            self.assertTrue(
-                frappe.db.exists(
-                    "Custom Field",
-                    {"dt": "Company", "fieldname": fieldname, "module": "Sotrama"},
-                ),
-                f"Custom field {fieldname} not found on Company doctype",
-            )
-            self.assertIsNotNone(
-                company_meta.get_field(fieldname),
-                f"{fieldname} is in Custom Field but missing from Company metadata",
-            )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            return foreign_field if filters.get("fieldname") == "custom_nis" else None
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            self.assertRaises(frappe.ValidationError),
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_not_called()
+
+    def test_enabling_refuses_to_take_over_a_manually_created_sotrama_field(self):
+        from sotrama import hooks
+
+        manual_field = frappe._dict(
+            {
+                "name": "Company-custom_nis",
+                "fieldtype": "Data",
+                "module": "Sotrama",
+                "is_system_generated": 0,
+            }
+        )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            return manual_field if filters.get("fieldname") == "custom_nis" else None
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            self.assertRaises(frappe.ValidationError),
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_not_called()
+
+    def test_enabling_recognizes_system_generated_fields_preserved_in_custom_module(self):
+        from sotrama import hooks
+
+        preserved_field = frappe._dict(
+            {
+                "name": "Company-custom_nis",
+                "fieldtype": "Data",
+                "module": "Custom",
+                "is_system_generated": 1,
+                "description": hooks.COMPANY_FIELD_OWNERSHIP_MARKER,
+            }
+        )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            if filters.get("module") == "Sotrama":
+                return None
+            return preserved_field if filters.get("fieldname") == "custom_nis" else None
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks.frappe, "get_all", return_value=[]),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            patch.object(hooks, "_set_company_fields_hidden") as reveal_fields,
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_called_once_with(hooks.get_custom_fields(), update=False)
+        reveal_fields.assert_called_once_with(False)
+
+    def test_enabling_does_not_claim_an_unmarked_generated_custom_field(self):
+        from sotrama import hooks
+
+        foreign_field = frappe._dict(
+            {
+                "name": "Company-custom_nis",
+                "fieldtype": "Data",
+                "module": "Custom",
+                "is_system_generated": 1,
+                "description": "Generated by another app.",
+            }
+        )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            return foreign_field if filters.get("fieldname") == "custom_nis" else None
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            self.assertRaises(frappe.ValidationError),
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_not_called()
+
+    def test_enabling_refuses_unowned_legacy_nif_field(self):
+        from sotrama import hooks
+
+        manual_nif = frappe._dict(
+            {
+                "name": "Company-custom_nif",
+                "fieldtype": "Data",
+                "module": "Custom",
+                "is_system_generated": 0,
+                "description": "Created manually.",
+            }
+        )
+
+        def get_value(doctype, filters, *args, **kwargs):
+            return manual_nif if filters.get("fieldname") == "custom_nif" else None
+
+        with (
+            patch.object(hooks.frappe.db, "get_value", side_effect=get_value),
+            patch.object(hooks, "create_custom_fields") as create_fields,
+            self.assertRaises(frappe.ValidationError),
+        ):
+            hooks.enable_algerian_company_fields()
+
+        create_fields.assert_not_called()
+
+    def test_uninstall_detaches_company_fields_instead_of_deleting_them(self):
+        from sotrama import hooks
+
+        fields = [
+            frappe._dict(
+                {
+                    "name": "Company-custom_nif",
+                    "fieldname": "custom_nif",
+                    "module": "Sotrama",
+                    "description": "Legacy NIF",
+                    "is_system_generated": 1,
+                }
+            ),
+            frappe._dict(
+                {
+                    "name": "Company-custom_algerian_registration_section",
+                    "fieldname": "custom_algerian_registration_section",
+                    "module": "Sotrama",
+                    "description": "Legacy section",
+                    "is_system_generated": 1,
+                }
+            ),
+            frappe._dict(
+                {
+                    "name": "Company-custom_nis",
+                    "fieldname": "custom_nis",
+                    "module": "Sotrama",
+                    "description": "NIS field",
+                    "is_system_generated": 1,
+                }
+            ),
+            frappe._dict(
+                {
+                    "name": "Company-custom_capital_social",
+                    "fieldname": "custom_capital_social",
+                    "module": "Sotrama",
+                    "description": "Capital field",
+                    "is_system_generated": 1,
+                }
+            ),
+            frappe._dict(
+                {
+                    "name": "Company-custom_rc",
+                    "fieldname": "custom_rc",
+                    "module": "Sotrama",
+                    "description": "User-managed RC field",
+                    "is_system_generated": 0,
+                }
+            ),
+        ]
+        with (
+            patch.object(hooks.frappe.db, "table_exists", return_value=True) as table_exists,
+            patch.object(hooks.frappe, "get_all", return_value=fields) as get_all,
+            patch.object(hooks.frappe.db, "set_value") as set_value,
+            patch.object(hooks.frappe, "clear_cache") as clear_cache,
+        ):
+            hooks.preserve_company_fields_on_uninstall()
 
         self.assertEqual(
-            frappe.get_value("Custom Field", {"dt": "Company", "fieldname": "custom_nif"}, "module"),
-            "Sotrama",
+            get_all.call_args.kwargs["filters"],
+            {
+                "dt": "Company",
+                "fieldname": [
+                    field["fieldname"] for field in hooks.get_custom_fields()["Company"]
+                ]
+                + ["custom_nif", "custom_algerian_registration_section"],
+            },
         )
-
-    def test_company_tax_id_alias_syncs_without_overwriting_conflicts(self):
-        from sotrama.hooks import validate_algerian_company_tax_id
-
-        doc = frappe._dict({
-            "country": "Algeria",
-            "custom_nif": "001234567890123",
-            "tax_id": None,
-        })
-        validate_algerian_company_tax_id(doc)
-        self.assertEqual(doc.tax_id, doc.custom_nif)
-
-        reverse = frappe._dict({
-            "country": "Algeria",
-            "custom_nif": None,
-            "tax_id": "001234567890123",
-        })
-        validate_algerian_company_tax_id(reverse)
-        self.assertEqual(reverse.custom_nif, reverse.tax_id)
-
-        conflict = frappe._dict({
-            "country": "Algeria",
-            "custom_nif": "111",
-            "tax_id": "222",
-        })
-        with self.assertRaises(frappe.ValidationError):
-            validate_algerian_company_tax_id(conflict)
+        self.assertEqual(set_value.call_count, 5)
+        table_exists.assert_called_once_with("Custom Field")
+        for call in set_value.call_args_list:
+            self.assertEqual(call.args[0], "Custom Field")
+            name = call.args[1]
+            values = call.args[2]
+            self.assertEqual(values["module"], "Custom")
+            if name == "Company-custom_rc":
+                self.assertNotIn("hidden", values)
+                self.assertNotIn("description", values)
+            else:
+                self.assertEqual(values["hidden"], 1)
+                self.assertIn(hooks.COMPANY_FIELD_OWNERSHIP_MARKER, values["description"])
+        self.assertTrue(all(call.kwargs["update_modified"] is False for call in set_value.call_args_list))
+        clear_cache.assert_called_once_with(doctype="Company")
 
 
 class TestVehicle(unittest.TestCase):

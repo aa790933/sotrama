@@ -1,8 +1,8 @@
 """
 Sotrama — Algerian Localization & Public Works Fleet Management for ERPNext
 
-Adds Algerian statutory company identifiers and capital fields to Company.
-Also provides a full TP (Travaux Publics) Fleet Management module:
+Provides optional Algerian company registration fields and a TP
+(Travaux Publics) Fleet Management module:
 Vehicle, Driver, Maintenance Job Card, Breakdown Incident,
 Maintenance Schedule, Vehicle Inspection, Operational Task,
 Company Classification (Grade I–IX), and supporting masters.
@@ -12,6 +12,9 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from . import __version__ as _app_version
+
+COMPANY_EXTENSION_MODULE = "Custom"
+COMPANY_FIELD_OWNERSHIP_MARKER = "Managed by Sotrama — Algerian Company Extension."
 
 app_name = "sotrama"
 app_title = "Sotrama"
@@ -25,7 +28,7 @@ app_email = "dekukoda41@users.noreply.github.com"
 app_license = "MIT"
 app_color = "#d94736"
 app_logo_url = "/assets/sotrama/images/sotrama-logo.svg"
-app_home = "/desk/sotrama-fleet"
+app_home = "/desk/sotrama"
 required_apps = ["frappe/erpnext", "frappe/hrms"]
 
 add_to_apps_screen = [
@@ -58,212 +61,359 @@ def ensure_roles():
 # ---------------------------------------------------------------------------
 
 def get_custom_fields():
-    """
-    Returns the custom field definitions for the Company doctype.
-    These are defined in code (not the database) so they survive
-    `bench update` and migrate cleanly to new sites.
+    """Return complementary Algerian Company fields for explicit admin opt-in.
+
+    ERPNext's standard ``Company.tax_id`` is the single source of truth for NIF.
     """
     return {
         "Company": [
             {
-                "fieldname": "custom_algerian_registration_section",
+                "fieldname": "custom_sotrama_algerian_registration_section",
                 "fieldtype": "Section Break",
-                "label": "Algerian Registration & Legal Capital",
-                "module": "Sotrama",
+                "label": "Algerian Legal & Registration Details",
+                "module": COMPANY_EXTENSION_MODULE,
                 "insert_after": "tax_id",
                 "collapsible": 1,
-            },
-            {
-                "fieldname": "custom_nif",
-                "fieldtype": "Data",
-                "label": "NIF / Matricule Fiscal",
-                "module": "Sotrama",
-                "insert_after": "custom_algerian_registration_section",
-                "in_standard_filter": 1,
-                "in_list_view": 1,
-                "in_preview": 1,
-                "reqd": 0,
-                "description": "Numéro d'Identification Fiscale (NIF), commonly referred to as the matricule fiscal. Record the full identifier from the official tax registration certificate.",
+                "description": COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
                 "fieldname": "custom_article_imposition",
                 "fieldtype": "Data",
                 "label": "Article d'imposition",
-                "module": "Sotrama",
-                "insert_after": "custom_nif",
+                "module": COMPANY_EXTENSION_MODULE,
+                "insert_after": "custom_sotrama_algerian_registration_section",
                 "in_standard_filter": 1,
                 "in_list_view": 0,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Numéro d'article fiscal recorded on the Certificate of Existence (certificat d'existence C n°20), distinct from the NIF.",
+                "description": "Numéro d'article fiscal recorded on the Certificate of Existence (certificat d'existence C n°20), distinct from the NIF. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
                 "fieldname": "custom_algerian_registration_column_break",
                 "fieldtype": "Column Break",
-                "module": "Sotrama",
+                "module": COMPANY_EXTENSION_MODULE,
                 "insert_after": "custom_article_imposition",
+                "description": COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
                 "fieldname": "custom_nis",
                 "fieldtype": "Data",
                 "label": "NIS (Statistical ID)",
-                "module": "Sotrama",
+                "module": COMPANY_EXTENSION_MODULE,
                 "insert_after": "custom_algerian_registration_column_break",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Numéro d'Identification Statistique — Algerian statistical registration number",
+                "description": "Numéro d'Identification Statistique — Algerian statistical registration number. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
                 "fieldname": "custom_rc",
                 "fieldtype": "Data",
                 "label": "RC (Trade Registry)",
-                "module": "Sotrama",
+                "module": COMPANY_EXTENSION_MODULE,
                 "insert_after": "custom_nis",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Registre de Commerce — Algerian trade registry number",
+                "description": "Registre de Commerce — Algerian trade registry number. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
                 "fieldname": "custom_capital_social",
                 "fieldtype": "Currency",
                 "label": "Capital Social",
-                "module": "Sotrama",
+                "module": COMPANY_EXTENSION_MODULE,
                 "options": "default_currency",
                 "insert_after": "custom_rc",
                 "in_standard_filter": 0,
                 "in_list_view": 0,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Registered share capital of the legal entity, expressed in the Company's default currency.",
+                "description": "Registered share capital. Enter a numeric amount only; the value uses the Company's default currency. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "depends_on": 'eval:doc.country=="Algeria"',
             },
         ],
     }
 
 
-def migrate_legacy_company_capital_field():
-    """Upgrade a legacy Data version of Capital Social to Currency.
+def _is_managed_company_field(field):
+    """Recognize only Sotrama-generated Company fields, including after uninstall.
 
-    Frappe rejects changing a Custom Field's type through
-    ``create_custom_fields``. Update this field's metadata first, then rebuild
-    the Company schema so the physical column matches. This is idempotent and
-    leaves an already-correct Currency field untouched.
+    The marker is retained in the field description when a generated field is
+    detached into Frappe's shared ``Custom`` module. A same-name Custom field
+    without this marker may belong to another app and must not be claimed.
     """
-    existing = frappe.db.get_value(
-        "Custom Field",
-        {"dt": "Company", "fieldname": "custom_capital_social"},
-        ["name", "fieldtype"],
-        as_dict=True,
+    if not field or not field.is_system_generated:
+        return False
+
+    if field.module == "Sotrama":
+        return True
+
+    return (
+        field.module == COMPANY_EXTENSION_MODULE
+        and COMPANY_FIELD_OWNERSHIP_MARKER in (field.description or "")
     )
-    if not existing or existing.fieldtype == "Currency":
+
+
+def _set_company_fields_hidden(hidden):
+    """Hide or reveal Sotrama-owned fields without deleting metadata or data."""
+    fieldnames = [field["fieldname"] for field in get_custom_fields()["Company"]]
+    if not frappe.db.table_exists("Custom Field"):
         return
 
-    if existing.fieldtype != "Data":
-        frappe.throw(
-            frappe._(
-                "Cannot migrate Company Capital Social from {0} to Currency. "
-                "Expected the legacy Data field."
-            ).format(existing.fieldtype)
-        )
-
-    frappe.db.set_value(
+    fields = frappe.get_all(
         "Custom Field",
-        existing.name,
-        {"fieldtype": "Currency", "options": "default_currency"},
-        update_modified=False,
+        filters={"dt": "Company", "fieldname": ["in", fieldnames]},
+        fields=["name", "module", "is_system_generated", "description", "hidden"],
     )
-    frappe.clear_cache(doctype="Company")
-    frappe.db.updatedb("Company")
+    changed = False
+    for field in fields:
+        if not _is_managed_company_field(field):
+            continue
+        if bool(field.hidden) != bool(hidden):
+            frappe.db.set_value(
+                "Custom Field", field.name, "hidden", int(bool(hidden)), update_modified=False
+            )
+            changed = True
 
-
-# ---------------------------------------------------------------------------
-# Setup — fields are installed and kept in sync through app lifecycle hooks.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Lifecycle Hooks
-# ---------------------------------------------------------------------------
-
-def install_company_fields():
-    """Create Sotrama's Company fields after the app is installed."""
-    ensure_roles()
-    migrate_legacy_company_capital_field()
-    create_custom_fields(get_custom_fields())
-
-
-def uninstall_company_fields():
-    """Remove Sotrama-owned Company fields when the app is uninstalled."""
-    for fieldname in (
-        "custom_nif",
-        "custom_article_imposition",
-        "custom_algerian_registration_column_break",
-        "custom_nis",
-        "custom_rc",
-        "custom_capital_social",
-        "custom_algerian_registration_section",
-    ):
-        existing = frappe.db.get_value(
+    # Retire legacy fields whose names changed or whose purpose is now covered
+    # by ERPNext's standard Company.tax_id. Keep their values untouched.
+    for legacy_fieldname in ("custom_nif", "custom_algerian_registration_section"):
+        legacy_field = frappe.db.get_value(
             "Custom Field",
-            {"dt": "Company", "fieldname": fieldname, "module": "Sotrama"},
+            {"dt": "Company", "fieldname": legacy_fieldname},
+            ["name", "module", "is_system_generated", "description", "hidden"],
+            as_dict=True,
         )
-        if existing:
-            frappe.delete_doc("Custom Field", existing, ignore_on_trash=True)
+        if (
+            legacy_field
+            and _is_managed_company_field(legacy_field)
+            and not legacy_field.hidden
+        ):
+            frappe.db.set_value(
+                "Custom Field", legacy_field.name, "hidden", 1, update_modified=False
+            )
+            changed = True
+
+    if changed:
+        frappe.clear_cache(doctype="Company")
+
+
+def enable_algerian_company_fields():
+    """Install the optional Company extension after explicit admin opt-in.
+
+    Existing fields are never silently converted or overwritten. This avoids
+    schema casts of formatted currency text such as ``2 897 268 000.00 DA``.
+    """
+    definitions = get_custom_fields()
+    for doctype, fields in definitions.items():
+        for field in fields:
+            existing = frappe.db.get_value(
+                "Custom Field",
+                {"dt": doctype, "fieldname": field["fieldname"]},
+                ["name", "fieldtype", "module", "is_system_generated", "description"],
+                as_dict=True,
+            )
+            if existing and not _is_managed_company_field(existing):
+                frappe.throw(
+                    frappe._(
+                        "The field {0} already exists on {1} and is owned by module {2}. "
+                        "Sotrama will not take ownership of or modify another app's field. "
+                        "Choose a different field name or resolve the ownership conflict first."
+                    ).format(field["fieldname"], doctype, existing.module or frappe._("Customizations")),
+                    title=frappe._("Existing field is owned elsewhere"),
+                )
+            if existing and existing.fieldtype != field["fieldtype"]:
+                frappe.throw(
+                    frappe._(
+                        "The existing {0} field on {1} is {2}, but Sotrama requires {3}. "
+                        "No data was changed. Review or rename the existing field before enabling this feature."
+                    ).format(field["fieldname"], doctype, existing.fieldtype, field["fieldtype"]),
+                    title=frappe._("Existing field needs review"),
+                )
+
+    # An older duplicate NIF field or registration section must not remain
+    # beside the standard Tax ID/current section. Reject a same-name field
+    # unless Sotrama can prove it created that field in an earlier release.
+    legacy_fieldnames = ("custom_nif", "custom_algerian_registration_section")
+    for fieldname in legacy_fieldnames:
+        legacy_field = frappe.db.get_value(
+            "Custom Field",
+            {"dt": "Company", "fieldname": fieldname},
+            ["name", "module", "is_system_generated", "description"],
+            as_dict=True,
+        )
+        if legacy_field and not _is_managed_company_field(legacy_field):
+            frappe.throw(
+                frappe._(
+                    "The legacy Company field {0} exists but is not owned by Sotrama. "
+                    "Review or rename it before enabling the Algerian Company Extension."
+                ).format(fieldname),
+                title=frappe._("Legacy Company field needs review"),
+            )
+
+    # Older releases stored generated Company fields in the app-owned Sotrama
+    # module. Move them to the persistent Custom module only after all conflicts
+    # and field types have passed validation; this does not alter SQL columns.
+    _detach_legacy_module_fields(definitions)
+
+    # Only create missing fields; do not overwrite site-specific customizations.
+    create_custom_fields(definitions, update=False)
+    _set_company_fields_hidden(False)
+
+
+def _detach_legacy_module_fields(definitions=None):
+    """Preserve ownership and fill only missing metadata on prior Sotrama fields.
+
+    Earlier releases put generated fields in the app-owned Sotrama module and
+    did not restrict them to Algerian Companies. Move those fields to Frappe's
+    persistent Custom module. Add only the missing country dependency, and fix
+    the old Article d'imposition position when it still points at the retired
+    custom NIF field. Other user-edited presentation metadata remains untouched.
+    """
+    company_fields = (definitions or get_custom_fields())["Company"]
+    definitions_by_name = {field["fieldname"]: field for field in company_fields}
+    fieldnames = list(definitions_by_name)
+    fieldnames.extend(("custom_nif", "custom_algerian_registration_section"))
+
+    existing_fields = frappe.get_all(
+        "Custom Field",
+        filters={"dt": "Company", "fieldname": ["in", fieldnames]},
+        fields=[
+            "name",
+            "fieldname",
+            "module",
+            "description",
+            "is_system_generated",
+            "depends_on",
+            "insert_after",
+        ],
+    )
+    changed = False
+    for existing in existing_fields:
+        if not _is_managed_company_field(existing):
+            continue
+
+        values = {}
+        if existing.module == "Sotrama":
+            values["module"] = COMPANY_EXTENSION_MODULE
+
+        description = existing.description or ""
+        if COMPANY_FIELD_OWNERSHIP_MARKER not in description:
+            values["description"] = (
+                f"{description.rstrip()} {COMPANY_FIELD_OWNERSHIP_MARKER}".strip()
+            )
+
+        definition = definitions_by_name.get(existing.fieldname)
+        if definition:
+            if not existing.depends_on and definition.get("depends_on"):
+                values["depends_on"] = definition["depends_on"]
+
+            if (
+                existing.fieldname == "custom_article_imposition"
+                and existing.insert_after == "custom_nif"
+            ):
+                values["insert_after"] = "custom_sotrama_algerian_registration_section"
+
+        if values:
+            frappe.db.set_value("Custom Field", existing.name, values, update_modified=False)
+            changed = True
+
+    if changed:
+        frappe.clear_cache(doctype="Company")
 
 
 def sync_company_fields():
-    """Idempotently create or update the Company fields after migrations."""
+    """Apply Company fields only when enabled in Sotrama Settings.
+
+    A fresh install has no setting record and therefore creates no Company
+    Custom Fields. Disabling the option hides existing fields but preserves
+    their metadata and every value already stored on Company records.
+    """
+    if not frappe.db.exists("DocType", "Sotrama Settings"):
+        return
+
+    enabled = frappe.db.get_single_value("Sotrama Settings", "enable_algerian_company_fields")
+    if enabled:
+        enable_algerian_company_fields()
+    else:
+        _set_company_fields_hidden(True)
+
+
+def initialize_app():
+    """Initialize app roles without modifying standard ERPNext DocTypes."""
     ensure_roles()
-    migrate_legacy_company_capital_field()
-    create_custom_fields(get_custom_fields())
+
+
+def preserve_company_fields_on_uninstall():
+    """Preserve Company extension fields before Frappe removes app-owned modules.
+
+    Frappe deletes Custom Field records linked to an app-owned module during
+    uninstall. Move the known Company extension fieldnames into the persistent
+    core ``Custom`` module. Stamp only system-generated fields with the
+    Sotrama ownership marker; same-name user-created fields remain unclaimed.
+    """
+    fieldnames = [field["fieldname"] for field in get_custom_fields()["Company"]]
+    fieldnames.extend(("custom_nif", "custom_algerian_registration_section"))
+    if not frappe.db.table_exists("Custom Field"):
+        return
+
+    fields = frappe.get_all(
+        "Custom Field",
+        filters={"dt": "Company", "fieldname": ["in", fieldnames]},
+        fields=["name", "fieldname", "module", "description", "is_system_generated"],
+    )
+    changed = False
+    for field in fields:
+        values = {}
+        if field.module == "Sotrama":
+            # Even a manually created field filed under Sotrama is detached so
+            # Frappe cannot delete it; without the marker it will not be adopted
+            # by a later Sotrama install.
+            values["module"] = COMPANY_EXTENSION_MODULE
+            if field.is_system_generated:
+                description = field.description or ""
+                if COMPANY_FIELD_OWNERSHIP_MARKER not in description:
+                    values["description"] = (
+                        f"{description.rstrip()} {COMPANY_FIELD_OWNERSHIP_MARKER}".strip()
+                    )
+                values["hidden"] = 1
+        elif (
+            field.module == COMPANY_EXTENSION_MODULE
+            and field.is_system_generated
+            and COMPANY_FIELD_OWNERSHIP_MARKER in (field.description or "")
+        ):
+            values["hidden"] = 1
+
+        if values:
+            frappe.db.set_value("Custom Field", field.name, values, update_modified=False)
+            changed = True
+
+    if changed:
+        frappe.clear_cache(doctype="Company")
 
 
 # ---------------------------------------------------------------------------
-# Fixtures — export these so they're version-controlled and reinstall
-# on new sites. Always filter by module so we don't export unrelated
-# custom fields from other apps.
+# Fixtures — export only site metadata explicitly owned by this app.
 # ---------------------------------------------------------------------------
 
+# Do not export Company Custom Fields as fixtures: Frappe imports fixtures
+# before after_migrate, which would bypass the administrator's opt-in setting.
+# Optional Company fields are created only by enable_algerian_company_fields().
 fixtures = [
-    {"dt": "Custom Field", "filters": [["module", "=", "Sotrama"]]},
     {"dt": "Property Setter", "filters": [["module", "=", "Sotrama"]]},
 ]
 
 before_install = "sotrama.hooks.ensure_roles"
-after_install = "sotrama.hooks.install_company_fields"
-before_uninstall = "sotrama.hooks.uninstall_company_fields"
+after_install = "sotrama.hooks.initialize_app"
 after_migrate = "sotrama.hooks.sync_company_fields"
-
-
-def validate_algerian_company_tax_id(doc, method=None):
-    """Keep ERPNext Tax ID and Sotrama's NIF alias consistent on save.
-
-    The database is not modified just by opening an existing Company form.
-    If both fields are supplied, disagreement is rejected before saving so
-    statutory documents cannot silently use a different identifier.
-    """
-    if doc.country != "Algeria":
-        return
-
-    nif = (doc.get("custom_nif") or "").strip()
-    tax_id = (doc.get("tax_id") or "").strip()
-    if nif and tax_id and nif != tax_id:
-        frappe.throw(
-            frappe._("NIF / Matricule Fiscal must match the standard ERPNext Tax ID.")
-        )
-    if nif and not tax_id:
-        doc.tax_id = nif
-    elif tax_id and not nif:
-        doc.custom_nif = tax_id
-
-
-doc_events = {
-    "Company": {
-        "validate": "sotrama.hooks.validate_algerian_company_tax_id",
-    },
-}
+before_uninstall = "sotrama.hooks.preserve_company_fields_on_uninstall"
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +447,6 @@ app_include_js = "/assets/sotrama/js/sotrama.js"
 # ---------------------------------------------------------------------------
 
 doctype_js = {
-    "Company": "public/js/company.js",
     "Vehicle": "public/js/vehicle.js",
     "Breakdown Incident": "public/js/breakdown.js",
     "Maintenance Job Card": "public/js/job_card.js",

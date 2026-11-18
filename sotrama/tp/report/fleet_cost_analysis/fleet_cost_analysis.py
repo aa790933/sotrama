@@ -44,9 +44,15 @@ def get_columns():
         {
             "label": _("Company"),
             "fieldname": "company",
-            "fieldtype": "Link",
-            "options": "Company",
+            "fieldtype": "Data",
             "width": 150,
+        },
+        {
+            "label": _("Currency"),
+            "fieldname": "currency",
+            "fieldtype": "Link",
+            "options": "Currency",
+            "width": 85,
         },
         {
             "label": _("Distance (km)"),
@@ -58,30 +64,35 @@ def get_columns():
             "label": _("Parts & Labour"),
             "fieldname": "maintenance_cost",
             "fieldtype": "Currency",
+            "options": "currency",
             "width": 125,
         },
         {
             "label": _("Other Costs"),
             "fieldname": "other_costs",
             "fieldtype": "Currency",
+            "options": "currency",
             "width": 115,
         },
         {
             "label": _("Estimated Depreciation"),
             "fieldname": "depreciation",
             "fieldtype": "Currency",
+            "options": "currency",
             "width": 145,
         },
         {
             "label": _("Total Cost"),
             "fieldname": "total_cost",
             "fieldtype": "Currency",
+            "options": "currency",
             "width": 120,
         },
         {
             "label": _("Cost per km"),
             "fieldname": "cost_per_km",
             "fieldtype": "Currency",
+            "options": "currency",
             "width": 115,
         },
     ]
@@ -146,6 +157,11 @@ def get_data(filters):
         return []
 
     vehicle_names = [vehicle.name for vehicle in vehicles]
+    # TP cost fields currently use Frappe's site default currency (they are not
+    # Company-currency fields). Label them with that same currency rather than
+    # incorrectly substituting each Company's default_currency.
+    report_currency = frappe.db.get_default("currency")
+
     maintenance_filters = [["docstatus", "=", 1], ["vehicle", "in", vehicle_names]]
     maintenance_filters.extend(_date_filters(filters, "job_date"))
     maintenance_rows = frappe.get_list(
@@ -190,6 +206,7 @@ def get_data(filters):
                 "vehicle": vehicle.name,
                 "license_plate": vehicle.license_plate,
                 "company": vehicle.company,
+                "currency": report_currency,
                 "distance_km": distance,
                 "maintenance_cost": parts_and_labour,
                 "other_costs": other_costs,

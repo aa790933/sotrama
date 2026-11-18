@@ -1,0 +1,61 @@
+{
+ "app": "sotrama",
+ "doctype": "Workspace",
+ "label": "Sotrama",
+ "title": "Sotrama",
+ "module": "Sotrama",
+ "icon": "building-2",
+ "sequence_id": 1,
+ "type": "Workspace",
+ "public": 1,
+ "is_hidden": 0,
+ "hide_custom": 0,
+ "standard": 1,
+ "for_user": "",
+ "content": "[]",
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Business Modules",
+   "link_count": 2,
+   "hidden": 0
+  },
+  {
+   "type": "Link",
+   "label": "Algerian Localization",
+   "link_type": "Workspace",
+   "link_to": "Algerian Localization",
+   "hidden": 0,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Public Works Fleet",
+   "link_type": "Workspace",
+   "link_to": "Sotrama Fleet",
+   "hidden": 0,
+   "onboard": 0
+  },
+  {
+   "type": "Card Break",
+   "label": "Application Administration",
+   "link_count": 1,
+   "hidden": 0
+  },
+  {
+   "type": "Link",
+   "label": "Sotrama Settings",
+   "link_type": "DocType",
+   "link_to": "Sotrama Settings",
+   "hidden": 0,
+   "onboard": 0
+  }
+ ],
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Fleet Manager"},
+  {"role": "Workshop"},
+  {"role": "HR Manager"},
+  {"role": "Accounts Manager"}
+ ]
+}

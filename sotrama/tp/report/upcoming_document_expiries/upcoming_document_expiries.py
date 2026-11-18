@@ -16,7 +16,7 @@ def get_columns():
     return [
         {"label": _("Vehicle"), "fieldname": "vehicle", "fieldtype": "Link", "options": "Vehicle", "width": 110},
         {"label": _("License Plate"), "fieldname": "license_plate", "fieldtype": "Data", "width": 120},
-        {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 140},
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 140},
         {"label": _("Document Type"), "fieldname": "document_type", "fieldtype": "Data", "width": 175},
         {"label": _("Expiry Date"), "fieldname": "expiry_date", "fieldtype": "Date", "width": 105},
         {"label": _("Days Remaining"), "fieldname": "days_remaining", "fieldtype": "Int", "width": 100},
@@ -29,7 +29,12 @@ def get_data(filters):
     configured_days = get_tp_setting("vehicle_document_alert_days", 30)
     requested_days = filters.get("alert_days")
     days_value = requested_days if requested_days not in (None, "") else configured_days
-    alert_days = max(int(30 if days_value is None else days_value), 0)
+    try:
+        alert_days = int(30 if days_value is None else days_value)
+    except (TypeError, ValueError):
+        frappe.throw(_("Alert Within Days must be a whole number."))
+    if alert_days < 0 or alert_days > 3650:
+        frappe.throw(_("Alert Within Days must be between 0 and 3650 days."))
     threshold = add_days(today(), alert_days)
 
     vehicle_filters = [["vehicle_status", "not in", ["Retired", "Scrapped"]]]

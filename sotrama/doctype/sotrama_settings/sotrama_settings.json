@@ -1,0 +1,51 @@
+{
+ "doctype": "DocType",
+ "name": "Sotrama Settings",
+ "module": "Sotrama",
+ "issingle": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_algeria_company",
+   "label": "Algerian Company Extension"
+  },
+  {
+   "fieldtype": "Check",
+   "fieldname": "enable_algerian_company_fields",
+   "label": "Enable Algerian Company Registration Fields",
+   "default": "0",
+   "description": "When enabled, Sotrama adds Article d'imposition, NIS, RC and Capital Social to Company records whose Country is Algeria. NIF continues to use ERPNext's standard Tax ID field. Disabling this option hides Sotrama fields but preserves their values."
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "print": 1,
+   "email": 0,
+   "report": 0,
+   "export": 0,
+   "share": 0
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "print": 0,
+   "email": 0,
+   "report": 0,
+   "export": 0,
+   "share": 0
+  }
+ ],
+ "icon": "settings-2",
+ "description": "Central application settings and optional feature activation for all Sotrama modules."
+}
