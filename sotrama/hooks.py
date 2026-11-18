@@ -1,7 +1,7 @@
 """
 Sotrama — Algerian Localization & Public Works Fleet Management for ERPNext
 
-Adds NIF, NIS, and RC fields to the Company doctype.
+Adds Algerian statutory company identifiers and capital fields to Company.
 Also provides a full TP (Travaux Publics) Fleet Management module:
 Vehicle, Driver, Maintenance Job Card, Breakdown Incident,
 Maintenance Schedule, Vehicle Inspection, Operational Task,
@@ -66,23 +66,49 @@ def get_custom_fields():
     return {
         "Company": [
             {
-                "fieldname": "custom_nif",
-                "fieldtype": "Data",
-                "label": "NIF (Tax ID)",
+                "fieldname": "custom_algerian_registration_section",
+                "fieldtype": "Section Break",
+                "label": "Algerian Registration & Legal Capital",
                 "module": "Sotrama",
                 "insert_after": "tax_id",
+                "collapsible": 1,
+            },
+            {
+                "fieldname": "custom_nif",
+                "fieldtype": "Data",
+                "label": "NIF / Matricule Fiscal",
+                "module": "Sotrama",
+                "insert_after": "custom_algerian_registration_section",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Numéro d'Identification Fiscale — Algerian tax registration number",
+                "description": "Numéro d'Identification Fiscale (NIF), commonly referred to as the matricule fiscal. Record the full identifier from the official tax registration certificate.",
+            },
+            {
+                "fieldname": "custom_article_imposition",
+                "fieldtype": "Data",
+                "label": "Article d'imposition",
+                "module": "Sotrama",
+                "insert_after": "custom_nif",
+                "in_standard_filter": 1,
+                "in_list_view": 0,
+                "in_preview": 1,
+                "reqd": 0,
+                "description": "Numéro d'article fiscal recorded on the Certificate of Existence (certificat d'existence C n°20), distinct from the NIF.",
+            },
+            {
+                "fieldname": "custom_algerian_registration_column_break",
+                "fieldtype": "Column Break",
+                "module": "Sotrama",
+                "insert_after": "custom_article_imposition",
             },
             {
                 "fieldname": "custom_nis",
                 "fieldtype": "Data",
                 "label": "NIS (Statistical ID)",
                 "module": "Sotrama",
-                "insert_after": "custom_nif",
+                "insert_after": "custom_algerian_registration_column_break",
                 "in_standard_filter": 1,
                 "in_list_view": 1,
                 "in_preview": 1,
@@ -100,6 +126,19 @@ def get_custom_fields():
                 "in_preview": 1,
                 "reqd": 0,
                 "description": "Registre de Commerce — Algerian trade registry number",
+            },
+            {
+                "fieldname": "custom_capital_social",
+                "fieldtype": "Currency",
+                "label": "Capital Social",
+                "module": "Sotrama",
+                "options": "default_currency",
+                "insert_after": "custom_rc",
+                "in_standard_filter": 0,
+                "in_list_view": 0,
+                "in_preview": 1,
+                "reqd": 0,
+                "description": "Registered share capital of the legal entity, expressed in the Company's default currency.",
             },
         ],
     }
@@ -121,7 +160,15 @@ def install_company_fields():
 
 def uninstall_company_fields():
     """Remove Sotrama-owned Company fields when the app is uninstalled."""
-    for fieldname in ("custom_nif", "custom_nis", "custom_rc"):
+    for fieldname in (
+        "custom_nif",
+        "custom_article_imposition",
+        "custom_algerian_registration_column_break",
+        "custom_nis",
+        "custom_rc",
+        "custom_capital_social",
+        "custom_algerian_registration_section",
+    ):
         existing = frappe.db.get_value(
             "Custom Field",
             {"dt": "Company", "fieldname": fieldname, "module": "Sotrama"},
@@ -151,6 +198,35 @@ before_install = "sotrama.hooks.ensure_roles"
 after_install = "sotrama.hooks.install_company_fields"
 before_uninstall = "sotrama.hooks.uninstall_company_fields"
 after_migrate = "sotrama.hooks.sync_company_fields"
+
+
+def validate_algerian_company_tax_id(doc, method=None):
+    """Keep ERPNext Tax ID and Sotrama's NIF alias consistent on save.
+
+    The database is not modified just by opening an existing Company form.
+    If both fields are supplied, disagreement is rejected before saving so
+    statutory documents cannot silently use a different identifier.
+    """
+    if doc.country != "Algeria":
+        return
+
+    nif = (doc.get("custom_nif") or "").strip()
+    tax_id = (doc.get("tax_id") or "").strip()
+    if nif and tax_id and nif != tax_id:
+        frappe.throw(
+            frappe._("NIF / Matricule Fiscal must match the standard ERPNext Tax ID.")
+        )
+    if nif and not tax_id:
+        doc.tax_id = nif
+    elif tax_id and not nif:
+        doc.custom_nif = tax_id
+
+
+doc_events = {
+    "Company": {
+        "validate": "sotrama.hooks.validate_algerian_company_tax_id",
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +267,9 @@ doctype_js = {
     "Vehicle Inspection": "public/js/inspection.js",
     "Operational Task": "public/js/operational_task.js",
     "Driver": "public/js/driver.js",
+    "Maintenance Schedule": "public/js/maintenance_schedule.js",
+    "TP Settings": "public/js/tp_settings.js",
+    "Company Classification": "public/js/company_classification.js",
 }
 
 

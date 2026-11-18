@@ -24,6 +24,14 @@
    "reqd": 1
   },
   {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
    "label": "Inspection Type",
    "fieldname": "inspection_type",
    "fieldtype": "Select",
@@ -49,6 +57,13 @@
    "fieldtype": "Link",
    "options": "Driver",
    "in_list_view": 1
+  },
+  {
+   "label": "Follow-up of Critical Inspection",
+   "fieldname": "follow_up_of",
+   "fieldtype": "Link",
+   "options": "Vehicle Inspection",
+   "description": "Use only when this successful reinspection clears a previously submitted safety-critical inspection."
   },
   {
    "label": "Supervisor",
@@ -102,6 +117,32 @@
    "fieldtype": "Table",
    "options": "Inspection Item",
    "reqd": 1
+  },
+  {
+   "label": "Previous Vehicle Status",
+   "fieldname": "previous_vehicle_status",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Has Safety-Critical Defect",
+   "fieldname": "has_critical_defect",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Critical Defect Cleared By",
+   "fieldname": "critical_defect_cleared_by",
+   "fieldtype": "Link",
+   "options": "Vehicle Inspection",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Successful follow-up inspection that cleared this critical defect."
   }
  ],
  "links": [],

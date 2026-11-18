@@ -129,6 +129,13 @@
    "link_type": "DocType",
    "link_to": "Maintenance Job Type",
    "icon": "settings"
+  },
+  {
+   "type": "Link",
+   "label": "TP Settings",
+   "link_type": "DocType",
+   "link_to": "TP Settings",
+   "icon": "sliders-horizontal"
   }
  ],
  "modified": "2026-11-17 00:00:00",

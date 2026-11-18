@@ -24,6 +24,14 @@
    "reqd": 1
   },
   {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
    "label": "Schedule Type",
    "fieldname": "schedule_type",
    "fieldtype": "Select",
@@ -79,6 +87,14 @@
    "fieldtype": "Float"
   },
   {
+   "label": "Last Service Job Card",
+   "fieldname": "last_service_job_card",
+   "fieldtype": "Link",
+   "options": "Maintenance Job Card",
+   "read_only": 1,
+   "description": "Last submitted job card applied to this maintenance plan."
+  },
+  {
    "fieldtype": "Column Break",
    "fieldname": "column_next_service"
   },
@@ -102,7 +118,18 @@
    "options": "\nActive\nPaused\nCompleted",
    "default": "Active",
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "label": "Next Schedule",
+   "fieldname": "next_schedule",
+   "fieldtype": "Link",
+   "options": "Maintenance Schedule",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Next recurring schedule generated when this plan is completed."
   },
   {
    "fieldtype": "Tab Break",

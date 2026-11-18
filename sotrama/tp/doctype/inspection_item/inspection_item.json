@@ -35,6 +35,13 @@
    "in_list_view": 1
   },
   {
+   "label": "Safety Critical",
+   "fieldname": "is_safety_critical",
+   "fieldtype": "Check",
+   "default": "0",
+   "description": "When enabled, a defective result automatically marks the vehicle Out of Service."
+  },
+  {
    "label": "Remarks",
    "fieldname": "remarks",
    "fieldtype": "Small Text",
@@ -44,6 +51,15 @@
    "label": "Photo Proof",
    "fieldname": "photo_proof",
    "fieldtype": "Attach Image"
+  },
+  {
+   "label": "Linked Issue",
+   "fieldname": "linked_issue",
+   "fieldtype": "Link",
+   "options": "Issue",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "istable": 1,

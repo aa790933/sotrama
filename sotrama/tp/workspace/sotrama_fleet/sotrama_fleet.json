@@ -109,7 +109,7 @@
   {
    "hidden": 0,
    "label": "Setup & Masters",
-   "link_count": 4,
+   "link_count": 5,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -144,6 +144,14 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "label": "TP Settings",
+   "link_to": "TP Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
  "modified": "2026-11-17 00:00:00",
@@ -172,7 +180,8 @@
  "roles": [
   {"role": "System Manager"},
   {"role": "Fleet Manager"},
-  {"role": "Workshop"}
+  {"role": "Workshop"},
+  {"role": "HR Manager"}
  ],
  "sequence_id": 1.0,
  "shortcuts": [],

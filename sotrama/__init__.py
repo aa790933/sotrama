@@ -1,6 +1,6 @@
 """Algerian localization and fleet management extensions for ERPNext."""
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 app_title = "Sotrama"
 app_description = "Algerian company localization and public-works fleet management for ERPNext and Frappe HR."

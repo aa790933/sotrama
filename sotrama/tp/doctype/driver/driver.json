@@ -19,7 +19,8 @@
    "fieldname": "driver_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "reqd": 1
+   "reqd": 1,
+   "allow_on_submit": 1
   },
   {
    "fieldtype": "Column Break",
@@ -30,7 +31,19 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "options": "Employee",
-   "description": "Linked ERPNext Employee record"
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "allow_on_submit": 1,
+   "description": "Optional link to the authoritative ERPNext/Frappe HR Employee record."
+  },
+  {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Company employing or assigning this driver. Defaults from the linked Employee."
   },
   {
    "fieldtype": "Tab Break",
@@ -50,16 +63,18 @@
    "in_list_view": 1,
    "reqd": 1,
    "in_standard_filter": 1,
+   "allow_on_submit": 1,
    "description": "Driver's license number"
   },
   {
-   "label": "License Class",
+   "label": "Algerian Licence Category",
    "fieldname": "license_class",
    "fieldtype": "Select",
-   "options": "\nC\nC1\nC2\nC3\nD\nD1\nE",
+   "options": "\nA1\nA\nB\nB(E)\nC1\nC1(E)\nC\nC(E)\nD\nD(E)\nF",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "License category (C=truck, D=bus, etc.)"
+   "allow_on_submit": 1,
+   "description": "Categories listed in Article 180 of Executive Decree 04-381 as amended by Executive Decree 25-169 of 22 June 2025."
   },
   {
    "label": "License Expiry",
@@ -67,12 +82,14 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "reqd": 1,
+   "allow_on_submit": 1,
    "description": "Date the driver's license expires"
   },
   {
    "label": "License Issue Date",
    "fieldname": "license_issue_date",
    "fieldtype": "Date",
+   "allow_on_submit": 1,
    "description": "Date the license was issued"
   },
   {
@@ -83,25 +100,62 @@
    "label": "Medical Certificate Expiry",
    "fieldname": "medical_expiry",
    "fieldtype": "Date",
-   "in_list_view": 1,
+   "permlevel": 1,
+   "allow_on_submit": 1,
+   "in_list_view": 0,
    "description": "Date the medical certificate expires"
   },
   {
    "label": "Safety Training Expiry",
    "fieldname": "safety_training_expiry",
    "fieldtype": "Date",
+   "allow_on_submit": 1,
    "in_list_view": 1,
    "description": "Date the safety training certification expires"
   },
   {
+   "label": "Brevet Professionnel Number",
+   "fieldname": "professional_certificate_number",
+   "fieldtype": "Data",
+   "allow_on_submit": 1,
+   "description": "Professional transport certificate number, where required by the transport activity."
+  },
+  {
+   "label": "Brevet Professionnel",
+   "fieldname": "professional_certificate",
+   "fieldtype": "Attach",
+   "allow_on_submit": 1,
+   "description": "Scanned professional certificate required for the road-transport activities listed in Articles 79–80 of Law 26-09."
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_restricted_compliance",
+   "label": "Restricted Medical & Screening Records",
+   "collapsible": 1,
+   "permlevel": 1
+  },
+  {
+   "label": "Medical & Screening History",
+   "fieldname": "compliance_records",
+   "fieldtype": "Table",
+   "options": "Driver Compliance Record",
+   "permlevel": 1,
+   "allow_on_submit": 1,
+   "description": "Restricted HR/medical records. Keep the latest medical fitness and drug-screening results and their review/expiry dates."
+  },
+  {
    "label": "Date of Birth",
    "fieldname": "date_of_birth",
-   "fieldtype": "Date"
+   "fieldtype": "Date",
+   "permlevel": 1,
+   "allow_on_submit": 1
   },
   {
    "label": "National ID Number",
    "fieldname": "national_id",
    "fieldtype": "Data",
+   "permlevel": 1,
+   "allow_on_submit": 1,
    "description": "Carte d'identité nationale number"
   },
   {
@@ -118,7 +172,8 @@
   {
    "label": "Address",
    "fieldname": "address",
-   "fieldtype": "Text"
+   "fieldtype": "Text",
+   "allow_on_submit": 1
   },
   {
    "fieldtype": "Column Break",
@@ -127,17 +182,20 @@
   {
    "label": "Phone",
    "fieldname": "phone",
-   "fieldtype": "Data"
+   "fieldtype": "Data",
+   "allow_on_submit": 1
   },
   {
    "label": "Email",
    "fieldname": "email",
-   "fieldtype": "Data"
+   "fieldtype": "Data",
+   "allow_on_submit": 1
   },
   {
    "label": "Hire Date",
    "fieldname": "hire_date",
    "fieldtype": "Date",
+   "allow_on_submit": 1,
    "in_list_view": 1
   },
   {
@@ -147,7 +205,8 @@
    "options": "\nActive\nSuspended\nTerminated\nOn Leave",
    "default": "Active",
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "read_only_depends_on": "eval:doc.docstatus == 1"
   },
   {
    "label": "Total Incidents",
@@ -190,6 +249,13 @@
    "share": 1
   },
   {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
    "role": "Fleet Manager",
    "permlevel": 0,
    "read": 1,
@@ -220,6 +286,25 @@
    "export": 0,
    "report": 0,
    "share": 0
+  },
+  {
+   "role": "HR Manager",
+   "permlevel": 0,
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 0,
+   "export": 0
+  },
+  {
+   "role": "HR Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "create": 1
   }
  ],
  "icon": "user-round",

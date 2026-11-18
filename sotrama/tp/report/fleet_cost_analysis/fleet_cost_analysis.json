@@ -9,6 +9,7 @@
  "modified": "2026-11-15 00:00:00",
  "module": "TP",
  "name": "Fleet Cost Analysis",
+ "ref_doctype": "Vehicle",
  "owner": "Administrator",
  "query_report": "sotrama.tp.report.fleet_cost_analysis.fleet_cost_analysis.execute",
  "ref_report_type": "Script Report",

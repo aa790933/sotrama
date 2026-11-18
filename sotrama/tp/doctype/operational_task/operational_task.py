@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import get_datetime
 
 
 class OperationalTask(Document):
@@ -17,10 +18,14 @@ class OperationalTask(Document):
         self._calculate_actuals()
 
     def on_submit(self):
-        self._assign_driver()
+        self._update_vehicle_odometer()
 
     def _validate_dates(self):
-        if self.start_date and self.end_date and self.end_date < self.start_date:
+        if (
+            self.start_date
+            and self.end_date
+            and get_datetime(self.end_date) < get_datetime(self.start_date)
+        ):
             frappe.throw(_("End Date cannot be before Start Date"))
 
     def _calculate_actuals(self):
@@ -38,9 +43,10 @@ class OperationalTask(Document):
         if not self.vehicle:
             frappe.throw(_("Vehicle is required"))
         if self.vehicle:
-            vehicle_status = frappe.db.get_value(
-                "Vehicle", self.vehicle, "vehicle_status"
+            vehicle = frappe.db.get_value(
+                "Vehicle", self.vehicle, ["vehicle_status", "company"], as_dict=True
             )
+            vehicle_status = vehicle.vehicle_status if vehicle else None
             unavailable_statuses = {
                 "Out of Service", "Under Repair", "Retired", "Scrapped"
             }
@@ -50,24 +56,45 @@ class OperationalTask(Document):
                         self.vehicle, vehicle_status
                     )
                 )
-        if self.driver:
-            driver = frappe.db.get_value(
-                "Driver", self.driver, ["status", "license_expiry"], as_dict=True
-            )
-            if driver and driver.status != "Active":
+            vehicle_company = vehicle.company if vehicle else None
+            if self.company and vehicle_company and self.company != vehicle_company:
+                frappe.throw(_("Operational Task Company must match its Vehicle Company."))
+            self.company = vehicle_company or self.company
+
+        if self.project and self.company:
+            project_company = frappe.db.get_value("Project", self.project, "company")
+            if project_company and project_company != self.company:
                 frappe.throw(
-                    _("Driver {0} is not Active and cannot be assigned.").format(
-                        self.driver
+                    _("Project {0} belongs to Company {1}, not {2}.").format(
+                        self.project, project_company, self.company
                     )
                 )
-            if driver and driver.license_expiry and driver.license_expiry < frappe.utils.today():
-                frappe.throw(
-                    _("Driver {0} has an expired driving licence.").format(self.driver)
-                )
 
-    def _assign_driver(self):
-        """Ensure the assigned driver is linked to the vehicle."""
-        if self.vehicle and self.driver:
+        previous = self.get_doc_before_save()
+        assignment_changed = not previous or any(
+            previous.get(fieldname) != self.get(fieldname)
+            for fieldname in ("vehicle", "driver", "task_type", "transport_kind")
+        )
+        if self.driver and (not previous or self.docstatus == 0 or assignment_changed):
+            from sotrama.tp.validation import (
+                validate_active_driver,
+                validate_professional_transport_certificate,
+            )
+
+            validate_active_driver(self.driver, self.company)
+            if self.task_type == "Transport":
+                if not self.transport_kind:
+                    frappe.throw(_("Select the Transport Activity for this transport task."))
+                validate_professional_transport_certificate(self.driver, self.transport_kind)
+        elif self.task_type == "Transport" and not self.transport_kind:
+            frappe.throw(_("Select the Transport Activity for this transport task."))
+
+    def _update_vehicle_odometer(self):
+        """Keep the physical odometer monotonic; cancellation never rewinds it."""
+        if not self.vehicle or self.end_odometer is None:
+            return
+        current = frappe.db.get_value("Vehicle", self.vehicle, "current_odometer") or 0
+        if self.end_odometer > current:
             frappe.db.set_value(
-                "Vehicle", self.vehicle, "primary_driver", self.driver
+                "Vehicle", self.vehicle, "current_odometer", self.end_odometer
             )

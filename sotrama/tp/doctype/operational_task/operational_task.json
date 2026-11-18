@@ -40,6 +40,14 @@
    "reqd": 1
   },
   {
+   "label": "Transport Activity",
+   "fieldname": "transport_kind",
+   "fieldtype": "Select",
+   "options": "\nTransport collectif de personnes\nTransport scolaire\nTransport de marchandises\nTransport de matières dangereuses\nTransport par taxi",
+   "depends_on": "eval:doc.task_type == 'Transport'",
+   "mandatory_depends_on": "eval:doc.task_type == 'Transport'"
+  },
+  {
    "fieldtype": "Column Break",
    "fieldname": "column_task_assignment"
   },
@@ -49,6 +57,14 @@
    "fieldtype": "Link",
    "options": "Project",
    "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "read_only": 1,
    "in_standard_filter": 1
   },
   {

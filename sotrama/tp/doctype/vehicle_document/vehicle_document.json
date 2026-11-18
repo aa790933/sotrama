@@ -13,7 +13,7 @@
    "label": "Document Type",
    "fieldname": "document_type",
    "fieldtype": "Select",
-   "options": "\nCarte Grise (Registration)\nAssurance (Insurance)\nCertificat de Pollution\nVisite Technique\nCertificat de Conformité\nPermis de Circulation\nVignette\nAutre",
+   "options": "\nCarte d'immatriculation\nCarte Grise (Registration)\nAssurance (Insurance)\nCertificat de Pollution\nVisite Technique\nCertificat de Conformité\nPermis de Circulation\nVignette\nAutre",
    "in_list_view": 1,
    "reqd": 1
   },

@@ -30,12 +30,15 @@ frappe.ui.form.on('Operational Task', {
                 args: {
                     doctype: 'Vehicle',
                     name: frm.doc.vehicle,
-                    fieldname: ['primary_driver', 'vehicle_status']
+                    fieldname: ['primary_driver', 'vehicle_status', 'company']
                 },
                 callback: function(r) {
                     if (r.message) {
                         if (r.message.primary_driver && !frm.doc.driver) {
                             frm.set_value('driver', r.message.primary_driver);
+                        }
+                        if (r.message.company) {
+                            frm.set_value('company', r.message.company);
                         }
                         if (r.message.vehicle_status === 'Out of Service') {
                             frappe.msgprint(__('Vehicle is Out of Service'));

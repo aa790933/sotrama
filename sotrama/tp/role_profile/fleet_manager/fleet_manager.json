@@ -11,9 +11,6 @@
  "roles": [
   {
    "role": "Fleet Manager"
-  },
-  {
-   "role": "System Manager"
   }
  ]
 }

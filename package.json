@@ -1,1 +1,1 @@
-{"name": "sotrama", "version": "1.0.0", "description": "Algerian localization for ERPNext — adds NIF, NIS, RC fields to the Company doctype", "license": "MIT", "dependencies": {}}
+{"name": "sotrama", "version": "1.2.0", "description": "Algerian company localization and public-works fleet management for ERPNext and Frappe HR", "license": "MIT", "dependencies": {}}

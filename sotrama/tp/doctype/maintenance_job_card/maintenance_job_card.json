@@ -31,6 +31,14 @@
    "reqd": 1
   },
   {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
    "label": "Job Nature",
    "fieldname": "job_nature",
    "fieldtype": "Select",
@@ -46,6 +54,14 @@
    "options": "Maintenance Job Type",
    "in_list_view": 1,
    "in_standard_filter": 1
+  },
+  {
+   "label": "Preventive Maintenance Schedule",
+   "fieldname": "maintenance_schedule",
+   "fieldtype": "Link",
+   "options": "Maintenance Schedule",
+   "depends_on": "eval:doc.job_nature == 'Scheduled Service'",
+   "description": "Active maintenance plan this scheduled service completes."
   },
   {
    "label": "Status",
@@ -156,6 +172,17 @@
    "collapsible": 1
   },
   {
+   "label": "Cost Center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_cost_center"
+  },
+  {
    "label": "Total Parts Cost (DZD)",
    "fieldname": "total_parts_cost",
    "fieldtype": "Currency",
@@ -198,6 +225,64 @@
    "options": "Stock Entry",
    "read_only": 1,
    "description": "Material Issue generated for consumed maintenance parts."
+  },
+  {
+   "label": "Linked Maintenance Schedule",
+   "fieldname": "linked_maintenance_schedule",
+   "fieldtype": "Link",
+   "options": "Maintenance Schedule",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Previous Schedule Last Service Date",
+   "fieldname": "previous_schedule_last_service_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Previous Schedule Last Service Odometer",
+   "fieldname": "previous_schedule_last_service_odometer",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Previous Schedule Last Service Job Card",
+   "fieldname": "previous_schedule_last_service_job_card",
+   "fieldtype": "Link",
+   "options": "Maintenance Job Card",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Previous Schedule Next Due Date",
+   "fieldname": "previous_schedule_next_due_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Previous Schedule Next Due Odometer",
+   "fieldname": "previous_schedule_next_due_odometer",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "label": "Applied Schedule Service Odometer",
+   "fieldname": "applied_schedule_last_service_odometer",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldtype": "Section Break",

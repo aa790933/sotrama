@@ -2,6 +2,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import add_days, getdate, today
 
 
 class VehicleDocument(Document):
@@ -10,11 +11,15 @@ class VehicleDocument(Document):
     def validate(self):
         if not self.document_type:
             frappe.throw(_("Document Type is required"))
-        if self.expiry_date and self.expiry_date < frappe.utils.today():
+
+        from sotrama.tp.settings import get_tp_setting
+
+        configured_days = get_tp_setting("vehicle_document_alert_days", 30)
+        alert_days = int(30 if configured_days is None else configured_days)
+        if self.expiry_date and getdate(self.expiry_date) < getdate(today()):
             self.status = "Expired"
         elif self.expiry_date:
-            from frappe.utils import add_days
-            if self.expiry_date <= add_days(frappe.utils.today(), 30):
+            if getdate(self.expiry_date) <= getdate(add_days(today(), alert_days)):
                 self.status = "Expiring Soon"
             else:
                 self.status = "Valid"

@@ -9,7 +9,9 @@ These run once per day via Frappe's scheduler to:
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, today
+from frappe.utils import add_days, getdate, today
+
+from sotrama.tp.settings import get_tp_setting
 
 # ---------------------------------------------------------------------------
 # Document expiry alerts
@@ -21,13 +23,15 @@ def check_document_expiries():
     Uses the Vehicle Document child table for expiry tracking.
     Creates a ToDo for each expiring document.
     """
-    alert_days = 30
+    configured_days = get_tp_setting("vehicle_document_alert_days", 30)
+    alert_days = int(30 if configured_days is None else configured_days)
     threshold = add_days(today(), alert_days)
 
     vehicles = frappe.get_all(
         "Vehicle",
         fields=["name", "license_plate", "vehicle_status"],
-        filters={"vehicle_status": ["!=", "Retired"]},
+        filters={"vehicle_status": ["not in", ["Retired", "Scrapped"]]},
+        limit_page_length=0,
     )
 
     for v in vehicles:
@@ -40,9 +44,14 @@ def check_document_expiries():
                 "expiry_date": ["<=", threshold],
             },
             fields=["document_type", "expiry_date", "status"],
+            limit_page_length=0,
         )
 
         for doc in docs:
+            document_status = (
+                "Expired" if doc["expiry_date"] and getdate(doc["expiry_date"]) < getdate(today())
+                else "Expiring Soon"
+            )
             # Avoid duplicate ToDos
             if not frappe.db.exists(
                 "ToDo",
@@ -63,12 +72,13 @@ def check_document_expiries():
                     doc["document_type"],
                     v["license_plate"] or v["name"],
                     doc["expiry_date"],
-                    doc["status"],
+                    document_status,
                 )
                 todo.reference_type = "Vehicle"
                 todo.reference_name = v["name"]
-                todo.priority = "High" if doc["status"] == "Expired" else "Medium"
-                todo.owner = "Administrator"
+                todo.priority = "High" if document_status == "Expired" else "Medium"
+                todo.allocated_to = _user_for_role("Fleet Manager")
+                todo.assigned_by = "Administrator"
                 todo.insert(ignore_permissions=True)
 
 
@@ -83,15 +93,22 @@ def check_maintenance_due():
     """
     schedules = frappe.get_all(
         "Maintenance Schedule",
-        filters={"status": "Active"},
+        filters={"status": "Active", "docstatus": 1},
         fields=[
             "name", "vehicle", "next_due_date", "next_due_odometer", "job_type"
         ],
+        limit_page_length=0,
     )
+
+    configured_days = get_tp_setting("maintenance_due_alert_days", 14)
+    alert_days = int(14 if configured_days is None else configured_days)
 
     for sched in schedules:
         due_reasons = []
-        if sched.next_due_date and sched.next_due_date <= add_days(today(), 14):
+        if (
+            sched.next_due_date
+            and getdate(sched.next_due_date) <= getdate(add_days(today(), alert_days))
+        ):
             due_reasons.append(_("due date {0}").format(sched.next_due_date))
 
         if sched.next_due_odometer:
@@ -126,7 +143,8 @@ def check_maintenance_due():
             todo.reference_type = "Maintenance Schedule"
             todo.reference_name = sched["name"]
             todo.priority = "Medium"
-            todo.owner = "Administrator"
+            todo.allocated_to = _user_for_role("Fleet Manager")
+            todo.assigned_by = "Administrator"
             todo.insert(ignore_permissions=True)
 
 
@@ -139,20 +157,41 @@ def check_driver_license_expiry():
     Scan all active Drivers for licenses expiring within 60 days.
     Creates a ToDo and blocks vehicle assignment if expired.
     """
-    alert_days = 60
+    configured_days = get_tp_setting("driver_document_alert_days", 60)
+    alert_days = int(60 if configured_days is None else configured_days)
     threshold = add_days(today(), alert_days)
+
+    regulated_transport_kinds = [
+        "Transport collectif de personnes",
+        "Transport scolaire",
+        "Transport de marchandises",
+        "Transport de matières dangereuses",
+        "Transport par taxi",
+    ]
+    regulated_driver_names = set(
+        frappe.get_all(
+            "Operational Task",
+            filters={
+                "docstatus": 1,
+                "task_type": "Transport",
+                "transport_kind": ["in", regulated_transport_kinds],
+            },
+            pluck="driver",
+            limit_page_length=0,
+        )
+    )
 
     drivers = frappe.get_all(
         "Driver",
-        filters={"status": "Active"},
-        fields=["name", "driver_name", "license_number", "license_expiry",
-                "medical_expiry", "safety_training_expiry"],
+        filters={"status": "Active", "docstatus": 1},
+        fields=["name", "driver_name", "license_number", "license_expiry", "safety_training_expiry"],
+        limit_page_length=0,
     )
 
     for d in drivers:
         if (
             d.license_expiry
-            and d.license_expiry <= threshold
+            and getdate(d.license_expiry) <= getdate(threshold)
             and not frappe.db.exists(
                 "ToDo",
                 {
@@ -171,36 +210,66 @@ def check_driver_license_expiry():
             todo.reference_type = "Driver"
             todo.reference_name = d["name"]
             todo.priority = "High"
-            todo.owner = "Administrator"
+            todo.allocated_to = _user_for_role("Fleet Manager")
+            todo.assigned_by = "Administrator"
             todo.insert(ignore_permissions=True)
 
-        if (
-            d.medical_expiry
-            and d.medical_expiry <= threshold
-            and not frappe.db.exists(
-                "ToDo",
-                {
-                    "reference_type": "Driver",
-                    "reference_name": d["name"],
-                    "title": ["like", "%Medical%"],
-                    "status": "Open",
+        compliance_due = False
+        if d.name in regulated_driver_names and frappe.db.exists("DocType", "Driver Compliance Record"):
+            compliance_records = frappe.get_all(
+                "Driver Compliance Record",
+                filters={
+                    "parent": d.name,
+                    "parenttype": "Driver",
+                    "parentfield": "compliance_records",
                 },
+                fields=["check_type", "test_date", "result", "valid_until"],
+                order_by="test_date desc, idx desc",
+                limit_page_length=0,
             )
+            latest_by_type = {}
+            for record in compliance_records:
+                latest_by_type.setdefault(record.check_type, record)
+
+            for check_type, expected in (
+                ("Medical Fitness Examination", "Fit"),
+                ("Drug Screening", "Negative"),
+            ):
+                record = latest_by_type.get(check_type)
+                if (
+                    not record
+                    or record.result != expected
+                    or not record.valid_until
+                    or getdate(record.valid_until) <= getdate(threshold)
+                ):
+                    compliance_due = True
+                    break
+
+        if compliance_due and not frappe.db.exists(
+            "ToDo",
+            {
+                "reference_type": "Driver",
+                "reference_name": d.name,
+                "title": "Restricted Driver Compliance Review",
+                "status": "Open",
+            },
         ):
             todo = frappe.new_doc("ToDo")
-            todo.title = _("Medical Certificate Expiring: {0}").format(d["driver_name"])
+            todo.title = _("Restricted Driver Compliance Review")
             todo.description = _(
-                "Driver {0} medical certificate expires on {1}."
-            ).format(d["driver_name"], d["medical_expiry"])
+                "Review the restricted professional-driver compliance records for {0}. "
+                "This task intentionally contains no medical result or date."
+            ).format(d.driver_name)
             todo.reference_type = "Driver"
-            todo.reference_name = d["name"]
-            todo.priority = "Medium"
-            todo.owner = "Administrator"
+            todo.reference_name = d.name
+            todo.priority = "High"
+            todo.allocated_to = _user_for_role("HR Manager")
+            todo.assigned_by = "Administrator"
             todo.insert(ignore_permissions=True)
 
         if (
             d.safety_training_expiry
-            and d.safety_training_expiry <= threshold
+            and getdate(d.safety_training_expiry) <= getdate(threshold)
             and not frappe.db.exists(
                 "ToDo",
                 {
@@ -219,5 +288,21 @@ def check_driver_license_expiry():
             todo.reference_type = "Driver"
             todo.reference_name = d["name"]
             todo.priority = "Medium"
-            todo.owner = "Administrator"
+            todo.allocated_to = _user_for_role("Fleet Manager")
+            todo.assigned_by = "Administrator"
             todo.insert(ignore_permissions=True)
+
+
+def _user_for_role(role_name):
+    """Return an enabled user for a role, falling back to Administrator."""
+    users = frappe.get_all(
+        "Has Role",
+        filters={"role": role_name, "parenttype": "User"},
+        pluck="parent",
+        order_by="parent asc",
+        limit_page_length=0,
+    )
+    for user in users:
+        if user != "Guest" and frappe.db.get_value("User", user, "enabled"):
+            return user
+    return "Administrator"

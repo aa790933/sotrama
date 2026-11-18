@@ -217,6 +217,7 @@
    "fieldname": "primary_driver",
    "fieldtype": "Link",
    "options": "Driver",
+   "allow_on_submit": 1,
    "in_list_view": 1,
    "description": "Assigned primary driver"
   },

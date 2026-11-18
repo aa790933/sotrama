@@ -1,0 +1,201 @@
+{
+ "doctype": "DocType",
+ "name": "TP Settings",
+ "module": "TP",
+ "issingle": 1,
+ "istable": 0,
+ "is_submittable": 0,
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_company_defaults",
+   "label": "Company & Defaults"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_company_defaults",
+   "label": "Organization Defaults",
+   "description": "Fallback defaults for the primary company. For multiple legal entities, define one row per company in the Company Defaults table below. ERPNext Company, Warehouse and Cost Center records remain the source of truth."
+  },
+  {
+   "label": "Default Company",
+   "fieldname": "default_company",
+   "fieldtype": "Link",
+   "options": "Company"
+  },
+  {
+   "label": "Default Company Classification",
+   "fieldname": "default_company_classification",
+   "fieldtype": "Link",
+   "options": "Company Classification"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_default_organization"
+  },
+  {
+   "label": "Default Department",
+   "fieldname": "default_department",
+   "fieldtype": "Link",
+   "options": "Department"
+  },
+  {
+   "label": "Default Cost Center",
+   "fieldname": "default_cost_center",
+   "fieldtype": "Link",
+   "options": "Cost Center"
+  },
+  {
+   "label": "Default Parts Warehouse",
+   "fieldname": "default_parts_warehouse",
+   "fieldtype": "Link",
+   "options": "Warehouse",
+   "description": "Source Warehouse for maintenance issues when a vehicle has no dedicated Parts Warehouse."
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_company_matrix",
+   "label": "Company Defaults"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_company_matrix",
+   "label": "Per-Company Configuration",
+   "description": "Add one row for each legal entity. New Vehicles and Maintenance Job Cards resolve their classification, department, cost center and parts warehouse from the matching row; tasks inherit the Vehicle company."
+  },
+  {
+   "label": "Company Defaults",
+   "fieldname": "company_defaults",
+   "fieldtype": "Table",
+   "options": "TP Company Defaults"
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_driver_compliance",
+   "label": "Drivers & Compliance"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_employee_policy",
+   "label": "Frappe HR Employee Integration"
+  },
+  {
+   "label": "Require Employee Link",
+   "fieldname": "require_employee_link",
+   "fieldtype": "Check",
+   "permlevel": 1,
+   "default": "0",
+   "description": "Require every Driver record to reference an Employee from ERPNext/Frappe HR."
+  },
+  {
+   "label": "Require Active Employee for Active Driver",
+   "fieldname": "require_active_employee_for_active_driver",
+   "fieldtype": "Check",
+   "permlevel": 1,
+   "default": "1"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_driver_policy"
+  },
+  {
+   "label": "Block Assignment with Expired Licence",
+   "fieldname": "block_expired_driver_license",
+   "fieldtype": "Check",
+   "default": "1"
+  },
+  {
+   "label": "Block Assignment with Expired Medical Certificate",
+   "fieldname": "block_expired_medical_certificate",
+   "fieldtype": "Check",
+   "permlevel": 1,
+   "default": "0",
+   "description": "Optional company policy for roles/activities requiring a current medical fitness certificate."
+  },
+  {
+   "label": "Block Assignment with Expired Safety Training",
+   "fieldname": "block_expired_safety_training",
+   "fieldtype": "Check",
+   "permlevel": 1,
+   "default": "0",
+   "description": "Optional company policy for roles/activities requiring current safety training."
+  },
+  {
+   "label": "Require Brevet Professionnel for Regulated Transport",
+   "fieldname": "require_professional_certificate_for_transport",
+   "fieldtype": "Check",
+   "permlevel": 1,
+   "default": "1",
+   "description": "Enforce the professional certificate, medical fitness and negative drug-screening evidence for the five road-transport activities in Algerian Law 26-09, Articles 79–80."
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_alert_windows",
+   "label": "Compliance Reminder Windows"
+  },
+  {
+   "label": "Driver Document Alert Days",
+   "fieldname": "driver_document_alert_days",
+   "fieldtype": "Int",
+   "default": "60"
+  },
+  {
+   "label": "Vehicle Document Alert Days",
+   "fieldname": "vehicle_document_alert_days",
+   "fieldtype": "Int",
+   "default": "30"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_alert_windows"
+  },
+  {
+   "label": "Maintenance Due Alert Days",
+   "fieldname": "maintenance_due_alert_days",
+   "fieldtype": "Int",
+   "default": "14"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "print": 1,
+   "email": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "HR Manager",
+   "read": 1
+  },
+  {
+   "role": "HR Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "Workshop",
+   "read": 1
+  }
+ ],
+ "icon": "settings-2",
+ "description": "Central settings for Sotrama public-works fleet operations."
+}
