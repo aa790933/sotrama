@@ -120,7 +120,7 @@ Custom fields added via the Desk UI (Customize Form) live in the database. On `b
 - Python 3.14 (matching the Frappe v16 runtime requirement)
 - Node.js 24 for the v16 asset toolchain
 - This app does not currently implement Algerian payroll statutory calculations.
-- Sotrama application version: 1.2.0
+- Sotrama application version: 1.2.1
 
 ## Installation
 
@@ -149,6 +149,7 @@ bench --site your-site migrate
 - `create_custom_fields()` is called with the Frappe 16 API; lifecycle hooks are registered as import paths
 - `fixtures` in `hooks.py` exports them as JSON for version control and clean reinstall
 - `after_migrate()` re-applies fields after any schema migration
+- A legacy `custom_capital_social` Data field is upgraded to Currency before field synchronization, avoiding Frappe's direct fieldtype-change validation error
 - `before_uninstall()` removes fields cleanly — no orphaned metadata
 - All Company localization fields are re-applied by migration and are named in a single code-owned schema definition
 - TP operational policies are centralized in `TP Settings`; company-specific defaults are in the `TP Company Defaults` child table

@@ -11,13 +11,14 @@ NIS and RC fields are created by the app installation/migration hooks instead.
 
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-from sotrama.hooks import get_custom_fields
+from sotrama.hooks import get_custom_fields, migrate_legacy_company_capital_field
 
 
 def setup(company, is_setup=True):
     """
     Entry point for a future, explicitly wired Algeria regional setup.
     """
+    migrate_legacy_company_capital_field()
     create_custom_fields(get_custom_fields())
 
     # Company-specific defaults are intentionally not changed here; they

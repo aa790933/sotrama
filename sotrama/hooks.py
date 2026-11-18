@@ -144,6 +144,41 @@ def get_custom_fields():
     }
 
 
+def migrate_legacy_company_capital_field():
+    """Upgrade a legacy Data version of Capital Social to Currency.
+
+    Frappe rejects changing a Custom Field's type through
+    ``create_custom_fields``. Update this field's metadata first, then rebuild
+    the Company schema so the physical column matches. This is idempotent and
+    leaves an already-correct Currency field untouched.
+    """
+    existing = frappe.db.get_value(
+        "Custom Field",
+        {"dt": "Company", "fieldname": "custom_capital_social"},
+        ["name", "fieldtype"],
+        as_dict=True,
+    )
+    if not existing or existing.fieldtype == "Currency":
+        return
+
+    if existing.fieldtype != "Data":
+        frappe.throw(
+            frappe._(
+                "Cannot migrate Company Capital Social from {0} to Currency. "
+                "Expected the legacy Data field."
+            ).format(existing.fieldtype)
+        )
+
+    frappe.db.set_value(
+        "Custom Field",
+        existing.name,
+        {"fieldtype": "Currency", "options": "default_currency"},
+        update_modified=False,
+    )
+    frappe.clear_cache(doctype="Company")
+    frappe.db.updatedb("Company")
+
+
 # ---------------------------------------------------------------------------
 # Setup — fields are installed and kept in sync through app lifecycle hooks.
 # ---------------------------------------------------------------------------
@@ -155,6 +190,7 @@ def get_custom_fields():
 def install_company_fields():
     """Create Sotrama's Company fields after the app is installed."""
     ensure_roles()
+    migrate_legacy_company_capital_field()
     create_custom_fields(get_custom_fields())
 
 
@@ -180,6 +216,7 @@ def uninstall_company_fields():
 def sync_company_fields():
     """Idempotently create or update the Company fields after migrations."""
     ensure_roles()
+    migrate_legacy_company_capital_field()
     create_custom_fields(get_custom_fields())
 
 

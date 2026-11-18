@@ -368,6 +368,59 @@ class TestSotramaHooks(unittest.TestCase):
 class TestSotramaCustomFields(unittest.TestCase):
     """Test that Algerian company fields exist on the standard Company DocType."""
 
+    def test_legacy_capital_social_data_field_is_upgraded_before_sync(self):
+        from sotrama import hooks
+
+        legacy_field = frappe._dict(
+            {"name": "Company-custom_capital_social", "fieldtype": "Data"}
+        )
+        with (
+            patch.object(hooks.frappe.db, "get_value", return_value=legacy_field),
+            patch.object(hooks.frappe.db, "set_value") as set_value,
+            patch.object(hooks.frappe.db, "updatedb") as updatedb,
+            patch.object(hooks.frappe, "clear_cache") as clear_cache,
+        ):
+            hooks.migrate_legacy_company_capital_field()
+
+        set_value.assert_called_once_with(
+            "Custom Field",
+            "Company-custom_capital_social",
+            {"fieldtype": "Currency", "options": "default_currency"},
+            update_modified=False,
+        )
+        clear_cache.assert_called_once_with(doctype="Company")
+        updatedb.assert_called_once_with("Company")
+
+    def test_currency_capital_social_field_does_not_trigger_schema_migration(self):
+        from sotrama import hooks
+
+        current_field = frappe._dict(
+            {"name": "Company-custom_capital_social", "fieldtype": "Currency"}
+        )
+        with (
+            patch.object(hooks.frappe.db, "get_value", return_value=current_field),
+            patch.object(hooks.frappe.db, "set_value") as set_value,
+            patch.object(hooks.frappe.db, "updatedb") as updatedb,
+            patch.object(hooks.frappe, "clear_cache") as clear_cache,
+        ):
+            hooks.migrate_legacy_company_capital_field()
+
+        set_value.assert_not_called()
+        clear_cache.assert_not_called()
+        updatedb.assert_not_called()
+
+    def test_unexpected_capital_social_fieldtype_fails_with_clear_error(self):
+        from sotrama import hooks
+
+        unexpected_field = frappe._dict(
+            {"name": "Company-custom_capital_social", "fieldtype": "Link"}
+        )
+        with (
+            patch.object(hooks.frappe.db, "get_value", return_value=unexpected_field),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            hooks.migrate_legacy_company_capital_field()
+
     def test_custom_fields_exist(self):
         """Verify the Algeria localization fields exist on Company metadata."""
         company_meta = frappe.get_meta("Company", cached=False)
