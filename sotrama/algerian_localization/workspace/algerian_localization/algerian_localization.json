@@ -2,6 +2,7 @@
  "app": "sotrama",
  "doctype": "Workspace",
  "label": "Algerian Localization",
+ "name": "Algerian Localization",
  "title": "Algerian Localization",
  "module": "Algerian Localization",
  "icon": "landmark",

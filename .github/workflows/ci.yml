@@ -38,7 +38,9 @@ jobs:
 
           files = sorted(Path("sotrama").rglob("*.json"))
           for path in files:
-              json.loads(path.read_text(encoding="utf-8"))
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if isinstance(data, dict) and "doctype" in data:
+                  assert data.get("name"), f"Frappe record JSON is missing its name: {path}"
           print(f"Validated {len(files)} JSON files")
 
           app_path = Path("sotrama")
@@ -66,6 +68,8 @@ jobs:
               names = set(wheel.namelist())
               assert "sotrama/hooks.py" in names
               assert "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json" in names
+              assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
+              assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
               assert not any(name.endswith("/package.json") for name in names)
           print(f"Verified {wheels[0]}")
           PY

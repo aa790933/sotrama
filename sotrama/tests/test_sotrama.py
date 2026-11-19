@@ -5,6 +5,7 @@ Run with: bench --site your-site run-tests --app sotrama
 """
 
 
+import json
 import unittest
 import uuid
 from pathlib import Path
@@ -44,6 +45,23 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(
             (module_path / "doctype" / "sotrama_settings" / "sotrama_settings.json").is_file()
         )
+
+    def test_standard_workspace_exports_have_importable_names(self):
+        app_path = Path(frappe.get_app_path("sotrama")).parent
+        workspace_files = {
+            app_path / "sotrama" / "workspace" / "sotrama" / "sotrama.json": "Sotrama",
+            app_path
+            / "algerian_localization"
+            / "workspace"
+            / "algerian_localization"
+            / "algerian_localization.json": "Algerian Localization",
+        }
+
+        for path, expected_name in workspace_files.items():
+            workspace = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(workspace.get("doctype"), "Workspace")
+            self.assertTrue(workspace.get("name"), f"Missing import name in {path}")
+            self.assertEqual(workspace["name"], expected_name)
 
     def test_role_profiles_use_frappe_importable_doctype_sync(self):
         importable_doctypes = frappe.get_hooks("importable_doctypes", app_name="sotrama")

@@ -2,6 +2,7 @@
  "app": "sotrama",
  "doctype": "Workspace",
  "label": "Sotrama",
+ "name": "Sotrama",
  "title": "Sotrama",
  "module": "Sotrama",
  "icon": "building-2",

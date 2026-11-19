@@ -140,7 +140,7 @@ to show installed apps alongside ERPNext and Frappe HR.
 - Python `>=3.14,<3.15`
 - Node.js 24 is required by the Frappe v16 Bench asset toolchain; Sotrama
   itself currently has no Node.js package dependencies or bundle build.
-- Sotrama version: **1.3.1**
+- Sotrama version: **1.3.2**
 
 The minimum version reflects the v16.60 platform baseline. It does not mean
 that an existing site has been upgraded: verify the installed versions with
