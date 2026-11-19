@@ -1,4 +1,34 @@
-// Maintenance Job Card — client-side calculations
+// Maintenance Job Card — clear child-row actions and live cost summaries.
+(() => {
+    const updateTotals = (frm) => {
+        const amount = (value) => frappe.utils.flt(value);
+        const totalParts = (frm.doc.parts_used || []).reduce(
+            (total, row) => total + amount(row.amount),
+            0,
+        );
+        const totalLabour = (frm.doc.labour_lines || []).reduce(
+            (total, row) => total + amount(row.amount),
+            0,
+        );
+        const totalOther = (frm.doc.other_costs || []).reduce(
+            (total, row) => total + amount(row.amount),
+            0,
+        );
+
+        return frm.set_value({
+            total_parts_cost: totalParts,
+            total_labour_cost: totalLabour,
+            total_other_cost: totalOther,
+            total_cost: totalParts + totalLabour + totalOther,
+        });
+    };
+
+    const updateRowAmount = (frm, cdt, cdn, quantityField) => {
+        const row = locals[cdt][cdn];
+        const lineAmount = frappe.utils.flt(row[quantityField]) * frappe.utils.flt(row.rate);
+        return frappe.model.set_value(cdt, cdn, 'amount', lineAmount).then(() => updateTotals(frm));
+    };
+
 frappe.ui.form.on('Maintenance Job Card', {
     setup(frm) {
         frm.set_query('vehicle', () => ({
@@ -12,6 +42,10 @@ frappe.ui.form.on('Maintenance Job Card', {
             ),
         }));
         frm.set_query('item', 'parts_used', () => ({ filters: { is_stock_item: 1, disabled: 0 } }));
+        frm.set_query('mechanic', 'labour_lines', () => ({
+            query: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.search_workshop_employees',
+            filters: { company: frm.doc.company || '' },
+        }));
     },
 
     vehicle(frm) {
@@ -36,6 +70,34 @@ frappe.ui.form.on('Maintenance Job Card', {
     },
 
     refresh: function(frm) {
+        const canEdit = (frm.perm || []).some((permission) => permission.write || permission.create);
+        if (frm.doc.docstatus === 0 && canEdit) {
+            const addRow = (fieldname, description) => {
+                frm.add_child(fieldname);
+                frm.refresh_field(fieldname);
+                frappe.show_alert({
+                    message: __('A new row was added. {0}', [description]),
+                    indicator: 'blue',
+                });
+            };
+
+            frm.add_custom_button(
+                __('Add Spare Part (Item)'),
+                () => addRow('parts_used', __('Select a stock Item and enter its quantity and rate.')),
+                __('Add Entry'),
+            );
+            frm.add_custom_button(
+                __('Add Mechanic (Employee)'),
+                () => addRow('labour_lines', __('Select an active Employee, then enter hours and hourly rate.')),
+                __('Add Entry'),
+            );
+            frm.add_custom_button(
+                __('Add Other Cost'),
+                () => addRow('other_costs', __('Enter a cost description, category and amount.')),
+                __('Add Entry'),
+            );
+        }
+
         // Auto-set odometer before from vehicle
         if (frm.is_new() && frm.doc.vehicle && !frm.doc.odometer_before) {
             frappe.call({
@@ -89,6 +151,10 @@ frappe.ui.form.on('Maintenance Job Card', {
 });
 
 frappe.ui.form.on('Job Card Part', {
+    // Frappe 16 Grid emits <table_field>_delete on the child DocType.
+    parts_used_delete(frm) {
+        return updateTotals(frm);
+    },
     item(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (!row.item) return;
@@ -102,18 +168,47 @@ frappe.ui.form.on('Job Card Part', {
                 ]);
             });
     },
+    quantity(frm, cdt, cdn) {
+        return updateRowAmount(frm, cdt, cdn, 'quantity');
+    },
+    rate(frm, cdt, cdn) {
+        return updateRowAmount(frm, cdt, cdn, 'quantity');
+    },
 });
 
 frappe.ui.form.on('Job Card Labour', {
+    labour_lines_delete(frm) {
+        return updateTotals(frm);
+    },
     mechanic(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
-        if (!row.mechanic) return;
+        if (!row.mechanic) {
+            return frappe.model.set_value(cdt, cdn, 'mechanic_name', '');
+        }
 
-        return frappe.db.get_value('Employee', row.mechanic, 'employee_name')
-            .then(({ message }) => {
-                if (message && message.employee_name) {
-                    return frappe.model.set_value(cdt, cdn, 'mechanic_name', message.employee_name);
-                }
-            });
+        return frappe.call({
+            method: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.get_workshop_employee_name',
+            args: { employee: row.mechanic, company: frm.doc.company },
+        }).then(({ message }) => {
+            if (message) {
+                return frappe.model.set_value(cdt, cdn, 'mechanic_name', message);
+            }
+        });
+    },
+    hours(frm, cdt, cdn) {
+        return updateRowAmount(frm, cdt, cdn, 'hours');
+    },
+    rate(frm, cdt, cdn) {
+        return updateRowAmount(frm, cdt, cdn, 'hours');
     },
 });
+
+frappe.ui.form.on('Job Card Other Cost', {
+    other_costs_delete(frm) {
+        return updateTotals(frm);
+    },
+    amount(frm) {
+        return updateTotals(frm);
+    },
+});
+})();

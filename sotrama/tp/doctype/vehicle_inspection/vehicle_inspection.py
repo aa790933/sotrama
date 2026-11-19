@@ -7,7 +7,7 @@ class VehicleInspection(Document):
     """
     Vehicle Inspection — structured checklist for pre-use, periodic,
     and post-incident inspections. Each inspection item has a status
-    (Okay/Defective), remarks, and optional photo proof.
+    (Not Checked/Okay/Defective), remarks, and optional photo proof.
     """
 
     def validate(self):
@@ -38,10 +38,15 @@ class VehicleInspection(Document):
             self._restore_vehicle_status()
 
     def before_submit(self):
+        self._validate_items(require_completed=True)
+        self._calculate_defects()
+        self._validate_follow_up_result()
         if self.vehicle:
             from sotrama.tp.validation import get_vehicle_status_before_out_of_service
 
-            self.previous_vehicle_status = get_vehicle_status_before_out_of_service(self.vehicle)
+            self.previous_vehicle_status = get_vehicle_status_before_out_of_service(
+                self.vehicle
+            )
 
     def on_cancel(self):
         if self._reopen_followed_up_inspection():
@@ -56,13 +61,36 @@ class VehicleInspection(Document):
 
         previous = frappe.get_doc("Vehicle Inspection", self.follow_up_of)
         if previous.docstatus != 1 or not previous.has_critical_defect:
-            frappe.throw(_("Select a submitted inspection with an unresolved safety-critical defect."))
+            frappe.throw(
+                _(
+                    "Select a submitted inspection with an unresolved safety-critical defect."
+                )
+            )
         if previous.vehicle != self.vehicle:
-            frappe.throw(_("Follow-up Inspection and original Inspection must use the same Vehicle."))
-        if previous.critical_defect_cleared_by and previous.critical_defect_cleared_by != self.name:
-            frappe.throw(_("The selected critical inspection has already been cleared by another follow-up."))
-        if self.has_critical_defect or self.overall_status != "Pass":
-            frappe.throw(_("A follow-up can clear a critical defect only when its overall result is Pass and it has no critical defects."))
+            frappe.throw(
+                _(
+                    "Follow-up Inspection and original Inspection must use the same Vehicle."
+                )
+            )
+        if (
+            previous.critical_defect_cleared_by
+            and previous.critical_defect_cleared_by != self.name
+        ):
+            frappe.throw(
+                _(
+                    "The selected critical inspection has already been cleared by another follow-up."
+                )
+            )
+
+    def _validate_follow_up_result(self):
+        if self.follow_up_of and (
+            self.has_critical_defect or self.overall_status != "Pass"
+        ):
+            frappe.throw(
+                _(
+                    "A follow-up can clear a critical defect only when its overall result is Pass and it has no critical defects."
+                )
+            )
 
     def _clear_followed_up_inspection(self):
         if self.follow_up_of and not self.has_critical_defect:
@@ -74,7 +102,9 @@ class VehicleInspection(Document):
             )
 
     def _reopen_followed_up_inspection(self):
-        if not self.follow_up_of or not frappe.db.exists("Vehicle Inspection", self.follow_up_of):
+        if not self.follow_up_of or not frappe.db.exists(
+            "Vehicle Inspection", self.follow_up_of
+        ):
             return False
 
         previous = frappe.get_doc("Vehicle Inspection", self.follow_up_of)
@@ -84,35 +114,82 @@ class VehicleInspection(Document):
             and previous.critical_defect_cleared_by == self.name
         ):
             previous.db_set("critical_defect_cleared_by", None)
-            frappe.db.set_value("Vehicle", self.vehicle, "vehicle_status", "Out of Service")
+            frappe.db.set_value(
+                "Vehicle", self.vehicle, "vehicle_status", "Out of Service"
+            )
             return True
         return False
 
-    def _validate_items(self):
+    def _validate_items(self, require_completed=False):
+        if require_completed and not self.inspection_items:
+            frappe.throw(
+                _("Add at least one inspection checklist item before submitting.")
+            )
+
         for row in self.inspection_items or []:
-            if row.status == "Defective" and not row.remarks:
+            if row.status not in ("Okay", "Defective"):
+                if require_completed:
+                    frappe.throw(
+                        _("Complete the inspection result for: {0}.").format(
+                            row.category
+                        )
+                    )
+                continue
+            if (
+                require_completed
+                and row.status == "Defective"
+                and not (row.remarks or "").strip()
+            ):
                 frappe.throw(
                     _("Remarks required for defective item: {0}").format(row.category)
                 )
 
     def _calculate_defects(self):
         self.total_defects = sum(
-            1 for row in (self.inspection_items or [])
-            if row.status == "Defective"
+            1 for row in (self.inspection_items or []) if row.status == "Defective"
         )
         critical_terms = (
-            "mechanical", "brak", "steer", "tyre", "tire", "chassis",
-            "technical inspection", "frein", "direction", "pneumatique",
-            "moteur", "hydraulique", "structure",
+            "mechanical",
+            "brak",
+            "steer",
+            "tyre",
+            "tire",
+            "chassis",
+            "technical inspection",
+            "frein",
+            "direction",
+            "pneumatique",
+            "moteur",
+            "hydraulique",
+            "structure",
         )
-        self.has_critical_defect = int(any(
-            row.status == "Defective"
-            and (
-                row.is_safety_critical
-                or any(term in (row.category or "").casefold() for term in critical_terms)
+        self.has_critical_defect = int(
+            any(
+                row.status == "Defective"
+                and (
+                    row.is_safety_critical
+                    or any(
+                        term in (row.category or "").casefold()
+                        for term in critical_terms
+                    )
+                )
+                for row in (self.inspection_items or [])
             )
-            for row in (self.inspection_items or [])
-        ))
+        )
+        checks_complete = bool(self.inspection_items) and all(
+            row.status in ("Okay", "Defective")
+            and (row.status != "Defective" or (row.remarks or "").strip())
+            for row in self.inspection_items
+        )
+        self.overall_status = None
+        if checks_complete:
+            self.overall_status = (
+                "Fail"
+                if self.has_critical_defect
+                else "Conditional Pass"
+                if self.total_defects
+                else "Pass"
+            )
 
     def _create_defect_issues(self):
         """For each defective item, auto-create an ERPNext Issue."""

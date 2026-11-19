@@ -92,7 +92,9 @@
    "fieldname": "overall_status",
    "fieldtype": "Select",
    "options": "\nPass\nFail\nConditional Pass",
-   "in_list_view": 1
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Calculated automatically: Pass when all checks are Okay, Conditional Pass for non-critical defects, and Fail for safety-critical defects."
   },
   {
    "label": "Total Defects",
@@ -112,11 +114,12 @@
    "fieldtype": "Text"
   },
   {
-   "label": "Inspection Items",
+   "label": "Inspection Checklist Items",
    "fieldname": "inspection_items",
    "fieldtype": "Table",
    "options": "Inspection Item",
-   "reqd": 1
+   "reqd": 1,
+   "description": "The standard checklist is added automatically to new inspections. Use Add Inspection Check for an additional vehicle-specific check."
   },
   {
    "label": "Previous Vehicle Status",

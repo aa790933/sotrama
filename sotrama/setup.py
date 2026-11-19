@@ -1,6 +1,18 @@
 """Non-invasive setup helpers for Sotrama and its ERPNext integration."""
 
+import unicodedata
+
 from sotrama.designations import PUBLIC_WORKS_DESIGNATIONS
+
+
+def _designation_name_key(value):
+    """Normalize names consistently with case/accent-insensitive DB collations."""
+    normalized = unicodedata.normalize("NFKD", " ".join((value or "").split()))
+    return "".join(
+        character
+        for character in normalized.casefold()
+        if not unicodedata.combining(character)
+    )
 
 
 def ensure_default_masters():
@@ -55,6 +67,7 @@ def ensure_public_works_designations():
     or deleted; HR users continue managing them through the standard HRMS UI.
     """
     import frappe
+    from frappe.exceptions import DuplicateEntryError
 
     if not frappe.db.exists("DocType", "Designation"):
         frappe.throw(
@@ -78,24 +91,36 @@ def ensure_public_works_designations():
             )
         )
 
-    designation_names = list(PUBLIC_WORKS_DESIGNATIONS)
-    existing_names = set(
-        frappe.get_all(
+    existing_names = {
+        _designation_name_key(name)
+        for name in frappe.get_all(
             "Designation",
-            filters={"designation_name": ["in", designation_names]},
             pluck="designation_name",
+            limit_page_length=0,
         )
-    )
+    }
 
     created = []
     for designation_name in PUBLIC_WORKS_DESIGNATIONS:
-        if designation_name in existing_names:
+        name_key = _designation_name_key(designation_name)
+        if name_key in existing_names:
             continue
 
         designation = frappe.new_doc("Designation")
         designation.designation_name = designation_name
-        designation.insert()
+        try:
+            designation.insert()
+        except DuplicateEntryError:
+            # A concurrent seed or a database collation-equivalent spelling
+            # may have created the same unique designation after the query.
+            if not frappe.db.exists(
+                "Designation", {"designation_name": designation_name}
+            ):
+                raise
+            existing_names.add(name_key)
+            continue
         created.append(designation.name)
+        existing_names.add(name_key)
 
     return created
 

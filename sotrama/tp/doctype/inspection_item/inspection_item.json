@@ -30,9 +30,11 @@
    "label": "Status",
    "fieldname": "status",
    "fieldtype": "Select",
-   "options": "\nOkay\nDefective",
-   "default": "Okay",
-   "in_list_view": 1
+   "options": "\nNot Checked\nOkay\nDefective",
+   "default": "Not Checked",
+   "in_list_view": 1,
+   "reqd": 1,
+   "description": "Keep Not Checked until the inspector has physically verified this item. Every item must be marked Okay or Defective before submission."
   },
   {
    "label": "Safety Critical",

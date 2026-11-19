@@ -1,6 +1,10 @@
 // Driver form integration with the canonical ERPNext / Frappe HR Employee.
 frappe.ui.form.on('Driver', {
     setup(frm) {
+        const canManageEmployeeLink =
+            frappe.user.has_role('System Manager') || frappe.user.has_role('HR Manager');
+        frm.set_df_property('employee', 'read_only', !canManageEmployeeLink);
+
         frm.set_query('employee', () => {
             const filters = {};
             if (!frm.doc.status || frm.doc.status === 'Active') {

@@ -37,6 +37,19 @@ class Driver(Document):
         previous = self.get_doc_before_save()
         employee_link_changed = not previous or previous.employee != self.employee
 
+        if (
+            previous
+            and previous.employee
+            and not self.employee
+            and not frappe.has_permission("Employee", "read")
+        ):
+            frappe.throw(
+                _(
+                    "Only HR Manager or System Manager can remove the linked HRMS Employee."
+                ),
+                frappe.PermissionError,
+            )
+
         if not self.employee:
             self.company = self.company or get_tp_setting("default_company")
             if get_tp_setting("require_employee_link", 0):
@@ -65,24 +78,31 @@ class Driver(Document):
             and employee_data.status != "Active"
         ):
             frappe.throw(
-                _("This Driver cannot remain Active under the current employment policy. Ask an HR Manager to review the linked Employee record.")
-            )
-
-        if self.company and employee_data.company and self.company != employee_data.company:
-            frappe.throw(
-                _("Driver Company must match the linked Employee's Company ({0}).").format(
-                    employee_data.company
+                _(
+                    "This Driver cannot remain Active under the current employment policy. Ask an HR Manager to review the linked Employee record."
                 )
             )
 
-        self.company = self.company or employee_data.company or get_tp_setting("default_company")
+        if (
+            self.company
+            and employee_data.company
+            and self.company != employee_data.company
+        ):
+            frappe.throw(
+                _(
+                    "Driver Company must match the linked Employee's Company ({0})."
+                ).format(employee_data.company)
+            )
+
+        self.company = (
+            self.company or employee_data.company or get_tp_setting("default_company")
+        )
 
         if employee_link_changed:
             self.driver_name = self.driver_name or employee.employee_name
             self.phone = self.phone or employee.cell_number
             self.email = self.email or employee.company_email or employee.personal_email
             self.hire_date = self.hire_date or employee.date_of_joining
-
 
         duplicate = frappe.db.exists(
             "Driver",
@@ -113,7 +133,9 @@ def update_driver_status(name, status):
         return {"status": status}
     if status not in transitions.get(driver.status, set()):
         frappe.throw(
-            _("Driver status cannot change from {0} to {1}.").format(driver.status, status)
+            _("Driver status cannot change from {0} to {1}.").format(
+                driver.status, status
+            )
         )
 
     previous_status = driver.status

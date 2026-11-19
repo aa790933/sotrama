@@ -15,6 +15,7 @@ class MaintenanceJobCard(Document):
         self._validate_dates()
         self._set_company_and_cost_center()
         self._validate_odometer()
+        self._validate_labour_lines()
         self._calculate_totals()
         self._validate_maintenance_schedule()
 
@@ -29,7 +30,9 @@ class MaintenanceJobCard(Document):
 
     def before_submit(self):
         if self.status != "Completed":
-            frappe.throw(_("Set the Maintenance Job Card status to Completed before submitting."))
+            frappe.throw(
+                _("Set the Maintenance Job Card status to Completed before submitting.")
+            )
         self._check_parts_available()
 
     # ------------------------------------------------------------------
@@ -45,13 +48,21 @@ class MaintenanceJobCard(Document):
     def _set_company_and_cost_center(self):
         from sotrama.tp.settings import get_tp_company_setting, get_tp_setting
 
-        vehicle = frappe.db.get_value(
-            "Vehicle", self.vehicle, ["company", "cost_center"], as_dict=True
-        ) if self.vehicle else None
+        vehicle = (
+            frappe.db.get_value(
+                "Vehicle", self.vehicle, ["company", "cost_center"], as_dict=True
+            )
+            if self.vehicle
+            else None
+        )
         vehicle_company = vehicle.company if vehicle else None
         if self.company and vehicle_company and self.company != vehicle_company:
-            frappe.throw(_("Maintenance Job Card Company must match its Vehicle Company."))
-        self.company = vehicle_company or self.company or get_tp_setting("default_company")
+            frappe.throw(
+                _("Maintenance Job Card Company must match its Vehicle Company.")
+            )
+        self.company = (
+            vehicle_company or self.company or get_tp_setting("default_company")
+        )
         self.cost_center = (
             self.cost_center
             or (vehicle.cost_center if vehicle else None)
@@ -70,7 +81,11 @@ class MaintenanceJobCard(Document):
                 )
 
     def _validate_maintenance_schedule(self):
-        if self.job_nature != "Scheduled Service" or not self.vehicle or not self.job_type:
+        if (
+            self.job_nature != "Scheduled Service"
+            or not self.vehicle
+            or not self.job_type
+        ):
             self.maintenance_schedule = None
             return
 
@@ -96,7 +111,9 @@ class MaintenanceJobCard(Document):
                 )
             ):
                 frappe.throw(
-                    _("Select an active Maintenance Schedule matching this Vehicle and Job Type.")
+                    _(
+                        "Select an active Maintenance Schedule matching this Vehicle and Job Type."
+                    )
                 )
             return
 
@@ -109,7 +126,9 @@ class MaintenanceJobCard(Document):
         )
         if len(schedules) > 1:
             frappe.throw(
-                _("More than one active schedule exists for this Vehicle and Job Type. Select the schedule to complete.")
+                _(
+                    "More than one active schedule exists for this Vehicle and Job Type. Select the schedule to complete."
+                )
             )
         if schedules:
             self.maintenance_schedule = schedules[0].name
@@ -121,20 +140,56 @@ class MaintenanceJobCard(Document):
             and self.odometer_after < self.odometer_before
         ):
             frappe.throw(
-                _("Odometer After ({0}) cannot be less than Odometer Before ({1})").format(
-                    self.odometer_after, self.odometer_before
-                )
+                _(
+                    "Odometer After ({0}) cannot be less than Odometer Before ({1})"
+                ).format(self.odometer_after, self.odometer_before)
             )
         if self.vehicle and self.odometer_after is not None:
-            current_odometer = frappe.db.get_value(
-                "Vehicle", self.vehicle, "current_odometer"
-            ) or 0
+            current_odometer = (
+                frappe.db.get_value("Vehicle", self.vehicle, "current_odometer") or 0
+            )
             if self.odometer_after < current_odometer:
                 frappe.throw(
-                    _("Odometer After ({0}) cannot be lower than the vehicle's current reading ({1}).").format(
-                        self.odometer_after, current_odometer
+                    _(
+                        "Odometer After ({0}) cannot be lower than the vehicle's current reading ({1})."
+                    ).format(self.odometer_after, current_odometer)
+                )
+
+    def _validate_labour_lines(self):
+        """Keep workshop labour linked to Employees in the work order's Company."""
+        for row in self.labour_lines or []:
+            if row.hours is not None and row.hours <= 0:
+                frappe.throw(
+                    _("Labour hours must be greater than zero on row {0}.").format(
+                        row.idx
                     )
                 )
+            if row.rate is not None and row.rate < 0:
+                frappe.throw(
+                    _("Labour rate cannot be negative on row {0}.").format(row.idx)
+                )
+            if not row.mechanic:
+                continue
+
+            employee = frappe.db.get_value(
+                "Employee",
+                row.mechanic,
+                ["company", "employee_name"],
+                as_dict=True,
+            )
+            if not employee:
+                frappe.throw(
+                    _("Employee {0} on labour row {1} does not exist.").format(
+                        row.mechanic, row.idx
+                    )
+                )
+            if self.company and employee.company and employee.company != self.company:
+                frappe.throw(
+                    _(
+                        "Employee {0} on labour row {1} belongs to Company {2}, not {3}."
+                    ).format(row.mechanic, row.idx, employee.company, self.company)
+                )
+            row.mechanic_name = employee.employee_name
 
     def _calculate_totals(self):
         total_parts = 0
@@ -159,11 +214,18 @@ class MaintenanceJobCard(Document):
     def _check_parts_available(self):
         for row in self.parts_used or []:
             if not row.item or not frappe.db.exists("Item", row.item):
-                frappe.throw(_("Select a valid Item for maintenance part row {0}.").format(row.idx))
+                frappe.throw(
+                    _("Select a valid Item for maintenance part row {0}.").format(
+                        row.idx
+                    )
+                )
             if not frappe.db.get_value("Item", row.item, "is_stock_item"):
                 frappe.throw(_("Item {0} is not a stock item.").format(row.item))
             if not row.quantity or row.quantity <= 0:
                 frappe.throw(_("Part quantity must be greater than zero."))
+
+            if row.rate is not None and row.rate < 0:
+                frappe.throw(_("Part rate cannot be negative."))
 
     def _post_stock_entries(self):
         """
@@ -178,7 +240,9 @@ class MaintenanceJobCard(Document):
         company = self.company or vehicle.company
         if not company:
             frappe.throw(
-                _("Set a Company on Vehicle {0} or in TP Settings before issuing stock.").format(vehicle.name)
+                _(
+                    "Set a Company on Vehicle {0} or in TP Settings before issuing stock."
+                ).format(vehicle.name)
             )
         from sotrama.tp.settings import get_tp_company_setting
 
@@ -187,9 +251,9 @@ class MaintenanceJobCard(Document):
         )
         if not warehouse:
             frappe.throw(
-                _("Set a Parts Warehouse on Vehicle {0} or in TP Settings before issuing stock.").format(
-                    vehicle.name
-                )
+                _(
+                    "Set a Parts Warehouse on Vehicle {0} or in TP Settings before issuing stock."
+                ).format(vehicle.name)
             )
 
         warehouse_company = frappe.db.get_value(
@@ -217,12 +281,15 @@ class MaintenanceJobCard(Document):
                 frappe.throw(_("Item {0} is not a stock item.").format(row.item))
             if not row.quantity or row.quantity <= 0:
                 frappe.throw(_("Part quantity must be greater than zero."))
-            stock_entry.append("items", {
-                "item_code": row.item,
-                "qty": row.quantity,
-                "s_warehouse": warehouse,
-                "cost_center": self.cost_center,
-            })
+            stock_entry.append(
+                "items",
+                {
+                    "item_code": row.item,
+                    "qty": row.quantity,
+                    "s_warehouse": warehouse,
+                    "cost_center": self.cost_center,
+                },
+            )
 
         stock_entry.insert(ignore_permissions=True)
         stock_entry.submit()
@@ -230,7 +297,9 @@ class MaintenanceJobCard(Document):
 
     def _cancel_stock_entry(self):
         """Cancel the linked stock issue together with its maintenance job card."""
-        if not self.stock_entry or not frappe.db.exists("Stock Entry", self.stock_entry):
+        if not self.stock_entry or not frappe.db.exists(
+            "Stock Entry", self.stock_entry
+        ):
             return
 
         stock_entry = frappe.get_doc("Stock Entry", self.stock_entry)
@@ -240,9 +309,9 @@ class MaintenanceJobCard(Document):
     def _update_vehicle_odometer(self):
         """Update the linked Vehicle's current odometer."""
         if self.vehicle and self.odometer_after is not None:
-            current_odometer = frappe.db.get_value(
-                "Vehicle", self.vehicle, "current_odometer"
-            ) or 0
+            current_odometer = (
+                frappe.db.get_value("Vehicle", self.vehicle, "current_odometer") or 0
+            )
             if self.odometer_after > current_odometer:
                 frappe.db.set_value(
                     "Vehicle", self.vehicle, "current_odometer", self.odometer_after
@@ -253,7 +322,11 @@ class MaintenanceJobCard(Document):
         If this job is a scheduled service, create the next Maintenance Schedule
         occurrence based on the job type interval.
         """
-        if self.job_nature != "Scheduled Service" or not self.job_type or not self.vehicle:
+        if (
+            self.job_nature != "Scheduled Service"
+            or not self.job_type
+            or not self.vehicle
+        ):
             return
 
         if self.maintenance_schedule:
@@ -272,24 +345,31 @@ class MaintenanceJobCard(Document):
             if service_odometer is None:
                 service_odometer = sched.last_service_odometer
             self.applied_schedule_last_service_odometer = service_odometer
-            self.db_set({
-                "linked_maintenance_schedule": self.linked_maintenance_schedule,
-                "previous_schedule_last_service_date": self.previous_schedule_last_service_date,
-                "previous_schedule_last_service_odometer": self.previous_schedule_last_service_odometer,
-                "previous_schedule_last_service_job_card": self.previous_schedule_last_service_job_card,
-                "previous_schedule_next_due_date": self.previous_schedule_next_due_date,
-                "previous_schedule_next_due_odometer": self.previous_schedule_next_due_odometer,
-                "applied_schedule_last_service_odometer": self.applied_schedule_last_service_odometer,
-            })
+            self.db_set(
+                {
+                    "linked_maintenance_schedule": self.linked_maintenance_schedule,
+                    "previous_schedule_last_service_date": self.previous_schedule_last_service_date,
+                    "previous_schedule_last_service_odometer": self.previous_schedule_last_service_odometer,
+                    "previous_schedule_last_service_job_card": self.previous_schedule_last_service_job_card,
+                    "previous_schedule_next_due_date": self.previous_schedule_next_due_date,
+                    "previous_schedule_next_due_odometer": self.previous_schedule_next_due_odometer,
+                    "applied_schedule_last_service_odometer": self.applied_schedule_last_service_odometer,
+                }
+            )
             sched.last_service_date = self.job_date
             sched.last_service_odometer = service_odometer
             sched.last_service_job_card = self.name
 
             # Calculate next due based on mileage interval
-            if sched.schedule_type == "Mileage" and sched.interval_km and service_odometer is not None:
+            if (
+                sched.schedule_type == "Mileage"
+                and sched.interval_km
+                and service_odometer is not None
+            ):
                 sched.next_due_odometer = service_odometer + sched.interval_km
             elif sched.schedule_type == "Calendar" and sched.interval_months:
                 from frappe.utils import add_months
+
                 sched.next_due_date = add_months(
                     self.job_date or frappe.utils.today(), sched.interval_months
                 )
@@ -312,13 +392,105 @@ class MaintenanceJobCard(Document):
         ):
             return
 
-        schedule = frappe.get_doc("Maintenance Schedule", self.linked_maintenance_schedule)
+        schedule = frappe.get_doc(
+            "Maintenance Schedule", self.linked_maintenance_schedule
+        )
         # Do not overwrite a newer service's schedule update.
         if schedule.last_service_job_card == self.name:
-            schedule.db_set({
-                "last_service_date": self.previous_schedule_last_service_date,
-                "last_service_odometer": self.previous_schedule_last_service_odometer,
-                "last_service_job_card": self.previous_schedule_last_service_job_card,
-                "next_due_date": self.previous_schedule_next_due_date,
-                "next_due_odometer": self.previous_schedule_next_due_odometer,
-            })
+            schedule.db_set(
+                {
+                    "last_service_date": self.previous_schedule_last_service_date,
+                    "last_service_odometer": self.previous_schedule_last_service_odometer,
+                    "last_service_job_card": self.previous_schedule_last_service_job_card,
+                    "next_due_date": self.previous_schedule_next_due_date,
+                    "next_due_odometer": self.previous_schedule_next_due_odometer,
+                }
+            )
+
+
+def _validate_workshop_employee_lookup_access(company):
+    """Allow fleet roles to see only names for a Company they can operate."""
+    frappe.only_for(["System Manager", "Fleet Manager", "Workshop"])
+    if not isinstance(company, str) or not company.strip():
+        frappe.throw(_("A valid Company is required to search workshop Employees."))
+
+    company = company.strip()
+    if not (
+        frappe.has_permission("Maintenance Job Card", "write")
+        or frappe.has_permission("Maintenance Job Card", "create")
+    ):
+        frappe.throw(
+            _("You do not have permission to add Employees to a Maintenance Job Card."),
+            frappe.PermissionError,
+        )
+
+    visible_vehicles = frappe.get_list(
+        "Vehicle",
+        filters={"company": company},
+        fields=["name"],
+        limit_page_length=1,
+    )
+    if not visible_vehicles:
+        frappe.throw(
+            _("You do not have access to the fleet of Company {0}.").format(company),
+            frappe.PermissionError,
+        )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_workshop_employees(
+    doctype, txt, searchfield, start, page_len, filters, **kwargs
+):
+    """Search only active employee names for the current accessible fleet Company.
+
+    This deliberately avoids granting Fleet Manager or Workshop broad read
+    access to HRMS Employee records and their personal information.
+    """
+    if doctype != "Employee":
+        frappe.throw(_("This search is only for Frappe HR Employee records."))
+
+    filters = frappe.parse_json(filters) if isinstance(filters, str) else filters
+    if filters is None:
+        filters = {}
+    if not isinstance(filters, dict):
+        frappe.throw(_("Invalid Employee search filters."))
+    company = filters.get("company")
+    if not company:
+        return []
+
+    _validate_workshop_employee_lookup_access(company)
+    company = company.strip()
+    search_text = f"%{txt or ''}%"
+    return frappe.get_all(
+        "Employee",
+        filters={"company": company, "status": "Active"},
+        or_filters=[
+            ["Employee", "name", "like", search_text],
+            ["Employee", "employee_name", "like", search_text],
+        ],
+        fields=["name", "employee_name", "designation"],
+        order_by="employee_name asc",
+        start=start,
+        page_length=page_len,
+        as_list=True,
+    )
+
+
+@frappe.whitelist()
+def get_workshop_employee_name(employee, company):
+    """Return only the display name of an active Employee in an accessible Company."""
+    if not employee or not company:
+        frappe.throw(_("Select an Employee and Company."))
+    _validate_workshop_employee_lookup_access(company)
+    company = company.strip()
+    employee_name = frappe.db.get_value(
+        "Employee",
+        {"name": employee, "company": company, "status": "Active"},
+        "employee_name",
+    )
+    if not employee_name:
+        frappe.throw(
+            _("Select an active Employee belonging to Company {0}.").format(company)
+        )
+    return employee_name

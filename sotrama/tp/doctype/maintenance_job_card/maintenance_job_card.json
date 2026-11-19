@@ -291,22 +291,25 @@
    "collapsible": 1
   },
   {
-   "label": "Parts Used",
+   "label": "Spare Parts (Stock Items)",
    "fieldname": "parts_used",
    "fieldtype": "Table",
-   "options": "Job Card Part"
+   "options": "Job Card Part",
+   "description": "Add inventory items from ERPNext Item. On submission, the quantities are issued from the vehicle's configured parts warehouse and included in the parts cost."
   },
   {
-   "label": "Labour Lines",
+   "label": "Labour (Employees / Mechanics)",
    "fieldname": "labour_lines",
    "fieldtype": "Table",
-   "options": "Job Card Labour"
+   "options": "Job Card Labour",
+   "description": "Add mechanics from Frappe HR Employee. Enter hours and hourly rate; each line contributes to the labour cost."
   },
   {
    "label": "Other Costs",
    "fieldname": "other_costs",
    "fieldtype": "Table",
-   "options": "Job Card Other Cost"
+   "options": "Job Card Other Cost",
+   "description": "Record additional maintenance expenses such as towing, fuel, rental, tolls or permits."
   },
   {
    "fieldtype": "Tab Break",

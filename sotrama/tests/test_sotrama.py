@@ -219,6 +219,7 @@ class TestSotramaHooks(unittest.TestCase):
     def test_public_works_designations_are_unique_and_use_standard_hrms_master(self):
         from sotrama.setup import (
             PUBLIC_WORKS_DESIGNATIONS,
+            _designation_name_key,
             ensure_public_works_designations,
         )
 
@@ -226,6 +227,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(len(names), 202)
         self.assertTrue(all(name == name.strip() and name for name in names))
+        self.assertEqual(_designation_name_key("Gérant"), _designation_name_key("GERANT"))
 
         created = ensure_public_works_designations()
         try:
@@ -239,6 +241,17 @@ class TestSotramaHooks(unittest.TestCase):
             for name in created:
                 if frappe.db.exists("Designation", name):
                     frappe.delete_doc("Designation", name, ignore_permissions=True)
+
+    def test_designation_seed_respects_existing_case_and_accent_variants(self):
+        from sotrama.setup import ensure_public_works_designations
+
+        with (
+            patch("sotrama.setup.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)),
+            patch("frappe.get_all", return_value=["GERANT"]),
+            patch("frappe.new_doc") as new_doc,
+        ):
+            self.assertEqual(ensure_public_works_designations(), [])
+        new_doc.assert_not_called()
 
     def test_fleet_dock_sidebar_and_workspace_are_installed(self):
         self.assertTrue(frappe.db.exists("Dock", {"app": "sotrama", "standard": 1}))
@@ -447,6 +460,211 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(next_schedule.read_only)
         self.assertFalse(next_schedule.allow_on_submit)
 
+    def test_job_card_child_tables_explain_item_and_employee_sources(self):
+        card_meta = frappe.get_meta("Maintenance Job Card", cached=False)
+        parts = card_meta.get_field("parts_used")
+        labour = card_meta.get_field("labour_lines")
+        other_costs = card_meta.get_field("other_costs")
+        self.assertEqual(parts.options, "Job Card Part")
+        self.assertIn("ERPNext Item", parts.description)
+        self.assertIn("configured parts warehouse", parts.description)
+        self.assertEqual(labour.options, "Job Card Labour")
+        self.assertIn("Frappe HR Employee", labour.description)
+        self.assertIn("hourly rate", labour.description)
+        self.assertIn("additional maintenance expenses", other_costs.description)
+
+        print_format = frappe.get_doc("Print Format", "Maintenance Job Card Report")
+        self.assertTrue(print_format.print_format_builder_beta)
+        print_layout = json.loads(print_format.format_data)
+        print_sections = {section["label"] for section in print_layout["sections"]}
+        self.assertIn("Spare Parts (Stock Items)", print_sections)
+        self.assertIn("Labour (Employees / Mechanics)", print_sections)
+        inspection_print = frappe.get_doc("Print Format", "Vehicle Inspection Report")
+        self.assertTrue(inspection_print.print_format_builder_beta)
+        json.loads(inspection_print.format_data)
+
+        labour_meta = frappe.get_meta("Job Card Labour", cached=False)
+        self.assertEqual(labour_meta.get_field("mechanic").options, "Employee")
+        self.assertEqual(labour_meta.get_field("mechanic").label, "Employee (Mechanic)")
+        self.assertFalse(labour_meta.get_field("mechanic").in_list_view)
+        self.assertTrue(labour_meta.get_field("mechanic_name").in_list_view)
+
+        script = (
+            Path(frappe.get_app_path("sotrama")).parent / "public/js/job_card.js"
+        ).read_text(encoding="utf-8")
+        for action in (
+            "Add Spare Part (Item)",
+            "Add Mechanic (Employee)",
+            "Add Other Cost",
+            "frm.set_query('mechanic', 'labour_lines'",
+            "search_workshop_employees",
+            "get_workshop_employee_name",
+            "filters: { company: frm.doc.company || '' }",
+            "frappe.call({",
+            "total_parts_cost: totalParts",
+            "total_labour_cost: totalLabour",
+            "parts_used_delete",
+            "labour_lines_delete",
+            "other_costs_delete",
+        ):
+            self.assertIn(action, script)
+        self.assertNotIn("frappe.db.get_value('Employee'", script)
+
+    def test_workshop_employee_lookup_is_limited_to_accessible_company_and_safe_fields(self):
+        from sotrama.tp.doctype.maintenance_job_card.maintenance_job_card import (
+            get_workshop_employee_name,
+            search_workshop_employees,
+        )
+
+        module = "sotrama.tp.doctype.maintenance_job_card.maintenance_job_card"
+        with (
+            patch(f"{module}.frappe.only_for") as only_for,
+            patch(f"{module}.frappe.has_permission", return_value=True),
+            patch(f"{module}.frappe.get_list", return_value=[{"name": "VEH-001"}]),
+            patch(
+                f"{module}.frappe.get_all",
+                return_value=[("EMP-001", "Ali Mechanic", "Mécanicien")],
+            ) as get_all,
+        ):
+            result = search_workshop_employees(
+                "Employee", "Ali", "name", 0, 10, {"company": "SOTRAMA"}
+            )
+
+        self.assertEqual(result, [("EMP-001", "Ali Mechanic", "Mécanicien")])
+        only_for.assert_called_once_with(["System Manager", "Fleet Manager", "Workshop"])
+        query = get_all.call_args.kwargs
+        self.assertEqual(query["fields"], ["name", "employee_name", "designation"])
+        self.assertEqual(query["filters"], {"company": "SOTRAMA", "status": "Active"})
+        self.assertTrue(query["as_list"])
+
+        with (
+            patch(f"{module}.frappe.only_for"),
+            patch(f"{module}.frappe.has_permission", return_value=True),
+            patch(f"{module}.frappe.get_list", return_value=[{"name": "VEH-001"}]),
+            patch(f"{module}.frappe.db.get_value", return_value="Ali Mechanic"),
+        ):
+            self.assertEqual(
+                get_workshop_employee_name("EMP-001", "SOTRAMA"), "Ali Mechanic"
+            )
+
+        with (
+            patch(f"{module}.frappe.only_for"),
+            patch(f"{module}.frappe.has_permission", return_value=True),
+            patch(f"{module}.frappe.get_list", return_value=[]),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            get_workshop_employee_name("EMP-001", "OTHER-COMPANY")
+
+        with (
+            patch(f"{module}.frappe.only_for"),
+            patch(f"{module}.frappe.has_permission", return_value=False),
+            patch(f"{module}.frappe.get_list") as get_vehicles,
+            self.assertRaises(frappe.PermissionError),
+        ):
+            get_workshop_employee_name("EMP-001", "SOTRAMA")
+        get_vehicles.assert_not_called()
+
+    def test_inspection_checklist_has_an_explicit_add_action(self):
+        inspection_meta = frappe.get_meta("Vehicle Inspection", cached=False)
+        checklist = inspection_meta.get_field("inspection_items")
+        self.assertEqual(checklist.options, "Inspection Item")
+        self.assertIn("standard checklist", checklist.description)
+        self.assertTrue(inspection_meta.get_field("overall_status").read_only)
+
+        item_meta = frappe.get_meta("Inspection Item", cached=False)
+        status = item_meta.get_field("status")
+        self.assertEqual(status.default, "Not Checked")
+        self.assertIn("Not Checked", status.options.splitlines())
+        self.assertIn("Okay", status.options.splitlines())
+        self.assertIn("Defective", status.options.splitlines())
+
+        script = (
+            Path(frappe.get_app_path("sotrama")).parent / "public/js/inspection.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Add Inspection Check", script)
+        self.assertIn("row.status = 'Not Checked'", script)
+        self.assertIn("inspection_items_add", script)
+        self.assertIn("inspection_items_delete", script)
+
+    def test_inspection_cannot_be_submitted_with_unchecked_items(self):
+        inspection = frappe.new_doc("Vehicle Inspection")
+        inspection.append(
+            "inspection_items",
+            {
+                "category": "Freinage et direction",
+                "item_details": "Brake system",
+                "status": "Not Checked",
+            },
+        )
+        inspection.validate()
+        with self.assertRaises(frappe.ValidationError):
+            inspection.before_submit()
+
+        inspection.inspection_items[0].status = "Okay"
+        inspection.before_submit()
+
+        inspection.inspection_items[0].status = "Defective"
+        with self.assertRaises(frappe.ValidationError):
+            inspection.before_submit()
+        inspection.inspection_items[0].remarks = "Brake hose damaged"
+        inspection.before_submit()
+
+    def test_follow_up_inspection_can_be_saved_as_draft_before_checks_are_complete(self):
+        inspection = frappe.new_doc("Vehicle Inspection")
+        inspection.vehicle = "VEH-TEST-001"
+        inspection.follow_up_of = "INSP-CRITICAL-001"
+        inspection.append(
+            "inspection_items",
+            {
+                "category": "Freinage et direction",
+                "item_details": "Brake system",
+                "status": "Not Checked",
+                "is_safety_critical": 1,
+            },
+        )
+        previous = frappe._dict(
+            docstatus=1,
+            has_critical_defect=1,
+            vehicle="VEH-TEST-001",
+            critical_defect_cleared_by=None,
+        )
+        with (
+            patch("frappe.db.get_value", return_value="SOTRAMA-TEST-COMPANY"),
+            patch("frappe.get_doc", return_value=previous),
+        ):
+            inspection.validate()
+            self.assertIsNone(inspection.overall_status)
+            with self.assertRaises(frappe.ValidationError):
+                inspection.before_submit()
+
+    def test_inspection_overall_status_is_derived_from_checked_items(self):
+        inspection = frappe.new_doc("Vehicle Inspection")
+        inspection.append(
+            "inspection_items",
+            {
+                "category": "Documents réglementaires",
+                "item_details": "Registration documents",
+                "status": "Not Checked",
+                "is_safety_critical": 0,
+            },
+        )
+        inspection._calculate_defects()
+        self.assertIsNone(inspection.overall_status)
+
+        inspection.inspection_items[0].status = "Okay"
+        inspection._calculate_defects()
+        self.assertEqual(inspection.overall_status, "Pass")
+
+        inspection.inspection_items[0].status = "Defective"
+        inspection.inspection_items[0].is_safety_critical = 0
+        inspection.inspection_items[0].remarks = "Minor documentation defect"
+        inspection._calculate_defects()
+        self.assertEqual(inspection.overall_status, "Conditional Pass")
+
+        inspection.inspection_items[0].is_safety_critical = 1
+        inspection._calculate_defects()
+        self.assertEqual(inspection.overall_status, "Fail")
+
     def test_company_classification_can_be_assigned_to_a_legal_entity(self):
         meta = frappe.get_meta("Company Classification", cached=False)
         company = meta.get_field("company")
@@ -464,8 +682,42 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertFalse(employee_field.hidden)
         self.assertFalse(employee_field.reqd)
         self.assertTrue(employee_field.allow_on_submit)
+        self.assertIn("Only HR Manager and System Manager", employee_field.description)
         self.assertFalse(status_field.allow_on_submit)
         self.assertEqual(status_field.read_only_depends_on, "eval:doc.docstatus == 1")
+
+        script = (
+            Path(frappe.get_app_path("sotrama")).parent / "public/js/driver.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("frappe.user.has_role('HR Manager')", script)
+        self.assertIn("set_df_property('employee', 'read_only'", script)
+
+    def test_fleet_roles_cannot_remove_an_existing_hrms_employee_link(self):
+        driver = frappe.new_doc("Driver")
+        driver.company = "SOTRAMA-TEST-COMPANY"
+        driver.employee = None
+        with (
+            patch.object(
+                driver,
+                "get_doc_before_save",
+                return_value=frappe._dict(employee="EMP-TEST-001"),
+            ),
+            patch("frappe.has_permission", return_value=False),
+            patch("sotrama.tp.settings.get_tp_setting", side_effect=lambda key, default=None: default),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            driver._validate_employee_link()
+
+        with (
+            patch.object(
+                driver,
+                "get_doc_before_save",
+                return_value=frappe._dict(employee="EMP-TEST-001"),
+            ),
+            patch("frappe.has_permission", return_value=True),
+            patch("sotrama.tp.settings.get_tp_setting", side_effect=lambda key, default=None: default),
+        ):
+            driver._validate_employee_link()
 
     def test_driver_licence_categories_include_the_2025_decree_categories(self):
         driver_meta = frappe.get_meta("Driver", cached=False)
@@ -1239,6 +1491,32 @@ class TestMaintenanceJobCard(unittest.TestCase):
 
         # Cleanup
         # The document was never inserted; there is no database record to clean up.
+
+    def test_job_card_labour_employee_must_belong_to_the_job_company(self):
+        job_card = frappe.new_doc("Maintenance Job Card")
+        job_card.company = "SOTRAMA-TEST-COMPANY"
+        job_card.append(
+            "labour_lines",
+            {"mechanic": "EMP-TEST-001", "hours": 2, "rate": 500},
+        )
+
+        with (
+            patch(
+                "sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.frappe.db.get_value",
+                return_value=frappe._dict(company="ANOTHER-COMPANY"),
+            ),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            job_card._validate_labour_lines()
+
+        with patch(
+            "sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.frappe.db.get_value",
+            return_value=frappe._dict(
+                company="SOTRAMA-TEST-COMPANY", employee_name="Test Mechanic"
+            ),
+        ):
+            job_card._validate_labour_lines()
+        self.assertEqual(job_card.labour_lines[0].mechanic_name, "Test Mechanic")
 
     def test_job_card_odometer_validation(self):
         """Test that Odometer After cannot be less than Odometer Before."""

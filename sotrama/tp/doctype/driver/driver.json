@@ -34,7 +34,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "allow_on_submit": 1,
-   "description": "Optional link to the authoritative ERPNext/Frappe HR Employee record."
+   "description": "Optional link to the authoritative ERPNext/Frappe HR Employee record. Only HR Manager and System Manager can change this link; fleet roles do not receive broad Employee read access."
   },
   {
    "label": "Company",

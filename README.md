@@ -12,6 +12,16 @@ works fleet operations). The Sotrama Desk workspace is the app landing page.
 Frappe filters its module and settings links by the destination workspace's or
 DocType's permissions, so users only see destinations they are allowed to open.
 
+## Compatibility
+
+- Python: **3.14**
+- Frappe Framework: **16.60.0 or later, below 17.0.0**
+- ERPNext: **16.60.0 or later, below 17.0.0**
+- Frappe HR (HRMS): **16.60.0 or later, below 17.0.0**
+
+The current source review was checked against Frappe **16.60.2**, ERPNext
+**16.60.0** and HRMS **16.60.0**. HRMS 16.60 requires Frappe 16.60.0 or later.
+
 ## Architecture and source of truth
 
 Sotrama links to the standard ERPNext / Frappe HR records wherever they exist:
@@ -21,7 +31,9 @@ Sotrama links to the standard ERPNext / Frappe HR records wherever they exist:
 - Maintenance stock consumption uses ERPNext Stock Entry and its normal
   valuation/accounting pipeline.
 - Drivers may link to the authoritative HRMS `Employee` record; Sotrama does
-  not create a parallel employee register.
+  not create a parallel employee register. Only HR Manager/System Manager can
+  change the link; Fleet Manager and Workshop users are not granted broad HRMS
+  Employee read access.
 - Job titles use Frappe HR's standard `Designation` master. Sotrama does not
   introduce a parallel position or job-title DocType.
 - Fleet records retain a standard `Company` link to support multiple legal
@@ -112,6 +124,32 @@ The TP module currently provides:
 Supporting child tables hold vehicle documents, job-card parts/labour/costs,
 photos, inspection items and restricted driver compliance history.
 
+On a draft Maintenance Job Card, the **Add Entry** toolbar group names the
+record type explicitly: **Add Spare Part (Item)** selects an ERPNext stock
+Item, **Add Mechanic (Employee)** selects an active Frappe HR Employee, and
+**Add Other Cost** records a separate expense. The table headings explain
+where each record comes from and how it affects stock or maintenance costs.
+Part and labour line amounts and job-card totals recalculate as quantities,
+hours, rates or additional costs change; removing a line recalculates the
+totals too. The server verifies that a selected mechanic belongs to the same
+Company as the work order. Server-side validation remains authoritative when
+the document is saved or submitted. Vehicle Inspections also provide an explicit **Add
+Inspection Check** action alongside the standard checklist loaded for new
+inspections.
+
+Workshop employee selection uses a restricted server-side lookup: Fleet Manager
+and Workshop users see only active Employee names, IDs and job titles for a
+Company whose vehicles they can access. They are not granted broad read
+permission on HRMS Employee records or access to employees' personal
+information.
+
+Inspection checklist rows start at **Not Checked**, never at Okay. Drafts may
+be saved while an inspection is in progress, but submission is blocked until
+every checklist item is explicitly marked Okay or Defective; defective items
+require remarks. Overall status is calculated from the completed checklist:
+Pass for all-Okay results, Conditional Pass for non-critical defects, and Fail
+for safety-critical defects. The server repeats these checks before submission.
+
 **TP Settings** remains the configuration area for fleet-specific defaults and
 operating policies: per-Company department, Cost Center and parts Warehouse;
 driver/employee rules; compliance policies; and reminder windows. It does not
@@ -130,11 +168,12 @@ currency, so compare legal entities only when their fleet cost data shares that
 currency. Company-specific multi-currency conversion is not yet implemented.
 
 Maintenance Job Card and Vehicle Inspection ship with standard Frappe Print
-Format defaults using the **Print Format Builder Beta** (`format_data`). To
+Format defaults using the **Print Format Editor** (`format_data`, stored as
+Builder Beta layouts). To
 customize one without editing app files, duplicate it from the Print Format
 list and edit the resulting site-owned copy in the standard Print Format
 editor. Sotrama does not pin a PDF renderer in its source files. Frappe 16.60
-uses Chrome for Builder Beta formats by default, while supported alternatives
+uses Chromium for editor formats by default, while supported alternatives
 can be selected on a site-owned copy. Frappe 16.60 also improves report
 printing with a full-page preview and server-rendered report output.
 

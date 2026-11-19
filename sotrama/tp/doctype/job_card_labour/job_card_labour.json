@@ -10,18 +10,19 @@
    "collapsible": 1
   },
   {
-   "label": "Mechanic",
+   "label": "Employee (Mechanic)",
    "fieldname": "mechanic",
    "fieldtype": "Link",
    "options": "Employee",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "reqd": 1
   },
   {
-   "label": "Mechanic Name",
+   "label": "Employee Name",
    "fieldname": "mechanic_name",
    "fieldtype": "Data",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "fieldtype": "Column Break",

@@ -35,7 +35,14 @@ jobs:
           python - <<'PY'
           import ast
           import json
+          import tomllib
           from pathlib import Path
+
+          project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          assert project["project"]["requires-python"] == ">=3.14,<3.15"
+          frappe_dependencies = project["tool"]["bench"]["frappe-dependencies"]
+          for app in ("frappe", "erpnext", "hrms"):
+              assert frappe_dependencies[app] == ">=16.60.0,<17.0.0"
 
           files = sorted(Path("sotrama").rglob("*.json"))
           for path in files:
@@ -74,6 +81,65 @@ jobs:
           )
           assert "Sotrama Settings" in ast.literal_eval(doctype_js)
 
+          job_card = json.loads(Path("sotrama/tp/doctype/maintenance_job_card/maintenance_job_card.json").read_text(encoding="utf-8"))
+          job_card_fields = {field["fieldname"]: field for field in job_card["fields"]}
+          assert "ERPNext Item" in job_card_fields["parts_used"]["description"]
+          assert "Frappe HR Employee" in job_card_fields["labour_lines"]["description"]
+          job_card_print = json.loads(Path("sotrama/tp/print_format/maintenance_job_card_report/maintenance_job_card_report.json").read_text(encoding="utf-8"))
+          assert job_card_print["print_format_builder_beta"] == 1
+          job_card_print_layout = json.loads(job_card_print["format_data"])
+          job_card_print_sections = {section["label"] for section in job_card_print_layout["sections"]}
+          assert "Spare Parts (Stock Items)" in job_card_print_sections
+          assert "Labour (Employees / Mechanics)" in job_card_print_sections
+          for print_format_path in Path("sotrama/tp/print_format").glob("*/*.json"):
+              print_format_record = json.loads(print_format_path.read_text(encoding="utf-8"))
+              assert print_format_record["print_format_builder_beta"] == 1, print_format_path
+              json.loads(print_format_record["format_data"])
+          removed_hrms_apis = ("Daily Work Summary", "Daily Work Summary Group", "Identification Document Type", "hierarchy_chart")
+          for source_path in Path("sotrama").rglob("*"):
+              if source_path.is_file() and source_path.suffix in {".py", ".js", ".json", ".md"}:
+                  source_text = source_path.read_text(encoding="utf-8")
+                  for removed_api in removed_hrms_apis:
+                      assert removed_api not in source_text, f"Removed HRMS API {removed_api} referenced in {source_path}"
+          job_card_js = Path("sotrama/public/js/job_card.js").read_text(encoding="utf-8")
+          assert "Add Spare Part (Item)" in job_card_js
+          assert "Add Mechanic (Employee)" in job_card_js
+          job_card_controller = Path("sotrama/tp/doctype/maintenance_job_card/maintenance_job_card.py").read_text(encoding="utf-8")
+          assert "self._validate_labour_lines()" in job_card_controller
+          assert "employee.company != self.company" in job_card_controller
+          assert 'frappe.only_for(["System Manager", "Fleet Manager", "Workshop"])' in job_card_controller
+          assert 'fields=["name", "employee_name", "designation"]' in job_card_controller
+          assert "search_workshop_employees" in job_card_js
+          assert "get_workshop_employee_name" in job_card_js
+          assert "frappe.db.get_value('Employee'" not in job_card_js
+          assert "parts_used_delete" in job_card_js
+          assert "labour_lines_delete" in job_card_js
+          assert "other_costs_delete" in job_card_js
+          labour = json.loads(Path("sotrama/tp/doctype/job_card_labour/job_card_labour.json").read_text(encoding="utf-8"))
+          labour_fields = {field["fieldname"]: field for field in labour["fields"]}
+          assert labour_fields["mechanic"]["label"] == "Employee (Mechanic)"
+          assert not labour_fields["mechanic"]["in_list_view"]
+          assert labour_fields["mechanic_name"]["in_list_view"]
+          driver = json.loads(Path("sotrama/tp/doctype/driver/driver.json").read_text(encoding="utf-8"))
+          employee_link = next(field for field in driver["fields"] if field["fieldname"] == "employee")
+          assert "Only HR Manager and System Manager" in employee_link["description"]
+          assert "set_df_property('employee', 'read_only'" in Path("sotrama/public/js/driver.js").read_text(encoding="utf-8")
+          driver_controller = Path("sotrama/tp/doctype/driver/driver.py").read_text(encoding="utf-8")
+          assert "Only HR Manager or System Manager can remove the linked HRMS Employee." in driver_controller
+          inspection_js = Path("sotrama/public/js/inspection.js").read_text(encoding="utf-8")
+          assert "Add Inspection Check" in inspection_js
+          assert "inspection_items_add" in inspection_js
+          assert "inspection_items_delete" in inspection_js
+          inspection_item = json.loads(Path("sotrama/tp/doctype/inspection_item/inspection_item.json").read_text(encoding="utf-8"))
+          inspection_status = next(field for field in inspection_item["fields"] if field["fieldname"] == "status")
+          assert inspection_status["default"] == "Not Checked"
+          assert "Not Checked" in inspection_status["options"]
+          inspection_controller = Path("sotrama/tp/doctype/vehicle_inspection/vehicle_inspection.py").read_text(encoding="utf-8")
+          assert "_validate_items(require_completed=True)" in inspection_controller
+          assert '"Conditional Pass"' in inspection_controller
+          inspection = json.loads(Path("sotrama/tp/doctype/vehicle_inspection/vehicle_inspection.json").read_text(encoding="utf-8"))
+          assert next(field for field in inspection["fields"] if field["fieldname"] == "overall_status")["read_only"]
+
           sotrama_sidebar = json.loads(Path("sotrama/sotrama/sidebar/sotrama/sotrama.json").read_text(encoding="utf-8"))
           assert sotrama_sidebar["name"] == "Sotrama"
           assert sotrama_sidebar["module"] == "Sotrama"
@@ -110,6 +176,9 @@ jobs:
               assert "sotrama/setup.py" in names
               assert "sotrama/designations.py" in names
               assert "sotrama/public/js/sotrama_settings.js" in names
+              assert "sotrama/public/js/job_card.js" in names
+              assert "sotrama/public/js/inspection.js" in names
+              assert "sotrama/public/js/driver.js" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
               assert not any(name.endswith("/package.json") for name in names)

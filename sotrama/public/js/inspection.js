@@ -1,4 +1,36 @@
-// Vehicle Inspection — client-side checklist logic
+// Vehicle Inspection — client-side checklist logic.
+(() => {
+const criticalTerms = [
+    'mechanical', 'brak', 'steer', 'tyre', 'tire', 'chassis',
+    'technical inspection', 'frein', 'direction', 'pneumatique',
+    'moteur', 'hydraulique', 'structure',
+];
+
+const updateInspectionSummary = (frm) => {
+    const items = frm.doc.inspection_items || [];
+    const defects = items.filter((row) => row.status === 'Defective');
+    frm.set_value('total_defects', defects.length);
+
+    const hasCritical = defects.some((row) =>
+        row.is_safety_critical || criticalTerms.some((term) =>
+            (row.category || '').toLocaleLowerCase().includes(term),
+        ),
+    );
+    const checksComplete = items.length > 0 && items.every((row) =>
+        ['Okay', 'Defective'].includes(row.status)
+            && (row.status !== 'Defective' || Boolean((row.remarks || '').trim())),
+    );
+    frm.set_value(
+        'overall_status',
+        checksComplete
+            ? hasCritical ? 'Fail' : defects.length ? 'Conditional Pass' : 'Pass'
+            : '',
+    );
+    if (hasCritical) {
+        frm.dashboard.show_alert(__('Safety-critical defect detected — submitting this inspection will mark the vehicle Out of Service.'), 5000);
+    }
+};
+
 frappe.ui.form.on('Vehicle Inspection', {
     setup(frm) {
         frm.set_query('vehicle', () => ({
@@ -21,6 +53,16 @@ frappe.ui.form.on('Vehicle Inspection', {
     },
 
     refresh: function(frm) {
+        const canEdit = (frm.perm || []).some((permission) => permission.write || permission.create);
+        if (frm.doc.docstatus === 0 && canEdit) {
+            frm.add_custom_button(__('Add Inspection Check'), () => {
+                const row = frm.add_child('inspection_items');
+                row.status = 'Not Checked';
+                frm.refresh_field('inspection_items');
+                updateInspectionSummary(frm);
+            }, __('Checklist'));
+        }
+
         if (frm.is_new() && (!frm.doc.inspection_items || frm.doc.inspection_items.length === 0)) {
             // Auto-populate standard inspection categories
             var standard_checks = [
@@ -39,7 +81,7 @@ frappe.ui.form.on('Vehicle Inspection', {
                 var row = frm.add_child('inspection_items');
                 row.category = check.category;
                 row.item_details = check.item_details;
-                row.status = 'Okay';
+                row.status = 'Not Checked';
                 row.is_safety_critical = check.is_safety_critical ? 1 : 0;
             });
             frm.refresh_field('inspection_items');
@@ -80,21 +122,29 @@ frappe.ui.form.on('Vehicle Inspection', {
     },
 
     inspection_items: function(frm) {
-        // Auto-calculate total defects
-        var defects = 0;
-        frm.doc.inspection_items.forEach(function(row) {
-            if (row.status === 'Defective') defects++;
-        });
-        frm.set_value('total_defects', defects);
-
-        // If any critical item is defective, warn
-        var critical_categories = ['Freinage et direction', 'Pneumatiques et suspension', 'Moteur et transmission', 'Hydraulique et équipement TP', 'Châssis et structure'];
-        var has_critical = frm.doc.inspection_items.some(function(row) {
-            return critical_categories.includes(row.category) && row.status === 'Defective';
-        });
-
-        if (has_critical) {
-            frm.dashboard.show_alert(__('Critical defect detected — vehicle may be Out of Service'), 5000);
-        }
+        updateInspectionSummary(frm);
     }
 });
+
+frappe.ui.form.on('Inspection Item', {
+    // Frappe 16 Grid emits these table events on the child DocType.
+    inspection_items_add(frm) {
+        updateInspectionSummary(frm);
+    },
+    status(frm) {
+        updateInspectionSummary(frm);
+    },
+    is_safety_critical(frm) {
+        updateInspectionSummary(frm);
+    },
+    category(frm) {
+        updateInspectionSummary(frm);
+    },
+    remarks(frm) {
+        updateInspectionSummary(frm);
+    },
+    inspection_items_delete(frm) {
+        updateInspectionSummary(frm);
+    },
+});
+})();
