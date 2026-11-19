@@ -222,8 +222,9 @@ class TestSotramaHooks(unittest.TestCase):
             ensure_public_works_designations,
         )
 
-        names = [name for name, _category in PUBLIC_WORKS_DESIGNATIONS]
+        names = list(PUBLIC_WORKS_DESIGNATIONS)
         self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(len(names), 202)
         self.assertTrue(all(name == name.strip() and name for name in names))
 
         created = ensure_public_works_designations()
@@ -307,6 +308,54 @@ class TestSotramaHooks(unittest.TestCase):
 
         company_field = meta.get_field("enable_algerian_company_fields")
         self.assertEqual(company_field.permlevel, 0)
+
+        doctype_js = frappe.get_hooks("doctype_js", app_name="sotrama")
+        self.assertIn("Sotrama Settings", doctype_js)
+        self.assertTrue(
+            (
+                Path(frappe.get_app_path("sotrama")).parent
+                / "public/js/sotrama_settings.js"
+            ).is_file()
+        )
+
+    def test_explicit_btph_job_title_action_requires_enabled_setting_and_permission(
+        self,
+    ):
+        from sotrama.sotrama.doctype.sotrama_settings.sotrama_settings import (
+            create_missing_public_works_designations,
+        )
+
+        with (
+            patch(
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.only_for"
+            ) as only_for,
+            patch(
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.get_single",
+                return_value=frappe._dict(add_public_works_designations=1),
+            ),
+            patch(
+                "sotrama.setup.ensure_public_works_designations",
+                return_value=["TITLE-001"],
+            ) as seed,
+        ):
+            result = create_missing_public_works_designations()
+
+        self.assertEqual(result["created_count"], 1)
+        self.assertEqual(result["created"], ["TITLE-001"])
+        only_for.assert_called_once_with(["System Manager", "HR Manager"])
+        seed.assert_called_once_with()
+
+        with (
+            patch(
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.only_for"
+            ),
+            patch(
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.get_single",
+                return_value=frappe._dict(add_public_works_designations=0),
+            ),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            create_missing_public_works_designations()
 
     def test_fleet_manager_role_profile_does_not_escalate_to_system_manager(self):
         profile = frappe.get_doc("Role Profile", "Fleet Manager")

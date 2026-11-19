@@ -72,20 +72,26 @@ an existing Tax ID automatically.
 
 ### HR — Public Works Designations
 
-Sotrama can optionally add a curated French BTPH designation list to the
-standard Frappe HR `Designation` master. Open **Sotrama → Sotrama Settings**,
-select **Add Standard BTPH Designations**, and save. The app creates only
-missing records and keeps existing Designations unchanged. The option is off
-by default; disabling it later does not delete records already used by
+Sotrama can optionally add the company's curated **202-title French BTPH
+catalogue** to the standard Frappe HR `Designation` master. Open **Sotrama →
+Company Registration & HR Job Titles Settings**, check **Create Missing BTPH
+Designation Records**, and save. When the setting is enabled, the **HR Job
+Titles → Create Missing BTPH Job Titles** form action can also be used later
+to add newly introduced catalogue entries without toggling the setting. This
+creates job-title master records only;
+it does not create Employees, Drivers or employee assignments. The app creates
+only missing records and keeps existing Designations unchanged. The option is
+off by default; disabling it later does not delete records already used by
 Employees. HR users continue creating, editing and assigning titles through
 the standard **Human Resources → Employee → Designation** screens.
 
-The starter list consolidates spelling and abbreviation variants from the
-company's existing register. It excludes address fragments, generic source
-placeholders and ambiguous codes that cannot safely be interpreted as job
-titles. The list's internal work-family labels are not copied into HRMS's
-optional Description field; HR can enter accurate job descriptions and
-Required Skills for each role using the standard Designation form.
+The catalogue follows the job titles supplied for the company, with exact
+duplicate entries removed. It covers management, BTPH site operations, heavy
+equipment, transport, workshops, engineering, laboratories, HSE, roads and
+asphalt, concrete plants, quarries, VRD and utilities, logistics, HR and
+accounting. No generic work-family labels are written into HRMS's optional
+Description field; HR can enter accurate job descriptions and Required Skills
+for each role using the standard Designation form.
 
 ### TP — Public Works Fleet
 
@@ -161,7 +167,7 @@ to show installed apps alongside ERPNext and Frappe HR.
 - Python `>=3.14,<3.15`
 - Node.js 24 is required by the Frappe v16 Bench asset toolchain; Sotrama
   itself currently has no Node.js package dependencies or bundle build.
-- Sotrama version: **1.3.4**
+- Sotrama version: **1.4.0**
 
 The minimum version reflects the v16.60 platform baseline. It does not mean
 that an existing site has been upgraded: verify the installed versions with

@@ -15,14 +15,14 @@
   },
   {
    "type": "Section Break",
-   "label": "Configuration",
+   "label": "Company & HR Configuration",
    "icon": "settings-2",
    "collapsible": 1,
    "keep_closed": 0
   },
   {
    "type": "Link",
-   "label": "Sotrama Settings",
+   "label": "Company Registration & HR Job Titles Settings",
    "link_type": "DocType",
    "link_to": "Sotrama Settings",
    "icon": "sliders-horizontal"

@@ -33,16 +33,16 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_public_works_designations",
-   "label": "Algerian Public Works Job Titles",
-   "description": "Use Frappe HR's standard Designation records. No separate Sotrama job-title DocType is created."
+   "label": "Import BTPH Job Titles into Frappe HR",
+   "description": "Optional one-time creation of the company's French job-title catalogue in the standard Frappe HR Designation master. No separate Sotrama employee or job-title register is created."
   },
   {
    "fieldtype": "Check",
    "fieldname": "add_public_works_designations",
-   "label": "Add Standard BTPH Designations",
+   "label": "Create Missing BTPH Designation Records",
    "default": "0",
    "permlevel": 1,
-   "description": "When enabled and saved, Sotrama creates the missing French public-works designations in Frappe HR. Existing designations are never renamed, overwritten or deleted. You can continue adding and editing designations in the standard HR > Employee > Designation list."
+   "description": "When checked and saved, Sotrama creates only missing entries from the curated 202-title French BTPH list in Frappe HR > Human Resources > Employee > Designation. This creates job-title master records only; it does not create Employees, Drivers or employee assignments. Existing designations are never renamed, overwritten or deleted."
   }
  ],
  "permissions": [

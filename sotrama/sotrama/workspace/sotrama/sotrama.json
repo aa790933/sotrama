@@ -39,13 +39,13 @@
   },
   {
    "type": "Card Break",
-   "label": "Application Administration",
+   "label": "Company & HR Configuration",
    "link_count": 1,
    "hidden": 0
   },
   {
    "type": "Link",
-   "label": "Sotrama Settings",
+   "label": "Company Registration & HR Job Titles Settings",
    "link_type": "DocType",
    "link_to": "Sotrama Settings",
    "hidden": 0,

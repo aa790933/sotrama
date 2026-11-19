@@ -50,19 +50,29 @@ jobs:
           assert designation_setting["fieldtype"] == "Check"
           assert designation_setting["default"] == "0"
           assert designation_setting["permlevel"] == 1
+          assert "Create Missing BTPH Designation Records" == designation_setting["label"]
+          assert "does not create Employees, Drivers" in designation_setting["description"]
           assert any(permission["role"] == "HR Manager" and permission.get("permlevel", 0) == 1 and permission.get("write") for permission in settings["permissions"])
 
-          setup_tree = ast.parse(Path("sotrama/setup.py").read_text(encoding="utf-8"))
+          designation_tree = ast.parse(Path("sotrama/designations.py").read_text(encoding="utf-8"))
           designation_assignment = next(
-              node for node in setup_tree.body
+              node for node in designation_tree.body
               if isinstance(node, ast.Assign)
               and any(isinstance(target, ast.Name) and target.id == "PUBLIC_WORKS_DESIGNATIONS" for target in node.targets)
           )
           designations = ast.literal_eval(designation_assignment.value)
-          designation_names = [name for name, _category in designations]
-          assert len(designation_names) == 106, f"Expected 106 curated job titles, found {len(designation_names)}"
+          designation_names = list(designations)
+          assert len(designation_names) == 202, f"Expected 202 curated job titles, found {len(designation_names)}"
           assert len(designation_names) == len(set(designation_names)), "BTPH designation names must be unique"
           assert all(name and name == name.strip() for name in designation_names)
+          assert (Path("sotrama/public/js/sotrama_settings.js")).is_file()
+          hooks = ast.parse(Path("sotrama/hooks.py").read_text(encoding="utf-8"))
+          doctype_js = next(
+              node.value for node in hooks.body
+              if isinstance(node, ast.Assign)
+              and any(isinstance(target, ast.Name) and target.id == "doctype_js" for target in node.targets)
+          )
+          assert "Sotrama Settings" in ast.literal_eval(doctype_js)
 
           sotrama_sidebar = json.loads(Path("sotrama/sotrama/sidebar/sotrama/sotrama.json").read_text(encoding="utf-8"))
           assert sotrama_sidebar["name"] == "Sotrama"
@@ -98,6 +108,8 @@ jobs:
               assert "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json" in names
               assert "sotrama/sotrama/sidebar/sotrama/sotrama.json" in names
               assert "sotrama/setup.py" in names
+              assert "sotrama/designations.py" in names
+              assert "sotrama/public/js/sotrama_settings.js" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
               assert not any(name.endswith("/package.json") for name in names)

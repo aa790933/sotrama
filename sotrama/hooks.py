@@ -481,6 +481,7 @@ app_include_js = "/assets/sotrama/js/sotrama.js"
 # ---------------------------------------------------------------------------
 
 doctype_js = {
+    "Sotrama Settings": "public/js/sotrama_settings.js",
     "Vehicle": "public/js/vehicle.js",
     "Breakdown Incident": "public/js/breakdown.js",
     "Maintenance Job Card": "public/js/job_card.js",
