@@ -702,7 +702,10 @@ class TestSotramaHooks(unittest.TestCase):
                 "get_doc_before_save",
                 return_value=frappe._dict(employee="EMP-TEST-001"),
             ),
-            patch("frappe.has_permission", return_value=False),
+            patch(
+                "frappe.only_for",
+                side_effect=frappe.PermissionError("HR Manager role required"),
+            ),
             patch("sotrama.tp.settings.get_tp_setting", side_effect=lambda key, default=None: default),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -714,10 +717,11 @@ class TestSotramaHooks(unittest.TestCase):
                 "get_doc_before_save",
                 return_value=frappe._dict(employee="EMP-TEST-001"),
             ),
-            patch("frappe.has_permission", return_value=True),
+            patch("frappe.only_for") as only_for,
             patch("sotrama.tp.settings.get_tp_setting", side_effect=lambda key, default=None: default),
         ):
             driver._validate_employee_link()
+        only_for.assert_called_once_with(["System Manager", "HR Manager"])
 
     def test_driver_licence_categories_include_the_2025_decree_categories(self):
         driver_meta = frappe.get_meta("Driver", cached=False)

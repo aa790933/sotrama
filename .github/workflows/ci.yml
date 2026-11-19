@@ -125,7 +125,7 @@ jobs:
           assert "Only HR Manager and System Manager" in employee_link["description"]
           assert "set_df_property('employee', 'read_only'" in Path("sotrama/public/js/driver.js").read_text(encoding="utf-8")
           driver_controller = Path("sotrama/tp/doctype/driver/driver.py").read_text(encoding="utf-8")
-          assert "Only HR Manager or System Manager can remove the linked HRMS Employee." in driver_controller
+          assert 'frappe.only_for(["System Manager", "HR Manager"])' in driver_controller
           inspection_js = Path("sotrama/public/js/inspection.js").read_text(encoding="utf-8")
           assert "Add Inspection Check" in inspection_js
           assert "inspection_items_add" in inspection_js

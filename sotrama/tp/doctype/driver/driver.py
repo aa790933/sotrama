@@ -37,18 +37,10 @@ class Driver(Document):
         previous = self.get_doc_before_save()
         employee_link_changed = not previous or previous.employee != self.employee
 
-        if (
-            previous
-            and previous.employee
-            and not self.employee
-            and not frappe.has_permission("Employee", "read")
+        if employee_link_changed and (
+            self.employee or (previous and previous.employee)
         ):
-            frappe.throw(
-                _(
-                    "Only HR Manager or System Manager can remove the linked HRMS Employee."
-                ),
-                frappe.PermissionError,
-            )
+            frappe.only_for(["System Manager", "HR Manager"])
 
         if not self.employee:
             self.company = self.company or get_tp_setting("default_company")
