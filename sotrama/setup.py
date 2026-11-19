@@ -213,14 +213,12 @@ def ensure_public_works_designations():
     )
 
     created = []
-    for designation_name, category in PUBLIC_WORKS_DESIGNATIONS:
+    for designation_name, _category in PUBLIC_WORKS_DESIGNATIONS:
         if designation_name in existing_names:
             continue
 
         designation = frappe.new_doc("Designation")
         designation.designation_name = designation_name
-        if meta.has_field("description"):
-            designation.description = category
         designation.insert()
         created.append(designation.name)
 

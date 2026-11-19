@@ -229,6 +229,10 @@ class TestSotramaHooks(unittest.TestCase):
         created = ensure_public_works_designations()
         try:
             self.assertTrue(all(frappe.db.exists("Designation", name) for name in created))
+            if frappe.get_meta("Designation").has_field("description"):
+                self.assertTrue(
+                    all(not frappe.db.get_value("Designation", name, "description") for name in created)
+                )
             self.assertEqual(ensure_public_works_designations(), [])
         finally:
             for name in created:
