@@ -1,10 +1,9 @@
 """
 Desktop configuration for the Sotrama app.
 
-Registers the app's Algerian Localization and TP modules in the Frappe Desk
-module navigation. Each module owns its standard Workspace and Sidebar.
+Registers the Sotrama overview, Algerian Localization and TP modules in the
+standard Frappe Desk navigation. Each module owns its Workspace and Sidebar.
 """
-
 
 from frappe import _
 
@@ -15,10 +14,20 @@ def get_data():
     """
     return [
         {
+            "module_name": "Sotrama",
+            "category": "Modules",
+            "label": _("Overview & Settings"),
+            "description": _("Sotrama application overview and configuration"),
+            "type": "module",
+            "icon": "building-2",
+        },
+        {
             "module_name": "Algerian Localization",
             "category": "Modules",
             "label": _("Algerian Localization"),
-            "description": _("Company registration identifiers and Algerian organization settings"),
+            "description": _(
+                "Company registration identifiers and Algerian organization settings"
+            ),
             "type": "module",
             "icon": "landmark",
         },
@@ -29,5 +38,5 @@ def get_data():
             "description": _("Vehicles, drivers, maintenance and inspections"),
             "type": "module",
             "icon": "truck",
-        }
+        },
     ]

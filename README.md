@@ -22,6 +22,8 @@ Sotrama links to the standard ERPNext / Frappe HR records wherever they exist:
   valuation/accounting pipeline.
 - Drivers may link to the authoritative HRMS `Employee` record; Sotrama does
   not create a parallel employee register.
+- Job titles use Frappe HR's standard `Designation` master. Sotrama does not
+  introduce a parallel position or job-title DocType.
 - Fleet records retain a standard `Company` link to support multiple legal
   entities (for example, a construction company, factory and quarry).
 
@@ -67,6 +69,22 @@ A legacy `custom_nif` field from an older installation
 is hidden, not deleted; review its values and reconcile them with the standard
 `Company.tax_id` field before retiring any old data. Sotrama does not overwrite
 an existing Tax ID automatically.
+
+### HR — Public Works Designations
+
+Sotrama can optionally add a curated French BTPH designation list to the
+standard Frappe HR `Designation` master. Open **Sotrama → Sotrama Settings**,
+select **Add Standard BTPH Designations**, and save. The app creates only
+missing records and keeps existing Designations unchanged. The option is off
+by default; disabling it later does not delete records already used by
+Employees. HR users continue creating, editing and assigning titles through
+the standard **Human Resources → Employee → Designation** screens.
+
+The starter list consolidates spelling and abbreviation variants from the
+company's existing register. It excludes address fragments, generic source
+placeholders and ambiguous codes that cannot safely be interpreted as job
+titles. Designation descriptions identify broad work families; they are not
+employment categories, qualifications or salary grades.
 
 ### TP — Public Works Fleet
 
@@ -118,15 +136,17 @@ printing with a full-page preview and server-rendered report output.
 - **Sotrama** is the app workspace and home route (`/desk/sotrama`).
 - **Algerian Localization** and **TP** are separate Frappe modules with their
   own standard Workspace and Sidebar records.
-- The app Dock exposes both module sidebars.
+- The app Dock exposes the Sotrama overview, Algerian Localization and TP
+  module sidebars.
 - App visibility is controlled by `sotrama.permissions.has_app_permission`;
   visibility does not grant DocType permissions. Normal Frappe role and
   document permissions still apply.
 - Report Company filters accept the exact Company name without expanding
   Fleet Manager's permissions on the standard Company DocType. Vehicle filters
   remain linked to the permission-controlled Vehicle register.
-- Only System Manager can change Sotrama Settings. Accounts Manager can read
-  the settings page but cannot change its options.
+- System Manager controls the Algerian Company extension. HR Manager can
+  change only the level-1 HR designation option; Accounts Manager can read the
+  settings page but cannot change its options.
 
 On upgraded Frappe sites that still use the legacy Desktop icon grid, a System
 Manager can open **Desktop Settings** and select **Apps** as the Desktop Page
@@ -140,7 +160,7 @@ to show installed apps alongside ERPNext and Frappe HR.
 - Python `>=3.14,<3.15`
 - Node.js 24 is required by the Frappe v16 Bench asset toolchain; Sotrama
   itself currently has no Node.js package dependencies or bundle build.
-- Sotrama version: **1.3.2**
+- Sotrama version: **1.3.3**
 
 The minimum version reflects the v16.60 platform baseline. It does not mean
 that an existing site has been upgraded: verify the installed versions with
@@ -181,6 +201,13 @@ until any existing custom fields have been reviewed.
   imported through Custom Field fixtures or synchronized during migration.
   Saving Sotrama Settings is the only operation that applies the optional
   Company extension.
+- Public-works designations are added only by explicit opt-in and are stored in
+  HRMS's standard `Designation` DocType. Existing records are never overwritten
+  or deleted, and turning the option off does not remove them.
+- Before install, Sotrama repairs only an unplaced, non-custom `Module Def`
+  whose name is declared by Sotrama. It never changes a module owned by another
+  app or a site-created custom module; Frappe remains responsible for handling
+  custom-module name conflicts.
 - Existing Company fields are never automatically converted between field
   types. In particular, formatted text such as `2 897 268 000.00 DA` must not
   be cast directly into a Decimal/Currency database column.

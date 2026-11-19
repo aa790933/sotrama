@@ -26,20 +26,6 @@
    "link_type": "DocType",
    "link_to": "Company",
    "icon": "building-2"
-  },
-  {
-   "type": "Section Break",
-   "label": "Configuration",
-   "icon": "settings-2",
-   "collapsible": 1,
-   "keep_closed": 0
-  },
-  {
-   "type": "Link",
-   "label": "Sotrama Settings",
-   "link_type": "DocType",
-   "link_to": "Sotrama Settings",
-   "icon": "sliders-horizontal"
   }
  ]
 }

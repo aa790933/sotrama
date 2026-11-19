@@ -56,6 +56,49 @@ def ensure_roles():
             ).insert(ignore_permissions=True)
 
 
+def prepare_before_install():
+    """Prepare only Sotrama-owned records before Frappe syncs its modules."""
+    ensure_roles()
+    repair_orphaned_module_definitions()
+
+
+def repair_orphaned_module_definitions():
+    """Repair unplaced Sotrama Module Def rows left by an interrupted install.
+
+    Frappe's installer creates Module Def records before syncing DocTypes. A
+    previous failed install can leave a module row without an ``app_name`` or
+    with a NULL ``custom`` flag; the next normal install then attempts to insert
+    the same primary key again. Normalize only an unplaced, non-custom row whose
+    module is declared by this app. Never rewrite a row owned by another app or
+    a custom module; Frappe's installer remains responsible for custom-name clashes.
+    """
+    if not frappe.db.table_exists("Module Def"):
+        return
+
+    for module_name in frappe.get_module_list("sotrama"):
+        existing = frappe.db.get_value(
+            "Module Def", module_name, ["app_name", "custom"], as_dict=True
+        )
+        if not existing or existing.custom in (1, "1", True):
+            continue
+        if existing.app_name and existing.app_name != "sotrama":
+            frappe.throw(
+                frappe._(
+                    "The module {0} already belongs to app {1}. Sotrama will not change another app's module ownership. "
+                    "Review the existing Module Def before installing Sotrama."
+                ).format(module_name, existing.app_name),
+                title=frappe._("Module ownership conflict"),
+            )
+
+        values = {}
+        if not existing.app_name:
+            values["app_name"] = "sotrama"
+        if existing.custom in (None, ""):
+            values["custom"] = 0
+        if values:
+            frappe.db.set_value("Module Def", module_name, values, update_modified=False)
+
+
 # ---------------------------------------------------------------------------
 # Custom Field Definitions — Company doctype (Algerian registration)
 # ---------------------------------------------------------------------------
@@ -402,7 +445,7 @@ def preserve_company_fields_on_uninstall():
         frappe.clear_cache(doctype="Company")
 
 
-before_install = "sotrama.hooks.ensure_roles"
+before_install = "sotrama.hooks.prepare_before_install"
 after_install = "sotrama.hooks.initialize_app"
 before_uninstall = "sotrama.hooks.preserve_company_fields_on_uninstall"
 

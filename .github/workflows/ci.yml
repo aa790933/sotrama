@@ -33,6 +33,7 @@ jobs:
       - name: Validate JSON metadata
         run: |
           python - <<'PY'
+          import ast
           import json
           from pathlib import Path
 
@@ -42,6 +43,33 @@ jobs:
               if isinstance(data, dict) and "doctype" in data:
                   assert data.get("name"), f"Frappe record JSON is missing its name: {path}"
           print(f"Validated {len(files)} JSON files")
+
+          settings = json.loads(Path("sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json").read_text(encoding="utf-8"))
+          settings_fields = {field["fieldname"]: field for field in settings["fields"]}
+          designation_setting = settings_fields["add_public_works_designations"]
+          assert designation_setting["fieldtype"] == "Check"
+          assert designation_setting["default"] == "0"
+          assert designation_setting["permlevel"] == 1
+          assert any(permission["role"] == "HR Manager" and permission.get("permlevel", 0) == 1 and permission.get("write") for permission in settings["permissions"])
+
+          setup_tree = ast.parse(Path("sotrama/setup.py").read_text(encoding="utf-8"))
+          designation_assignment = next(
+              node for node in setup_tree.body
+              if isinstance(node, ast.Assign)
+              and any(isinstance(target, ast.Name) and target.id == "PUBLIC_WORKS_DESIGNATIONS" for target in node.targets)
+          )
+          designations = ast.literal_eval(designation_assignment.value)
+          designation_names = [name for name, _category in designations]
+          assert len(designation_names) == 106, f"Expected 106 curated job titles, found {len(designation_names)}"
+          assert len(designation_names) == len(set(designation_names)), "BTPH designation names must be unique"
+          assert all(name and name == name.strip() for name in designation_names)
+
+          sotrama_sidebar = json.loads(Path("sotrama/sotrama/sidebar/sotrama/sotrama.json").read_text(encoding="utf-8"))
+          assert sotrama_sidebar["name"] == "Sotrama"
+          assert sotrama_sidebar["module"] == "Sotrama"
+          dock = json.loads(Path("sotrama/dock/sotrama/sotrama.json").read_text(encoding="utf-8"))
+          dock_modules = {item["link_to"] for item in dock["items"] if item["link_type"] == "Sidebar"}
+          assert dock_modules == {"Sotrama", "TP", "Algerian Localization"}
 
           app_path = Path("sotrama")
           assert not Path("package.json").exists(), "Sotrama must not trigger Bench's automatic Yarn install"
@@ -68,6 +96,8 @@ jobs:
               names = set(wheel.namelist())
               assert "sotrama/hooks.py" in names
               assert "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json" in names
+              assert "sotrama/sotrama/sidebar/sotrama/sotrama.json" in names
+              assert "sotrama/setup.py" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
               assert not any(name.endswith("/package.json") for name in names)

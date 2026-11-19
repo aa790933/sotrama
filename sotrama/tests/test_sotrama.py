@@ -95,7 +95,7 @@ class TestSotramaHooks(unittest.TestCase):
 
     def test_app_lifecycle_hooks_are_import_paths(self):
         app_hooks = frappe.get_hooks(app_name="sotrama")
-        self.assertEqual(app_hooks["before_install"][0], "sotrama.hooks.ensure_roles")
+        self.assertEqual(app_hooks["before_install"][0], "sotrama.hooks.prepare_before_install")
         self.assertEqual(app_hooks["after_install"][0], "sotrama.hooks.initialize_app")
         self.assertFalse(
             app_hooks.get("after_migrate"),
@@ -127,6 +127,113 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(app_entry["title"], "Sotrama")
         self.assertEqual(app_entry["route"], "/desk/sotrama")
         self.assertEqual(app_entry["has_permission"], "sotrama.permissions.has_app_permission")
+
+    def test_standard_desktop_navigation_includes_the_overview_module(self):
+        from sotrama.config.desktop import get_data
+
+        modules = {entry["module_name"] for entry in get_data()}
+        self.assertEqual(modules, {"Sotrama", "TP", "Algerian Localization"})
+        module = frappe.get_doc("Module Def", "Sotrama")
+        self.assertEqual(module.app_name, "sotrama")
+        self.assertFalse(module.custom)
+        sidebar = frappe.get_doc("Sidebar", "Sotrama")
+        self.assertTrue(any(item.link_to == "Sotrama Settings" for item in sidebar.items))
+        dock = frappe.get_doc("Dock", {"app": "sotrama", "standard": 1})
+        self.assertEqual(
+            {item.link_to for item in dock.items if item.link_type == "Sidebar"},
+            {"Sotrama", "TP", "Algerian Localization"},
+        )
+
+    def test_before_install_repairs_only_unplaced_sotrama_modules(self):
+        from sotrama.hooks import repair_orphaned_module_definitions
+
+        with (
+            patch("sotrama.hooks.frappe.get_module_list", return_value=["Sotrama"]),
+            patch("sotrama.hooks.frappe.db.table_exists", return_value=True),
+            patch(
+                "sotrama.hooks.frappe.db.get_value",
+                return_value=frappe._dict(app_name=None, custom=None),
+            ),
+            patch("sotrama.hooks.frappe.db.set_value") as set_value,
+        ):
+            repair_orphaned_module_definitions()
+
+        set_value.assert_called_once_with(
+            "Module Def",
+            "Sotrama",
+            {"app_name": "sotrama", "custom": 0},
+            update_modified=False,
+        )
+
+    def test_before_install_normalizes_a_null_custom_flag(self):
+        from sotrama.hooks import repair_orphaned_module_definitions
+
+        with (
+            patch("sotrama.hooks.frappe.get_module_list", return_value=["Sotrama"]),
+            patch("sotrama.hooks.frappe.db.table_exists", return_value=True),
+            patch(
+                "sotrama.hooks.frappe.db.get_value",
+                return_value=frappe._dict(app_name="sotrama", custom=None),
+            ),
+            patch("sotrama.hooks.frappe.db.set_value") as set_value,
+        ):
+            repair_orphaned_module_definitions()
+
+        set_value.assert_called_once_with(
+            "Module Def", "Sotrama", {"custom": 0}, update_modified=False
+        )
+
+    def test_before_install_does_not_claim_another_apps_module(self):
+        from sotrama.hooks import repair_orphaned_module_definitions
+
+        with (
+            patch("sotrama.hooks.frappe.get_module_list", return_value=["Sotrama"]),
+            patch("sotrama.hooks.frappe.db.table_exists", return_value=True),
+            patch(
+                "sotrama.hooks.frappe.db.get_value",
+                return_value=frappe._dict(app_name="erpnext", custom=0),
+            ),
+            patch("sotrama.hooks.frappe.db.set_value") as set_value,
+            self.assertRaises(frappe.ValidationError),
+        ):
+            repair_orphaned_module_definitions()
+
+        set_value.assert_not_called()
+
+    def test_before_install_leaves_custom_module_definitions_for_frappe(self):
+        from sotrama.hooks import repair_orphaned_module_definitions
+
+        with (
+            patch("sotrama.hooks.frappe.get_module_list", return_value=["Sotrama"]),
+            patch("sotrama.hooks.frappe.db.table_exists", return_value=True),
+            patch(
+                "sotrama.hooks.frappe.db.get_value",
+                return_value=frappe._dict(app_name=None, custom=1),
+            ),
+            patch("sotrama.hooks.frappe.db.set_value") as set_value,
+        ):
+            repair_orphaned_module_definitions()
+
+        set_value.assert_not_called()
+
+    def test_public_works_designations_are_unique_and_use_standard_hrms_master(self):
+        from sotrama.setup import (
+            PUBLIC_WORKS_DESIGNATIONS,
+            ensure_public_works_designations,
+        )
+
+        names = [name for name, _category in PUBLIC_WORKS_DESIGNATIONS]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue(all(name == name.strip() and name for name in names))
+
+        created = ensure_public_works_designations()
+        try:
+            self.assertTrue(all(frappe.db.exists("Designation", name) for name in created))
+            self.assertEqual(ensure_public_works_designations(), [])
+        finally:
+            for name in created:
+                if frappe.db.exists("Designation", name):
+                    frappe.delete_doc("Designation", name, ignore_permissions=True)
 
     def test_fleet_dock_sidebar_and_workspace_are_installed(self):
         self.assertTrue(frappe.db.exists("Dock", {"app": "sotrama", "standard": 1}))
@@ -174,8 +281,28 @@ class TestSotramaHooks(unittest.TestCase):
         app_dock = frappe.get_doc("Dock", {"app": "sotrama", "standard": 1})
         self.assertEqual(
             {item.link_to for item in app_dock.items if item.link_type == "Sidebar"},
-            {"TP", "Algerian Localization"},
+            {"Sotrama", "TP", "Algerian Localization"},
         )
+
+    def test_sotrama_settings_expose_optional_hr_designation_seed(self):
+        meta = frappe.get_meta("Sotrama Settings", cached=False)
+        field = meta.get_field("add_public_works_designations")
+        self.assertIsNotNone(field)
+        self.assertEqual(field.fieldtype, "Check")
+        self.assertEqual(field.default, "0")
+        self.assertEqual(field.permlevel, 1)
+
+        hr_permissions = [
+            permission
+            for permission in meta.permissions
+            if permission.role == "HR Manager" and permission.permlevel == 1
+        ]
+        self.assertTrue(hr_permissions)
+        self.assertTrue(hr_permissions[0].read)
+        self.assertTrue(hr_permissions[0].write)
+
+        company_field = meta.get_field("enable_algerian_company_fields")
+        self.assertEqual(company_field.permlevel, 0)
 
     def test_fleet_manager_role_profile_does_not_escalate_to_system_manager(self):
         profile = frappe.get_doc("Role Profile", "Fleet Manager")
