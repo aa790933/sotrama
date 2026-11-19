@@ -70,7 +70,12 @@ frappe.ui.form.on('Maintenance Job Card', {
     },
 
     refresh: function(frm) {
-        const canEdit = (frm.perm || []).some((permission) => permission.write || permission.create);
+        // A saved draft needs write permission; create permission applies only
+        // while the document is still new. Do not show add-row actions that the
+        // user cannot save on an existing draft.
+        const canEdit = (frm.perm || []).some((permission) =>
+            frm.is_new() ? permission.create : permission.write,
+        );
         if (frm.doc.docstatus === 0 && canEdit) {
             const addRow = (fieldname, description) => {
                 frm.add_child(fieldname);

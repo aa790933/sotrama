@@ -508,6 +508,7 @@ class TestSotramaHooks(unittest.TestCase):
             "other_costs_delete",
         ):
             self.assertIn(action, script)
+        self.assertIn("frm.is_new() ? permission.create : permission.write", script)
         self.assertNotIn("frappe.db.get_value('Employee'", script)
 
     def test_workshop_employee_lookup_is_limited_to_accessible_company_and_safe_fields(self):
@@ -585,6 +586,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("row.status = 'Not Checked'", script)
         self.assertIn("inspection_items_add", script)
         self.assertIn("inspection_items_delete", script)
+        self.assertIn("frm.is_new() ? permission.create : permission.write", script)
 
     def test_inspection_cannot_be_submitted_with_unchecked_items(self):
         inspection = frappe.new_doc("Vehicle Inspection")

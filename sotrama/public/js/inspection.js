@@ -53,7 +53,12 @@ frappe.ui.form.on('Vehicle Inspection', {
     },
 
     refresh: function(frm) {
-        const canEdit = (frm.perm || []).some((permission) => permission.write || permission.create);
+        // A saved draft needs write permission; create permission applies only
+        // while the document is still new. Do not show add-row actions that the
+        // user cannot save on an existing draft.
+        const canEdit = (frm.perm || []).some((permission) =>
+            frm.is_new() ? permission.create : permission.write,
+        );
         if (frm.doc.docstatus === 0 && canEdit) {
             frm.add_custom_button(__('Add Inspection Check'), () => {
                 const row = frm.add_child('inspection_items');
