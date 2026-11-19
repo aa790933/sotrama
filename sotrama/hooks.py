@@ -44,7 +44,7 @@ add_to_apps_screen = [
 
 
 def ensure_roles():
-    """Create the app roles before DocTypes and Role Profile fixtures sync."""
+    """Create the app roles before DocTypes and Role Profiles sync."""
     for role_name in ("Fleet Manager", "Workshop", "Driver"):
         if not frappe.db.exists("Role", role_name):
             frappe.get_doc(
@@ -347,8 +347,11 @@ def sync_company_fields():
 
 
 def initialize_app():
-    """Initialize app roles without modifying standard ERPNext DocTypes."""
+    """Initialize app roles and idempotent fleet masters after DocTypes sync."""
     ensure_roles()
+    from sotrama.setup import ensure_default_masters
+
+    ensure_default_masters()
 
 
 def preserve_company_fields_on_uninstall():
@@ -399,20 +402,8 @@ def preserve_company_fields_on_uninstall():
         frappe.clear_cache(doctype="Company")
 
 
-# ---------------------------------------------------------------------------
-# Fixtures — export only site metadata explicitly owned by this app.
-# ---------------------------------------------------------------------------
-
-# Do not export Company Custom Fields as fixtures: Frappe imports fixtures
-# before after_migrate, which would bypass the administrator's opt-in setting.
-# Optional Company fields are created only by enable_algerian_company_fields().
-fixtures = [
-    {"dt": "Property Setter", "filters": [["module", "=", "Sotrama"]]},
-]
-
 before_install = "sotrama.hooks.ensure_roles"
 after_install = "sotrama.hooks.initialize_app"
-after_migrate = "sotrama.hooks.sync_company_fields"
 before_uninstall = "sotrama.hooks.preserve_company_fields_on_uninstall"
 
 
@@ -457,6 +448,11 @@ doctype_js = {
     "TP Settings": "public/js/tp_settings.js",
     "Company Classification": "public/js/company_classification.js",
 }
+
+# Role Profiles are standard Frappe records stored in the module's role_profile
+# folder. Register the DocType with Frappe's supported importable_doctypes hook
+# so the records are synchronized during install and migrate, not left unused.
+importable_doctypes = ["Role Profile"]
 
 
 # ---------------------------------------------------------------------------

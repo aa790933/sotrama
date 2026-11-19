@@ -7,6 +7,7 @@ Run with: bench --site your-site run-tests --app sotrama
 
 import unittest
 import uuid
+from pathlib import Path
 from unittest.mock import patch
 
 import frappe
@@ -15,6 +16,40 @@ from frappe.utils import add_days, getdate, today
 
 class TestSotramaHooks(unittest.TestCase):
     """Protect against incompatible hook value shapes across installed apps."""
+
+    def test_app_install_does_not_trigger_an_unnecessary_yarn_install(self):
+        app_path = Path(frappe.get_app_path("sotrama")).parent
+        self.assertFalse(
+            (app_path / "package.json").exists(),
+            "Sotrama has no Node dependencies; package.json makes Bench run Yarn and can dirty the Git checkout.",
+        )
+
+    def test_declared_patches_resolve_to_real_python_modules(self):
+        app_path = Path(frappe.get_app_path("sotrama")).parent
+        patch_file = app_path / "patches.txt"
+        for line in patch_file.read_text(encoding="utf-8").splitlines():
+            dotted_path = line.strip()
+            if not dotted_path or dotted_path.startswith("#"):
+                continue
+            module_path = app_path.joinpath(*dotted_path.split(".")[1:]).with_suffix(".py")
+            self.assertTrue(module_path.is_file(), f"Patch module does not exist: {dotted_path}")
+
+    def test_default_fleet_masters_are_created_for_a_fresh_install(self):
+        self.assertTrue(frappe.db.exists("Vehicle Make", {"make_name": "Mercedes-Benz"}))
+        self.assertTrue(frappe.db.exists("Vehicle Make", {"make_name": "Volvo"}))
+        self.assertTrue(frappe.db.exists("Maintenance Job Type", {"job_type_name": "Oil Change"}))
+
+    def test_sotrama_settings_doctype_is_inside_its_declared_module(self):
+        module_path = Path(frappe.get_module_path("Sotrama"))
+        self.assertTrue(
+            (module_path / "doctype" / "sotrama_settings" / "sotrama_settings.json").is_file()
+        )
+
+    def test_role_profiles_use_frappe_importable_doctype_sync(self):
+        importable_doctypes = frappe.get_hooks("importable_doctypes", app_name="sotrama")
+        self.assertIn("Role Profile", importable_doctypes)
+        for profile in ("Fleet Manager", "Workshop", "Driver"):
+            self.assertTrue(frappe.db.exists("Role Profile", profile))
 
     def test_app_metadata_is_complete_for_desk_boot(self):
         from frappe.utils.change_log import get_versions
@@ -44,7 +79,10 @@ class TestSotramaHooks(unittest.TestCase):
         app_hooks = frappe.get_hooks(app_name="sotrama")
         self.assertEqual(app_hooks["before_install"][0], "sotrama.hooks.ensure_roles")
         self.assertEqual(app_hooks["after_install"][0], "sotrama.hooks.initialize_app")
-        self.assertEqual(app_hooks["after_migrate"][0], "sotrama.hooks.sync_company_fields")
+        self.assertFalse(
+            app_hooks.get("after_migrate"),
+            "Migrations must not create or alter optional Company custom fields.",
+        )
         self.assertEqual(
             app_hooks["before_uninstall"][0],
             "sotrama.hooks.preserve_company_fields_on_uninstall",
@@ -54,10 +92,11 @@ class TestSotramaHooks(unittest.TestCase):
         fixtures = frappe.get_hooks("fixtures", app_name="sotrama")
         self.assertFalse(
             any(
-                (fixture.get("dt") if isinstance(fixture, dict) else fixture) == "Custom Field"
+                (fixture.get("dt") if isinstance(fixture, dict) else fixture)
+                in {"Custom Field", "Property Setter"}
                 for fixture in fixtures
             ),
-            "Company Custom Fields must remain opt-in and cannot be imported as fixtures.",
+            "Company Custom Fields and standard DocType Property Setters must not be imported as fixtures.",
         )
 
     def test_company_form_does_not_load_legacy_nif_alias_script(self):

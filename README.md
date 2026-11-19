@@ -48,11 +48,11 @@ Settings**, and enable **Enable Algerian Company Registration Fields**. The
 fields are displayed on Company records whose Country is Algeria. They remain
 optional and do not replace standard ERPNext Company fields.
 
-The fields are deliberately not installed as fixtures and are not created by
-fresh installation or by `migrate` while the setting is disabled. Once enabled,
-the setting is the explicit authorization for Sotrama to create any missing
-fields. Existing fields are checked first: Sotrama refuses a field-type
-mismatch or a field owned by another module rather than silently changing or
+The fields are deliberately not installed as fixtures and are never created
+or altered by a migration. Saving the setting after explicitly enabling it is
+the authorization for Sotrama to create any missing fields. Existing fields
+are checked first: Sotrama refuses a field-type mismatch or a field owned by
+another module rather than silently changing or
 taking it over. Review the conflict and resolve it deliberately before
 enabling the feature.
 
@@ -138,8 +138,9 @@ to show installed apps alongside ERPNext and Frappe HR.
 - ERPNext `>=16.60.0,<17.0.0`
 - Frappe HR / HRMS `>=16.60.0,<17.0.0`
 - Python `>=3.14,<3.15`
-- Node.js 24 for the v16 asset toolchain
-- Sotrama version: **1.3.0**
+- Node.js 24 is required by the Frappe v16 Bench asset toolchain; Sotrama
+  itself currently has no Node.js package dependencies or bundle build.
+- Sotrama version: **1.3.1**
 
 The minimum version reflects the v16.60 platform baseline. It does not mean
 that an existing site has been upgraded: verify the installed versions with
@@ -158,17 +159,28 @@ bench --site your-site install-app sotrama
 bench --site your-site migrate
 ```
 
+Sotrama currently has no Node.js frontend bundle or third-party JavaScript
+dependencies. It deliberately does not ship a `package.json`: Bench runs
+`yarn install` for every app that contains that file, and an empty manifest
+would create an untracked `yarn.lock` in the cloned app repository on install.
+That makes `bench update` reject the app as locally modified. The app's
+Python package metadata and version are defined only in `pyproject.toml` and
+`sotrama/__init__.py`.
+
 For an existing installation, pull the published app revision and run the
 site migration after taking a backup. Do not enable optional Company fields
 until any existing custom fields have been reviewed.
 
 ## Upgrade and data safety
 
-- Standard Frappe DocType JSON, hooks, patches, fixtures, Workspaces, Sidebars
-  and Module Def registration are used; core applications are not modified.
+- Standard Frappe DocType JSON, hooks, patches, Workspaces and
+  Sidebars are used. Frappe 16.60 registers app modules declared in
+  `modules.txt` during migration; Sotrama does not maintain a parallel module
+  registry or patch the framework's Module Def lifecycle.
 - Optional Company fields are created only by explicit opt-in. They are not
-  imported through Custom Field fixtures, which would otherwise bypass the
-  setting during installation/migration.
+  imported through Custom Field fixtures or synchronized during migration.
+  Saving Sotrama Settings is the only operation that applies the optional
+  Company extension.
 - Existing Company fields are never automatically converted between field
   types. In particular, formatted text such as `2 897 268 000.00 DA` must not
   be cast directly into a Decimal/Currency database column.
@@ -179,6 +191,21 @@ until any existing custom fields have been reviewed.
   belong in Sotrama Settings.
 - Always back up the site before upgrading Frappe apps or Sotrama. Upgrade the
   framework, ERPNext, HRMS and dependent apps as a compatible set.
+- Uninstalling an app through Frappe removes its app-owned DocTypes and their
+  records. The Company extension is specifically preserved, but Fleet records
+  and Sotrama Settings are app-owned data and must be exported/backed up before
+  uninstalling Sotrama.
+- Do not add an empty `package.json` just to store the app version. If Sotrama
+  later adds a real JavaScript build or runtime dependency, add a deliberate
+  manifest and commit its lockfile so Bench's automatic Yarn install remains
+  reproducible and does not dirty the app checkout; remove the `yarn.lock`
+  ignore entry at that point.
+- Bench enables maintenance mode and pauses the scheduler before pulling app
+  repositories. If an update exits early because a repository is dirty, Bench
+  may not reach its normal cleanup. After resolving the repository issue,
+  inspect `sites/common_site_config.json`; if either flag was left enabled,
+  restore them with `bench set-config -g maintenance_mode 0` and
+  `bench set-config -g pause_scheduler 0`, then run `bench restart`.
 
 ## Development checks
 

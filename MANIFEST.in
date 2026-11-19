@@ -1,6 +1,4 @@
 recursive-include sotrama *.py *.txt *.js *.json *.svg *.css
 include README.md
 include license.txt
-include requirements.txt
-include package.json
 include pyproject.toml

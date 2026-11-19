@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install build and lint tools
+        run: python -m pip install --upgrade pip build 'flit_core>=3.12,<4' ruff
+
+      - name: Lint
+        run: ruff check sotrama
+
+      - name: Compile Python
+        run: python -m compileall -q sotrama
+
+      - name: Validate JSON metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = sorted(Path("sotrama").rglob("*.json"))
+          for path in files:
+              json.loads(path.read_text(encoding="utf-8"))
+          print(f"Validated {len(files)} JSON files")
+
+          app_path = Path("sotrama")
+          assert not Path("package.json").exists(), "Sotrama must not trigger Bench's automatic Yarn install"
+          assert (app_path / "sotrama" / "doctype" / "sotrama_settings" / "sotrama_settings.json").is_file()
+          for line in (app_path / "patches.txt").read_text(encoding="utf-8").splitlines():
+              patch = line.strip()
+              if patch and not patch.startswith("#"):
+                  module = app_path.joinpath(*patch.split(".")[1:]).with_suffix(".py")
+                  assert module.is_file(), f"Patch module does not exist: {patch}"
+          PY
+
+      - name: Build wheel
+        run: python -m build --wheel --no-isolation
+
+      - name: Verify wheel metadata and app files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          wheels = list(Path("dist").glob("sotrama-*.whl"))
+          assert len(wheels) == 1, f"Expected one Sotrama wheel, found {wheels}"
+          with ZipFile(wheels[0]) as wheel:
+              names = set(wheel.namelist())
+              assert "sotrama/hooks.py" in names
+              assert "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json" in names
+              assert not any(name.endswith("/package.json") for name in names)
+          print(f"Verified {wheels[0]}")
+          PY

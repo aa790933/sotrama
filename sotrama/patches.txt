@@ -1,6 +1,5 @@
 # Patches are run in order during `bench migrate`.
 # Each patch is run only once per site.
-# Add patch files under sotrama/patches/ and reference them here.
-sotrama.tp.patches.v1_0.register_tp_modules
+# Add patch files under the relevant module's patches/ directory and reference them here.
 sotrama.tp.patches.v1_0.register_doctype_masters
-sotrama.tp.patches.v1_3.register_algerian_localization_module
+sotrama.tp.patches.v1_3.ensure_default_masters

@@ -7,8 +7,11 @@ __pycache__/
 .vscode/
 node_modules/
 dist/
+yarn.lock
 *.log
 env/
+.venv/
+uv.lock
 .env
 *.sqlite3
 *.db
