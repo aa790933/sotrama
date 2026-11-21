@@ -5223,27 +5223,24 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         todos = [
             frappe._dict(
                 name="TODO-LICENSE",
-                title="Driver License Expiring: Test Driver",
                 reference_type="Driver",
                 reference_name="DRV-TEST-001",
                 allocated_to="fleet@example.invalid",
-                description="Old alert exposed licence SECRET-LICENSE-NUMBER",
+                description="Driver Test Driver license expires on tomorrow; SECRET-LICENSE-NUMBER",
             ),
             frappe._dict(
                 name="TODO-SAFETY",
-                title="Safety Training Expiring: Test Driver",
                 reference_type="Driver",
                 reference_name="DRV-TEST-001",
                 allocated_to="fleet@example.invalid",
-                description="Old safety alert with HR-only training date",
+                description="Driver Test Driver safety training expires on tomorrow; HR-only date",
             ),
             frappe._dict(
                 name="TODO-COMPLIANCE",
-                title="Restricted Driver Compliance Review",
                 reference_type="Driver",
                 reference_name="DRV-TEST-001",
                 allocated_to="fleet@example.invalid",
-                description="Old alert contained medical result: POSITIVE",
+                description="Review the restricted professional-driver compliance records. Medical result: POSITIVE",
             ),
         ]
         driver_license = frappe._dict(

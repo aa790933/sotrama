@@ -71,7 +71,7 @@ def check_document_expiries():
                 {
                     "reference_type": "Vehicle",
                     "reference_name": v["name"],
-                    "title": ["like", f"%{doc['document_type']}%"],
+                    "description": ["like", f"%{doc['document_type']}%"],
                     "status": "Open",
                 },
                 "name",
@@ -85,8 +85,7 @@ def check_document_expiries():
                 )
             else:
                 todo = frappe.new_doc("ToDo")
-                todo.title = title
-                todo.description = description
+                todo.description = f"{title}\n{description}"
                 todo.reference_type = "Vehicle"
                 todo.reference_name = v["name"]
                 todo.priority = "High" if document_status == "Expired" else "Medium"
@@ -150,16 +149,32 @@ def check_maintenance_due():
         )
         if existing:
             frappe.db.set_value(
-                "ToDo", existing, "allocated_to", allocated_to, update_modified=False
+                "ToDo",
+                existing,
+                {
+                    "allocated_to": allocated_to,
+                    "description": _("Maintenance Due: {0} (Vehicle: {1})\n{2}").format(
+                        sched.get("job_type", "Service"),
+                        sched.get("vehicle", "Unknown"),
+                        _("Scheduled maintenance for vehicle {0} is due: {1}.").format(
+                            sched.get("vehicle"), "; ".join(due_reasons)
+                        ),
+                    ),
+                },
+                update_modified=False,
             )
         else:
             todo = frappe.new_doc("ToDo")
-            todo.title = _("Maintenance Due: {0} (Vehicle: {1})").format(
+            title = _("Maintenance Due: {0} (Vehicle: {1})").format(
                 sched.get("job_type", "Service"), sched.get("vehicle", "Unknown")
             )
-            todo.description = _(
-                "Scheduled maintenance for vehicle {0} is due: {1}."
-            ).format(sched.get("vehicle"), "; ".join(due_reasons))
+            todo.description = (
+                title
+                + "\n"
+                + _("Scheduled maintenance for vehicle {0} is due: {1}.").format(
+                    sched.get("vehicle"), "; ".join(due_reasons)
+                )
+            )
             todo.reference_type = "Maintenance Schedule"
             todo.reference_name = sched["name"]
             todo.priority = "Medium"
@@ -221,7 +236,7 @@ def check_driver_license_expiry():
                 {
                     "reference_type": "Driver",
                     "reference_name": d["name"],
-                    "title": ["like", "%License%"],
+                    "description": ["like", "%license expires%"],
                     "status": "Open",
                 },
                 "name",
@@ -235,8 +250,7 @@ def check_driver_license_expiry():
                 )
             else:
                 todo = frappe.new_doc("ToDo")
-                todo.title = title
-                todo.description = description
+                todo.description = f"{title}\n{description}"
                 todo.reference_type = "Driver"
                 todo.reference_name = d["name"]
                 todo.priority = "High"
@@ -284,7 +298,10 @@ def check_driver_license_expiry():
                 {
                     "reference_type": "Driver",
                     "reference_name": d.name,
-                    "title": "Restricted Driver Compliance Review",
+                    "description": [
+                        "like",
+                        "%restricted professional-driver compliance records%",
+                    ],
                     "status": "Open",
                 },
                 "name",
@@ -299,11 +316,14 @@ def check_driver_license_expiry():
                 )
             else:
                 todo = frappe.new_doc("ToDo")
-                todo.title = _("Restricted Driver Compliance Review")
-                todo.description = _(
-                    "Review the restricted professional-driver compliance records for {0}. "
-                    "This task intentionally contains no medical result or date."
-                ).format(d.driver_name)
+                todo.description = (
+                    _("Restricted Driver Compliance Review")
+                    + "\n"
+                    + _(
+                        "Review the restricted professional-driver compliance records for {0}. "
+                        "This task intentionally contains no medical result or date."
+                    ).format(d.driver_name)
+                )
                 todo.reference_type = "Driver"
                 todo.reference_name = d.name
                 todo.priority = "High"
@@ -324,7 +344,7 @@ def check_driver_license_expiry():
                 {
                     "reference_type": "Driver",
                     "reference_name": d["name"],
-                    "title": ["like", "%Safety Training%"],
+                    "description": ["like", "%safety training expires%"],
                     "status": "Open",
                 },
                 "name",
@@ -338,8 +358,7 @@ def check_driver_license_expiry():
                 )
             else:
                 todo = frappe.new_doc("ToDo")
-                todo.title = title
-                todo.description = description
+                todo.description = f"{title}\n{description}"
                 todo.reference_type = "Driver"
                 todo.reference_name = d["name"]
                 todo.priority = "Medium"
@@ -354,37 +373,54 @@ def remediate_fleet_alert_todo_assignments():
         "ToDo",
         filters=[],
         or_filters=[
-            ["ToDo", "title", "like", "Vehicle Document Expiring:%"],
-            ["ToDo", "title", "like", "Maintenance Due:%"],
-            ["ToDo", "title", "like", "Driver License Expiring:%"],
-            ["ToDo", "title", "like", "Safety Training Expiring:%"],
-            ["ToDo", "title", "=", "Restricted Driver Compliance Review"],
+            ["ToDo", "description", "like", "Vehicle Document Expiring:%"],
+            ["ToDo", "description", "like", "Document '% expires on %"],
+            ["ToDo", "description", "like", "Maintenance Due:%"],
+            [
+                "ToDo",
+                "description",
+                "like",
+                "Scheduled maintenance for vehicle % is due:%",
+            ],
+            ["ToDo", "description", "like", "Driver License Expiring:%"],
+            ["ToDo", "description", "like", "% license expires on %"],
+            ["ToDo", "description", "like", "Safety Training Expiring:%"],
+            ["ToDo", "description", "like", "% safety training expires on %"],
+            ["ToDo", "description", "like", "%Restricted Driver Compliance Review%"],
         ],
-        fields=["name", "title", "reference_type", "reference_name", "allocated_to"],
+        fields=[
+            "name",
+            "description",
+            "reference_type",
+            "reference_name",
+            "allocated_to",
+        ],
         limit_page_length=0,
     )
     for todo in todos:
-        title = todo.title or ""
+        description = todo.description or ""
         reference_type = todo.reference_type
         reference_name = todo.reference_name
         allocated_to = "Administrator"
         updates = {}
 
         if (
-            title.startswith("Vehicle Document Expiring:")
-            and reference_type == "Vehicle"
-        ):
+            description.startswith("Vehicle Document Expiring:")
+            or "Document '" in description
+        ) and reference_type == "Vehicle":
             allocated_to = _user_for_role("Fleet Manager", "Vehicle", reference_name)
         elif (
-            title.startswith("Maintenance Due:")
-            and reference_type == "Maintenance Schedule"
-        ):
+            description.startswith(
+                ("Maintenance Due:", "Scheduled maintenance for vehicle ")
+            )
+        ) and reference_type == "Maintenance Schedule":
             allocated_to = _user_for_role(
                 "Fleet Manager", "Maintenance Schedule", reference_name
             )
         elif (
-            title.startswith("Driver License Expiring:") and reference_type == "Driver"
-        ):
+            description.startswith("Driver License Expiring:")
+            or " license expires on " in description
+        ) and reference_type == "Driver":
             allocated_to = _user_for_role("Fleet Manager", "Driver", reference_name)
             driver = frappe.db.get_value(
                 "Driver",
@@ -400,8 +436,9 @@ def remediate_fleet_alert_todo_assignments():
                 else _("The referenced Driver record is unavailable; contact HR.")
             )
         elif (
-            title.startswith("Safety Training Expiring:") and reference_type == "Driver"
-        ):
+            description.startswith("Safety Training Expiring:")
+            or " safety training expires on " in description
+        ) and reference_type == "Driver":
             allocated_to = _user_for_role("HR Manager", "Driver", reference_name)
             driver = frappe.db.get_value(
                 "Driver",
@@ -417,9 +454,9 @@ def remediate_fleet_alert_todo_assignments():
                 else _("The referenced Driver record is unavailable; contact HR.")
             )
         elif (
-            title == "Restricted Driver Compliance Review"
-            and reference_type == "Driver"
-        ):
+            description.startswith("Restricted Driver Compliance Review")
+            or "restricted professional-driver compliance records" in description
+        ) and reference_type == "Driver":
             allocated_to = _user_for_role("HR Manager", "Driver", reference_name)
             updates["description"] = _(
                 "Review the restricted professional-driver compliance records. "
