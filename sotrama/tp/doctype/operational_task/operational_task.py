@@ -94,6 +94,9 @@ class OperationalTask(Document):
 
     def _validate_transport_authority_evidence(self):
         """Require a real, readable File attached to this exact evidence field."""
+        evidence_fields = ["name", "file_url"]
+        if frappe.db.has_column("File", "is_remote_file"):
+            evidence_fields.append("is_remote_file")
         evidence = frappe.db.get_value(
             "File",
             {
@@ -102,10 +105,14 @@ class OperationalTask(Document):
                 "attached_to_name": self.name,
                 "attached_to_field": "transport_authority_evidence",
             },
-            ["name", "is_remote_file"],
+            evidence_fields,
             as_dict=True,
         )
-        if not evidence or evidence.is_remote_file:
+        if (
+            not evidence
+            or evidence.get("is_remote_file")
+            or (evidence.get("file_url") or "").startswith(("http://", "https://"))
+        ):
             frappe.throw(
                 _(
                     "Authority evidence must be an uploaded file attached to this Operational Task, not a remote link or an arbitrary URL."

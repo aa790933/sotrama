@@ -2474,6 +2474,39 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(file_doc.sotrama_private_driver_attachment, 1)
         file_doc.save.assert_called_once_with(ignore_permissions=True)
 
+    def test_driver_attachment_migration_supports_file_schema_without_remote_flag(self):
+        from sotrama.permissions import migrate_driver_private_attachments
+
+        file_doc = frappe._dict(
+            name="FILE-DRIVER-NO-REMOTE-FLAG",
+            attached_to_doctype="Driver",
+            attached_to_name="DRV-TEST-003",
+            attached_to_field="professional_certificate",
+            file_url="/private/files/driver-certificate.pdf",
+            is_private=1,
+            save=Mock(),
+        )
+        with (
+            patch("sotrama.permissions._ensure_driver_file_privacy_field"),
+            patch(
+                "sotrama.permissions.frappe.get_meta",
+                return_value=frappe._dict(has_field=Mock(return_value=False)),
+            ),
+            patch("sotrama.permissions.frappe.db.has_column", return_value=False),
+            patch(
+                "sotrama.permissions.frappe.get_all",
+                return_value=[frappe._dict(name=file_doc.name)],
+            ) as get_all,
+            patch("sotrama.permissions.frappe.get_doc", return_value=file_doc),
+            patch("sotrama.permissions._validate_driver_private_file_paths"),
+            patch("sotrama.permissions._remove_private_driver_file_shares"),
+        ):
+            migrate_driver_private_attachments()
+
+        self.assertNotIn("is_remote_file", get_all.call_args.kwargs["fields"])
+        self.assertEqual(file_doc.sotrama_private_driver_attachment, 1)
+        file_doc.save.assert_called_once_with(ignore_permissions=True)
+
         remote_file = frappe._dict(
             name="FILE-DRIVER-REMOTE",
             attached_to_doctype="Driver",

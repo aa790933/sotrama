@@ -108,6 +108,14 @@ def is_driver_private_attachment(file_doc):
     )
 
 
+def _is_remote_file(file_doc):
+    """Detect remote File links across Frappe versions with different File schemas."""
+    if file_doc.get("is_remote_file"):
+        return True
+    file_url = file_doc.get("file_url") or ""
+    return file_url.startswith(("http://", "https://"))
+
+
 def _can_read_driver_attachment_parent(doctype, name, user=None):
     """Check the parent Driver's read permission, including Company User Permissions."""
     if doctype == "Driver":
@@ -325,7 +333,7 @@ def _secure_duplicate_driver_file_rows(file_doc):
     rows = frappe.get_all(
         "File",
         filters={"content_hash": content_hash},
-        fields=["name", "is_private", "is_remote_file", "file_url"],
+        fields=["name", "is_private", "file_url"],
     )
     previous_flag = frappe.flags.get("in_driver_private_file_duplicate_sync")
     frappe.flags.in_driver_private_file_duplicate_sync = True
@@ -336,7 +344,7 @@ def _secure_duplicate_driver_file_rows(file_doc):
             duplicate = frappe.get_doc("File", row.name)
             setattr(duplicate, DRIVER_FILE_PRIVACY_FIELD, 1)
 
-            if duplicate.is_remote_file:
+            if _is_remote_file(duplicate):
                 if (
                     duplicate.attached_to_doctype
                     not in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES
@@ -579,7 +587,7 @@ def _validate_driver_private_file_paths(files):
     conflicts = []
     for file_doc in files:
         file_url = file_doc.get("file_url") or ""
-        if file_doc.get("is_remote_file") or not file_url.startswith("/files/"):
+        if _is_remote_file(file_doc) or not file_url.startswith("/files/"):
             continue
         file_name = file_url.rsplit("/", 1)[-1]
         public_path = Path(frappe.get_site_path("public", "files", file_name))
@@ -611,7 +619,7 @@ def secure_driver_private_attachment(doc, method=None):
         return
     _require_driver_private_file_write_access(doc)
     setattr(doc, DRIVER_FILE_PRIVACY_FIELD, 1)
-    if doc.is_remote_file:
+    if _is_remote_file(doc):
         if (
             doc.flags.get("allow_remote_driver_detach")
             and not doc.get("attached_to_doctype")
@@ -692,7 +700,9 @@ def _redact_driver_attachment_comments(
 def migrate_driver_private_attachments():
     """Make existing Driver HR/compliance files private during the next migrate."""
     _ensure_driver_file_privacy_field()
-    fields = ["name", "content_hash", "file_url", "is_remote_file", "is_private"]
+    fields = ["name", "content_hash", "file_url", "is_private"]
+    if frappe.db.has_column("File", "is_remote_file"):
+        fields.append("is_remote_file")
     files_by_name = {
         row.name: row
         for row in frappe.get_all(
@@ -730,7 +740,7 @@ def migrate_driver_private_attachments():
             or (file_doc.file_url or "").startswith("/files/")
         )
         setattr(file_doc, DRIVER_FILE_PRIVACY_FIELD, 1)
-        if file_doc.is_remote_file:
+        if _is_remote_file(file_doc):
             # A remote URL cannot be made private by Frappe. Detach it from docinfo;
             # the HR-only Driver field remains intact for HR to review/re-upload.
             attached_doctype = file_doc.attached_to_doctype
