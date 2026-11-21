@@ -91,10 +91,10 @@ class CompanyClassification(Document):
             low, high = ranges[grade]
             if not (low < self.total_score <= high):
                 frappe.msgprint(
-                    title=_("Score Mismatch"),
-                    indicator="orange",
-                    message=_(
+                    _(
                         "Total score {0} falls outside Grade {1} range ({2}–{3}). "
                         "Please verify the classification criteria."
                     ).format(self.total_score, grade, low, high),
+                    title=_("Score Mismatch"),
+                    indicator="orange",
                 )

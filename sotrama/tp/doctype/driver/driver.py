@@ -85,11 +85,11 @@ class Driver(Document):
     def _validate_license(self):
         if self.license_expiry and getdate(self.license_expiry) < getdate(today()):
             frappe.msgprint(
-                title=_("Warning"),
-                indicator="orange",
-                message=_("Driver {0}: License has expired on {1}").format(
+                _("Driver {0}: License has expired on {1}").format(
                     self.driver_name, self.license_expiry
                 ),
+                title=_("Warning"),
+                indicator="orange",
             )
 
     def _validate_name(self):

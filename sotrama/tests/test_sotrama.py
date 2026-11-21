@@ -3830,6 +3830,20 @@ class TestMaintenanceJobCard(unittest.TestCase):
 class TestCompanyClassification(unittest.TestCase):
     """Test Company Classification score calculation."""
 
+    def test_grade_score_mismatch_uses_frappe_16_msgprint_signature(self):
+        classification = frappe.new_doc("Company Classification")
+        classification.grade = 8
+        classification.total_score = 10
+
+        with patch("frappe.msgprint") as msgprint:
+            classification._verify_grade_range()
+
+        msgprint.assert_called_once()
+        message = msgprint.call_args.args[0]
+        self.assertIn("Total score 10", message)
+        self.assertEqual(msgprint.call_args.kwargs["title"], "Score Mismatch")
+        self.assertEqual(msgprint.call_args.kwargs["indicator"], "orange")
+
     def test_grade_8_score_range(self):
         """Test that Grade 8 falls in the correct score range (63.0 - 72.8)."""
         classification = frappe.new_doc("Company Classification")
