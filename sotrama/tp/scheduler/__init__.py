@@ -387,6 +387,12 @@ def remediate_fleet_alert_todo_assignments():
             ["ToDo", "description", "like", "Safety Training Expiring:%"],
             ["ToDo", "description", "like", "% safety training expires on %"],
             ["ToDo", "description", "like", "%Restricted Driver Compliance Review%"],
+            [
+                "ToDo",
+                "description",
+                "like",
+                "%restricted professional-driver compliance records%",
+            ],
         ],
         fields=[
             "name",
