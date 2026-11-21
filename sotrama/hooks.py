@@ -96,12 +96,15 @@ def repair_orphaned_module_definitions():
         if existing.custom in (None, ""):
             values["custom"] = 0
         if values:
-            frappe.db.set_value("Module Def", module_name, values, update_modified=False)
+            frappe.db.set_value(
+                "Module Def", module_name, values, update_modified=False
+            )
 
 
 # ---------------------------------------------------------------------------
 # Custom Field Definitions — Company doctype (Algerian registration)
 # ---------------------------------------------------------------------------
+
 
 def get_custom_fields():
     """Return complementary Algerian Company fields for explicit admin opt-in.
@@ -130,7 +133,8 @@ def get_custom_fields():
                 "in_list_view": 0,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Numéro d'article fiscal recorded on the Certificate of Existence (certificat d'existence C n°20), distinct from the NIF. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "description": "Numéro d'article fiscal recorded on the Certificate of Existence (certificat d'existence C n°20), distinct from the NIF. "
+                + COMPANY_FIELD_OWNERSHIP_MARKER,
                 "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
@@ -151,7 +155,8 @@ def get_custom_fields():
                 "in_list_view": 1,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Numéro d'Identification Statistique — Algerian statistical registration number. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "description": "Numéro d'Identification Statistique — Algerian statistical registration number. "
+                + COMPANY_FIELD_OWNERSHIP_MARKER,
                 "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
@@ -164,7 +169,8 @@ def get_custom_fields():
                 "in_list_view": 1,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Registre de Commerce — Algerian trade registry number. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "description": "Registre de Commerce — Algerian trade registry number. "
+                + COMPANY_FIELD_OWNERSHIP_MARKER,
                 "depends_on": 'eval:doc.country=="Algeria"',
             },
             {
@@ -178,7 +184,8 @@ def get_custom_fields():
                 "in_list_view": 0,
                 "in_preview": 1,
                 "reqd": 0,
-                "description": "Registered share capital. Enter a numeric amount only; the value uses the Company's default currency. " + COMPANY_FIELD_OWNERSHIP_MARKER,
+                "description": "Registered share capital. Enter a numeric amount only; the value uses the Company's default currency. "
+                + COMPANY_FIELD_OWNERSHIP_MARKER,
                 "depends_on": 'eval:doc.country=="Algeria"',
             },
         ],
@@ -221,7 +228,11 @@ def _set_company_fields_hidden(hidden):
             continue
         if bool(field.hidden) != bool(hidden):
             frappe.db.set_value(
-                "Custom Field", field.name, "hidden", int(bool(hidden)), update_modified=False
+                "Custom Field",
+                field.name,
+                "hidden",
+                int(bool(hidden)),
+                update_modified=False,
             )
             changed = True
 
@@ -269,7 +280,11 @@ def enable_algerian_company_fields():
                         "The field {0} already exists on {1} and is owned by module {2}. "
                         "Sotrama will not take ownership of or modify another app's field. "
                         "Choose a different field name or resolve the ownership conflict first."
-                    ).format(field["fieldname"], doctype, existing.module or frappe._("Customizations")),
+                    ).format(
+                        field["fieldname"],
+                        doctype,
+                        existing.module or frappe._("Customizations"),
+                    ),
                     title=frappe._("Existing field is owned elsewhere"),
                 )
             if existing and existing.fieldtype != field["fieldtype"]:
@@ -277,7 +292,12 @@ def enable_algerian_company_fields():
                     frappe._(
                         "The existing {0} field on {1} is {2}, but Sotrama requires {3}. "
                         "No data was changed. Review or rename the existing field before enabling this feature."
-                    ).format(field["fieldname"], doctype, existing.fieldtype, field["fieldtype"]),
+                    ).format(
+                        field["fieldname"],
+                        doctype,
+                        existing.fieldtype,
+                        field["fieldtype"],
+                    ),
                     title=frappe._("Existing field needs review"),
                 )
 
@@ -365,7 +385,9 @@ def _detach_legacy_module_fields(definitions=None):
                 values["insert_after"] = "custom_sotrama_algerian_registration_section"
 
         if values:
-            frappe.db.set_value("Custom Field", existing.name, values, update_modified=False)
+            frappe.db.set_value(
+                "Custom Field", existing.name, values, update_modified=False
+            )
             changed = True
 
     if changed:
@@ -382,11 +404,198 @@ def sync_company_fields():
     if not frappe.db.exists("DocType", "Sotrama Settings"):
         return
 
-    enabled = frappe.db.get_single_value("Sotrama Settings", "enable_algerian_company_fields")
+    enabled = frappe.db.get_single_value(
+        "Sotrama Settings", "enable_algerian_company_fields"
+    )
     if enabled:
         enable_algerian_company_fields()
     else:
         _set_company_fields_hidden(True)
+
+
+def migrate_legacy_company_nif():
+    """Copy legacy custom_nif to standard Company.tax_id without overwriting data.
+
+    A non-empty standard tax_id always wins. Conflicting legacy values are kept
+    untouched and reported for manual reconciliation; custom_nif is never cleared.
+    """
+    if not frappe.db.table_exists("Company"):
+        return {"copied": 0, "conflicts": 0, "skipped": 0}
+    if not frappe.db.table_exists("Custom Field"):
+        if frappe.db.has_column("Company", "custom_nif"):
+            frappe.log_error(
+                title="Legacy Company NIF migration skipped",
+                message=(
+                    "Company.custom_nif exists but Custom Field metadata is unavailable. "
+                    "No values were copied to Company.tax_id because Sotrama cannot prove "
+                    "ownership. Review and reconcile the legacy column manually."
+                ),
+            )
+            return {"copied": 0, "conflicts": 0, "skipped": 1}
+        return {"copied": 0, "conflicts": 0, "skipped": 0}
+
+    legacy_field = frappe.db.get_value(
+        "Custom Field",
+        {"dt": "Company", "fieldname": "custom_nif"},
+        ["name", "module", "is_system_generated", "description", "fieldtype"],
+        as_dict=True,
+    )
+    if not _is_managed_company_field(legacy_field):
+        if frappe.db.has_column("Company", "custom_nif"):
+            frappe.log_error(
+                title="Legacy Company NIF migration skipped",
+                message=(
+                    "Company.custom_nif exists but its Custom Field metadata is not "
+                    "provably owned by Sotrama. No values were copied to Company.tax_id. "
+                    "Review the field owner and reconcile it manually."
+                ),
+            )
+            return {"copied": 0, "conflicts": 0, "skipped": 1}
+        return {"copied": 0, "conflicts": 0, "skipped": 0}
+    if legacy_field.fieldtype != "Data":
+        frappe.log_error(
+            title="Legacy Company NIF migration skipped",
+            message=(
+                "The Sotrama-owned Company.custom_nif field is not a Data field. "
+                "No values were copied to Company.tax_id; review the field type manually."
+            ),
+        )
+        return {"copied": 0, "conflicts": 0, "skipped": 1}
+
+    if not frappe.db.has_column("Company", "custom_nif"):
+        return {"copied": 0, "conflicts": 0, "skipped": 0}
+    if not frappe.db.has_column("Company", "tax_id"):
+        frappe.log_error(
+            title="Legacy Company NIF migration skipped",
+            message=(
+                "The standard Company.tax_id column is unavailable. No legacy NIF "
+                "values were changed; review the ERPNext Company schema before retrying."
+            ),
+        )
+        return {"copied": 0, "conflicts": 0, "skipped": 1}
+
+    rows = frappe.db.sql(
+        """
+        SELECT `name`, `custom_nif`, `tax_id`
+        FROM `tabCompany`
+        WHERE `custom_nif` IS NOT NULL AND TRIM(`custom_nif`) != ''
+        """,
+        as_dict=True,
+    )
+    copied = 0
+    skipped = 0
+    conflicts = []
+    for row in rows:
+        legacy_nif = (row.custom_nif or "").strip()
+        standard_nif = (row.tax_id or "").strip()
+        if not legacy_nif or standard_nif == legacy_nif:
+            continue
+        if not standard_nif:
+            # The guarded UPDATE closes the read-then-write race: another user
+            # may set tax_id after the SELECT above, so never overwrite unless
+            # the standard field is still blank and the legacy value unchanged.
+            frappe.db.sql(
+                """
+                UPDATE `tabCompany`
+                SET `tax_id` = %s
+                WHERE `name` = %s
+                  AND `custom_nif` = %s
+                  AND TRIM(COALESCE(`tax_id`, '')) = ''
+                """,
+                (legacy_nif, row.name, row.custom_nif),
+            )
+            current_values = (
+                frappe.db.get_value(
+                    "Company", row.name, ["tax_id", "custom_nif"], as_dict=True
+                )
+                or {}
+            )
+            current_tax_id = (current_values.get("tax_id") or "").strip()
+            current_legacy_nif = (current_values.get("custom_nif") or "").strip()
+            if current_legacy_nif != legacy_nif:
+                skipped += 1
+            elif current_tax_id == legacy_nif:
+                copied += 1
+            elif current_tax_id:
+                conflicts.append(
+                    f"{row.name}: custom_nif={legacy_nif!r}; tax_id={current_tax_id!r}"
+                )
+            else:
+                skipped += 1
+        else:
+            conflicts.append(
+                f"{row.name}: custom_nif={legacy_nif!r}; tax_id={standard_nif!r}"
+            )
+
+    if copied:
+        frappe.clear_cache(doctype="Company")
+    if conflicts:
+        frappe.log_error(
+            title="Legacy Company NIF migration conflicts",
+            message=(
+                "The standard Company.tax_id was not overwritten. Review these "
+                "companies and reconcile the retained custom_nif values manually:\n\n"
+                + "\n".join(conflicts)
+            ),
+        )
+    return {"copied": copied, "conflicts": len(conflicts), "skipped": skipped}
+
+
+def hide_managed_legacy_company_nif(migration_result):
+    """Hide only the owned legacy NIF field after a conflict-free migration."""
+    if not isinstance(migration_result, dict) or migration_result.get("skipped"):
+        return False
+    if migration_result.get("conflicts"):
+        return False
+    if not frappe.db.table_exists("Company") or not frappe.db.table_exists(
+        "Custom Field"
+    ):
+        return False
+    if not frappe.db.has_column("Company", "custom_nif") or not frappe.db.has_column(
+        "Company", "tax_id"
+    ):
+        return False
+
+    legacy_field = frappe.db.get_value(
+        "Custom Field",
+        {"dt": "Company", "fieldname": "custom_nif"},
+        ["name", "module", "is_system_generated", "description", "fieldtype", "hidden"],
+        as_dict=True,
+    )
+    if not _is_managed_company_field(legacy_field) or legacy_field.fieldtype != "Data":
+        return False
+    if not legacy_field.hidden:
+        frappe.db.set_value(
+            "Custom Field", legacy_field.name, "hidden", 1, update_modified=False
+        )
+        frappe.clear_cache(doctype="Company")
+    return True
+
+
+def run_after_migrate():
+    """Run security migrations before optional legacy Company data cleanup."""
+    from sotrama.permissions import remove_unsafe_fleet_docshares
+
+    remove_unsafe_fleet_docshares()
+    from sotrama.permissions import migrate_driver_private_attachments
+
+    migrate_driver_private_attachments()
+    # This cleanup removes legacy HR-only Driver dates/results from ToDos that
+    # may previously have been assigned to Fleet users. Do not swallow errors:
+    # a successful migrate must mean this privacy remediation completed.
+    from sotrama.tp.scheduler import remediate_fleet_alert_todo_assignments
+
+    remediate_fleet_alert_todo_assignments()
+    try:
+        migration_result = migrate_legacy_company_nif()
+        hide_managed_legacy_company_nif(migration_result)
+    except Exception:  # noqa: BLE001 - optional legacy migration must not block the security migration
+        # Optional legacy Company data must not prevent the security-critical
+        # Driver attachment migration or otherwise fail the whole site migrate.
+        frappe.log_error(
+            title="Legacy Company NIF migration failed",
+            message=frappe.get_traceback(),
+        )
 
 
 def initialize_app():
@@ -398,7 +607,7 @@ def initialize_app():
 
 
 def preserve_company_fields_on_uninstall():
-    """Preserve Company extension fields before Frappe removes app-owned modules.
+    """Preserve Company fields and private Driver files before app uninstall.
 
     Frappe deletes Custom Field records linked to an app-owned module during
     uninstall. Move the known Company extension fieldnames into the persistent
@@ -438,11 +647,17 @@ def preserve_company_fields_on_uninstall():
             values["hidden"] = 1
 
         if values:
-            frappe.db.set_value("Custom Field", field.name, values, update_modified=False)
+            frappe.db.set_value(
+                "Custom Field", field.name, values, update_modified=False
+            )
             changed = True
 
     if changed:
         frappe.clear_cache(doctype="Company")
+
+    from sotrama.permissions import preserve_driver_file_privacy_on_uninstall
+
+    preserve_driver_file_privacy_on_uninstall()
 
 
 before_install = "sotrama.hooks.prepare_before_install"
@@ -492,6 +707,117 @@ doctype_js = {
     "TP Settings": "public/js/tp_settings.js",
     "Company Classification": "public/js/company_classification.js",
 }
+
+doc_events = {
+    "DocShare": {
+        "before_insert": "sotrama.permissions.prevent_unsafe_fleet_docsharing",
+        "before_save": "sotrama.permissions.prevent_unsafe_fleet_docsharing",
+    },
+    "File": {
+        "before_insert": "sotrama.permissions.secure_driver_private_attachment",
+        "before_save": "sotrama.permissions.secure_driver_private_attachment",
+        "on_update": "sotrama.permissions.secure_driver_private_attachment",
+        "after_insert": "sotrama.permissions.secure_driver_private_attachment",
+    },
+    "User Permission": {
+        "after_insert": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+    },
+    "User": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+    },
+    "Has Role": {
+        "after_insert": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_user",
+    },
+    "Vehicle": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Driver": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Maintenance Job Card": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Vehicle Inspection": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Breakdown Incident": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Operational Task": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Maintenance Schedule": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+    "Company Classification": {
+        "on_update": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_update_after_submit": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "after_delete": "sotrama.permissions.remove_unsafe_fleet_docshares_for_document",
+        "on_trash": "sotrama.tp.validation.prevent_submitted_fleet_record_deletion",
+    },
+}
+
+has_permission = {
+    "File": "sotrama.permissions.file_has_permission",
+    "Vehicle": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Driver": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Vehicle Inspection": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Breakdown Incident": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Operational Task": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Maintenance Schedule": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Maintenance Job Card": "sotrama.permissions.enforce_fleet_company_user_permissions",
+    "Company Classification": "sotrama.permissions.enforce_fleet_company_user_permissions",
+}
+
+# Frappe 16 form docinfo and the attachment gallery use get_all(), bypassing
+# File permissions and query conditions; wrap those endpoints for Driver evidence.
+permission_query_conditions = {
+    "File": "sotrama.permissions.file_query_conditions",
+    "TP Company Defaults": "sotrama.permissions.tp_company_defaults_query_conditions",
+    "TP Settings": "sotrama.permissions.tp_settings_query_conditions",
+    "Driver Compliance Record": "sotrama.permissions.driver_compliance_record_query_conditions",
+}
+
+override_whitelisted_methods = {
+    "frappe.desk.form.load.getdoc": "sotrama.permissions.getdoc_with_driver_attachment_filter",
+    "frappe.desk.form.load.get_docinfo": "sotrama.permissions.get_docinfo_with_driver_attachment_filter",
+    "frappe.desk.form.load.get_filtered_attachments": "sotrama.permissions.get_filtered_attachments_with_driver_attachment_filter",
+    "frappe.client.get_value": "sotrama.permissions.get_value_with_tp_settings_field_permissions",
+    "frappe.client.get_list": "sotrama.permissions.get_list_with_tp_settings_permissions",
+    "frappe.client.get_single_value": "sotrama.permissions.get_single_value_with_tp_settings_field_permissions",
+    "frappe.client.validate_link_and_fetch": "sotrama.permissions.validate_link_and_fetch_without_tp_settings_singleton",
+}
+
+extend_doctype_class = {
+    "File": "sotrama.overrides.file.DriverPrivateFileMixin",
+}
+
+after_migrate = "sotrama.hooks.run_after_migrate"
 
 # Role Profiles are standard Frappe records stored in the module's role_profile
 # folder. Register the DocType with Frappe's supported importable_doctypes hook

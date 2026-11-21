@@ -41,6 +41,13 @@ frappe.ui.form.on('Vehicle Inspection', {
             if (frm.doc.company) filters.company = frm.doc.company;
             return { filters };
         });
+        frm.set_query('supervisor', () => ({
+            query: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.search_workshop_employees',
+            filters: {
+                company: frm.doc.company || '',
+                target_doctype: 'Vehicle Inspection',
+            },
+        }));
         frm.set_query('follow_up_of', () => ({
             filters: {
                 vehicle: frm.doc.vehicle || undefined,
@@ -63,6 +70,7 @@ frappe.ui.form.on('Vehicle Inspection', {
             frm.add_custom_button(__('Add Inspection Check'), () => {
                 const row = frm.add_child('inspection_items');
                 row.status = 'Not Checked';
+                row.is_safety_critical = 1;
                 frm.refresh_field('inspection_items');
                 updateInspectionSummary(frm);
             }, __('Checklist'));

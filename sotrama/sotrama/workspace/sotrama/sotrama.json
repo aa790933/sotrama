@@ -18,7 +18,7 @@
   {
    "type": "Card Break",
    "label": "Business Modules",
-   "link_count": 2,
+   "link_count": 1,
    "hidden": 0
   },
   {
@@ -26,14 +26,6 @@
    "label": "Algerian Localization",
    "link_type": "Workspace",
    "link_to": "Algerian Localization",
-   "hidden": 0,
-   "onboard": 0
-  },
-  {
-   "type": "Link",
-   "label": "Public Works Fleet",
-   "link_type": "Workspace",
-   "link_to": "Sotrama Fleet",
    "hidden": 0,
    "onboard": 0
   },
@@ -53,10 +45,20 @@
   }
  ],
  "roles": [
-  {"role": "System Manager"},
-  {"role": "Fleet Manager"},
-  {"role": "Workshop"},
-  {"role": "HR Manager"},
-  {"role": "Accounts Manager"}
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Fleet Manager"
+  },
+  {
+   "role": "Workshop"
+  },
+  {
+   "role": "HR Manager"
+  },
+  {
+   "role": "Accounts Manager"
+  }
  ]
 }

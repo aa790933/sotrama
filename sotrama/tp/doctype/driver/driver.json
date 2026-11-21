@@ -31,16 +31,18 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "options": "Employee",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "in_standard_filter": 1,
    "allow_on_submit": 1,
-   "description": "Optional link to the authoritative ERPNext/Frappe HR Employee record. Only HR Manager and System Manager can change this link; fleet roles do not receive broad Employee read access."
+   "description": "Optional link to the authoritative ERPNext/Frappe HR Employee record. Only HR Manager and System Manager can change this link; fleet roles do not receive broad Employee read access.",
+   "permlevel": 3
   },
   {
    "label": "Company",
    "fieldname": "company",
    "fieldtype": "Link",
    "options": "Company",
+   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "description": "Company employing or assigning this driver. Defaults from the linked Employee."
@@ -61,10 +63,10 @@
    "fieldname": "license_number",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "reqd": 1,
    "in_standard_filter": 1,
    "allow_on_submit": 1,
-   "description": "Driver's license number"
+   "permlevel": 1,
+   "description": "Driving licence number. HR-only; Fleet Manager sees the licence category and expiry instead."
   },
   {
    "label": "Algerian Licence Category",
@@ -74,23 +76,25 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "allow_on_submit": 1,
-   "description": "Categories listed in Article 180 of Executive Decree 04-381 as amended by Executive Decree 25-169 of 22 June 2025."
+   "permlevel": 2,
+   "description": "Categories listed in Article 180 of Executive Decree 04-381 as amended by Executive Decree 25-169 of 22 June 2025. Visible to Fleet Manager and HR."
   },
   {
    "label": "License Expiry",
    "fieldname": "license_expiry",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "reqd": 1,
    "allow_on_submit": 1,
-   "description": "Date the driver's license expires"
+   "permlevel": 2,
+   "description": "Date the driver's licence expires. Visible to Fleet Manager and HR; hidden from Workshop."
   },
   {
    "label": "License Issue Date",
    "fieldname": "license_issue_date",
    "fieldtype": "Date",
+   "permlevel": 1,
    "allow_on_submit": 1,
-   "description": "Date the license was issued"
+   "description": "Date the licence was issued. HR-only."
   },
   {
    "fieldtype": "Column Break",
@@ -109,6 +113,7 @@
    "label": "Safety Training Expiry",
    "fieldname": "safety_training_expiry",
    "fieldtype": "Date",
+   "permlevel": 1,
    "allow_on_submit": 1,
    "in_list_view": 1,
    "description": "Date the safety training certification expires"
@@ -117,6 +122,7 @@
    "label": "Brevet Professionnel Number",
    "fieldname": "professional_certificate_number",
    "fieldtype": "Data",
+   "permlevel": 1,
    "allow_on_submit": 1,
    "description": "Professional transport certificate number, where required by the transport activity."
   },
@@ -124,6 +130,7 @@
    "label": "Brevet Professionnel",
    "fieldname": "professional_certificate",
    "fieldtype": "Attach",
+   "permlevel": 1,
    "allow_on_submit": 1,
    "description": "Scanned professional certificate required for the road-transport activities listed in Articles 79–80 of Law 26-09."
   },
@@ -173,30 +180,37 @@
    "label": "Address",
    "fieldname": "address",
    "fieldtype": "Text",
-   "allow_on_submit": 1
+   "allow_on_submit": 1,
+   "permlevel": 1,
+   "description": "Residential address. HR-only; use the operational phone/email fields for Fleet contact."
   },
   {
    "fieldtype": "Column Break",
    "fieldname": "column_contact"
   },
   {
-   "label": "Phone",
+   "label": "Operational Phone",
    "fieldname": "phone",
    "fieldtype": "Data",
-   "allow_on_submit": 1
+   "allow_on_submit": 1,
+   "permlevel": 2,
+   "description": "Company-approved operational contact number. Do not copy a private personal number without HR authorization."
   },
   {
-   "label": "Email",
+   "label": "Operational Email",
    "fieldname": "email",
    "fieldtype": "Data",
-   "allow_on_submit": 1
+   "allow_on_submit": 1,
+   "permlevel": 2,
+   "description": "Use a company email address for Fleet operations; do not store a personal email address."
   },
   {
    "label": "Hire Date",
    "fieldname": "hire_date",
    "fieldtype": "Date",
    "allow_on_submit": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "permlevel": 1
   },
   {
    "label": "Status",
@@ -214,12 +228,15 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Count of breakdown incidents attributed to this driver"
+   "permlevel": 2,
+   "description": "Count of breakdown incidents attributed to this driver. Visible to Fleet Manager and HR; hidden from Workshop."
   },
   {
-   "label": "Notes",
+   "label": "Operational Notes",
    "fieldname": "notes",
-   "fieldtype": "Text Editor"
+   "fieldtype": "Text Editor",
+   "permlevel": 2,
+   "description": "Fleet operational notes only. Do not record medical, disciplinary or personal HR information."
   }
  ],
  "links": [],
@@ -268,18 +285,17 @@
    "print": 1,
    "email": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
+   "report": 1
   },
   {
    "role": "Workshop",
    "permlevel": 0,
    "read": 1,
-   "write": 1,
-   "create": 1,
+   "write": 0,
+   "create": 0,
    "delete": 0,
-   "submit": 1,
-   "cancel": 1,
+   "submit": 0,
+   "cancel": 0,
    "amend": 0,
    "print": 1,
    "email": 0,
@@ -302,6 +318,41 @@
   {
    "role": "HR Manager",
    "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 3,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "HR Manager",
+   "permlevel": 3,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 2,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "HR Manager",
+   "permlevel": 2,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "permlevel": 2,
    "read": 1,
    "write": 1,
    "create": 1

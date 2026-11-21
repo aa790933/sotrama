@@ -139,38 +139,44 @@
    "fieldname": "acquisition_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "description": "Date the vehicle was acquired"
+   "description": "Date the vehicle was acquired",
+   "permlevel": 1
   },
   {
    "label": "Acquisition Value (DZD)",
    "fieldname": "acquisition_value",
    "fieldtype": "Currency",
-   "description": "Purchase value in Algerian Dinars"
+   "description": "Purchase value in Algerian Dinars",
+   "permlevel": 1
   },
   {
    "label": "Current Value (DZD)",
    "fieldname": "current_value",
    "fieldtype": "Currency",
-   "description": "Current book value (after depreciation)"
+   "description": "Current book value (after depreciation)",
+   "permlevel": 1
   },
   {
    "label": "Depreciation Rate (%)",
    "fieldname": "depreciation_rate",
    "fieldtype": "Float",
    "default": "10",
-   "description": "Annual depreciation rate as percentage"
+   "description": "Annual depreciation rate as percentage",
+   "permlevel": 1
   },
   {
    "label": "Salvage Value (DZD)",
    "fieldname": "salvage_value",
    "fieldtype": "Currency",
-   "description": "Estimated residual value at end of useful life"
+   "description": "Estimated residual value at end of useful life",
+   "permlevel": 1
   },
   {
    "label": "Insurance Value (DZD)",
    "fieldname": "insurance_value",
    "fieldtype": "Currency",
-   "description": "Insured value of the vehicle"
+   "description": "Insured value of the vehicle",
+   "permlevel": 1
   },
   {
    "fieldtype": "Section Break",
@@ -202,6 +208,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "options": "Company",
+   "reqd": 1,
    "in_standard_filter": 1,
    "description": "Owning company for this vehicle and its stock transactions."
   },
@@ -253,7 +260,8 @@
    "fieldname": "asset",
    "fieldtype": "Link",
    "options": "Asset",
-   "description": "Linked fixed asset record"
+   "description": "Linked fixed asset record",
+   "permlevel": 1
   },
   {
    "fieldtype": "Tab Break",
@@ -343,24 +351,37 @@
    "print": 1,
    "email": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
+   "report": 1
   },
   {
    "role": "Workshop",
    "permlevel": 0,
    "read": 1,
-   "write": 1,
-   "create": 1,
+   "write": 0,
+   "create": 0,
    "delete": 0,
-   "submit": 1,
-   "cancel": 1,
+   "submit": 0,
+   "cancel": 0,
    "amend": 0,
    "print": 1,
    "email": 0,
    "export": 0,
    "report": 0,
    "share": 0
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "create": 1
+  },
+  {
+   "role": "Fleet Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1,
+   "create": 1
   }
  ],
  "icon": "truck",

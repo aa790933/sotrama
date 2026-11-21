@@ -18,7 +18,10 @@ frappe.ui.form.on('Driver', {
     refresh(frm) {
         // Keep this field visible: the Employee link is optional by default,
         // but a site administrator may require it from TP Settings.
-        if (frm.fields_dict.employee) {
+        if (
+            frm.fields_dict.employee
+            && (frappe.user.has_role('System Manager') || frappe.user.has_role('HR Manager'))
+        ) {
             frm.toggle_display('employee', true);
             frappe.db.get_single_value('TP Settings', 'require_employee_link')
                 .then((required) => frm.set_df_property('employee', 'reqd', Boolean(required)))
@@ -53,18 +56,16 @@ frappe.ui.form.on('Driver', {
         if (!frm.doc.employee) return;
 
         return frappe.db.get_value('Employee', frm.doc.employee, [
-            'employee_name', 'company', 'cell_number', 'company_email',
-            'personal_email', 'date_of_joining', 'status',
+            'employee_name', 'company', 'company_email', 'date_of_joining',
         ]).then(({ message }) => {
             if (!message) return;
 
             const values = {
                 driver_name: message.employee_name,
                 company: message.company,
-                phone: message.cell_number,
-                email: message.company_email || message.personal_email,
                 hire_date: message.date_of_joining,
             };
+            if (message.company_email) values.email = message.company_email;
 
             return frm.set_value(values);
         }).catch(() => {

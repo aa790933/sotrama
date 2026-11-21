@@ -35,6 +35,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "options": "Company",
+   "reqd": 1,
    "read_only": 1,
    "in_standard_filter": 1
   },
@@ -151,6 +152,9 @@
    "fieldname": "linked_breakdown",
    "fieldtype": "Link",
    "options": "Breakdown Incident",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
    "description": "If this job was triggered by a breakdown"
   },
   {
@@ -158,6 +162,8 @@
    "fieldname": "linked_breakdown_incident",
    "fieldtype": "Link",
    "options": "Breakdown Incident",
+   "read_only": 1,
+   "no_copy": 1,
    "description": "Breakdown that triggered this job card"
   },
   {
@@ -366,8 +372,7 @@
    "print": 1,
    "email": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
+   "report": 1
   },
   {
    "role": "Workshop",
@@ -377,7 +382,7 @@
    "create": 1,
    "delete": 0,
    "submit": 1,
-   "cancel": 1,
+   "cancel": 0,
    "amend": 0,
    "print": 1,
    "email": 0,

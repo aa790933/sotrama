@@ -59,11 +59,14 @@ frappe.ui.form.on('Vehicle', {
         }
 
         if (frm.is_new() && !frm.doc.company) {
-            frappe.db.get_single_value('TP Settings', 'default_company').then((company) => {
+            frappe.call({
+                method: 'sotrama.tp.settings.get_tp_default_company',
+                args: { applicable_for: 'Vehicle' },
+            }).then(({ message: company }) => {
                 if (company && !frm.doc.company) {
                     frm.set_value('company', company).then(() => applyTpVehicleDefaults(frm));
                 }
-            });
+            }).catch(() => {});
         } else {
             applyTpVehicleDefaults(frm);
         }

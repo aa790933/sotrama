@@ -22,13 +22,15 @@
    "label": "Default Company",
    "fieldname": "default_company",
    "fieldtype": "Link",
-   "options": "Company"
+   "options": "Company",
+   "permlevel": 2
   },
   {
    "label": "Default Company Classification",
    "fieldname": "default_company_classification",
    "fieldtype": "Link",
-   "options": "Company Classification"
+   "options": "Company Classification",
+   "permlevel": 2
   },
   {
    "fieldtype": "Column Break",
@@ -38,19 +40,22 @@
    "label": "Default Department",
    "fieldname": "default_department",
    "fieldtype": "Link",
-   "options": "Department"
+   "options": "Department",
+   "permlevel": 2
   },
   {
    "label": "Default Cost Center",
    "fieldname": "default_cost_center",
    "fieldtype": "Link",
-   "options": "Cost Center"
+   "options": "Cost Center",
+   "permlevel": 2
   },
   {
    "label": "Default Parts Warehouse",
    "fieldname": "default_parts_warehouse",
    "fieldtype": "Link",
    "options": "Warehouse",
+   "permlevel": 2,
    "description": "Source Warehouse for maintenance issues when a vehicle has no dedicated Parts Warehouse."
   },
   {
@@ -68,7 +73,8 @@
    "label": "Company Defaults",
    "fieldname": "company_defaults",
    "fieldtype": "Table",
-   "options": "TP Company Defaults"
+   "options": "TP Company Defaults",
+   "permlevel": 2
   },
   {
    "fieldtype": "Tab Break",
@@ -103,7 +109,8 @@
    "label": "Block Assignment with Expired Licence",
    "fieldname": "block_expired_driver_license",
    "fieldtype": "Check",
-   "default": "1"
+   "default": "0",
+   "description": "Optional company-wide rule for all Driver assignments. Regulated transport tasks still require a current licence regardless of this setting."
   },
   {
    "label": "Block Assignment with Expired Medical Certificate",
@@ -127,7 +134,7 @@
    "fieldtype": "Check",
    "permlevel": 1,
    "default": "1",
-   "description": "Enforce the professional certificate, medical fitness and negative drug-screening evidence for the five road-transport activities in Algerian Law 26-09, Articles 79–80."
+   "description": "Controls the additional professional certificate, medical fitness and negative drug-screening evidence for the five road-transport activities in Algerian Law 26-09, Articles 79–80. Disable only after the competent authority confirms the selected activity is outside scope. A current driving licence number, category and expiry remain mandatory for regulated transport even when this option is disabled."
   },
   {
    "fieldtype": "Section Break",
@@ -167,8 +174,7 @@
    "print": 1,
    "email": 1,
    "report": 1,
-   "export": 1,
-   "share": 1
+   "export": 1
   },
   {
    "role": "Fleet Manager",
@@ -178,6 +184,12 @@
   {
    "role": "System Manager",
    "permlevel": 1,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 2,
    "read": 1,
    "write": 1
   },

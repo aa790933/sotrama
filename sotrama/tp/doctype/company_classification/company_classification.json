@@ -19,6 +19,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "options": "Company",
+   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "description": "Legal entity to which this public-works classification certificate belongs."
@@ -271,8 +272,7 @@
    "print": 1,
    "email": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
+   "report": 1
   }
  ],
  "icon": "award",

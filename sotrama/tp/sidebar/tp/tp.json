@@ -76,38 +76,10 @@
   },
   {
    "type": "Section Break",
-   "label": "Reports & Analysis",
-   "icon": "chart-column",
-   "collapsible": 1,
-   "keep_closed": 0
-  },
-  {
-   "type": "Link",
-   "label": "Fleet Cost Analysis",
-   "link_type": "Report",
-   "link_to": "Fleet Cost Analysis",
-   "icon": "chart-column"
-  },
-  {
-   "type": "Link",
-   "label": "Upcoming Document Expiries",
-   "link_type": "Report",
-   "link_to": "Upcoming Document Expiries",
-   "icon": "calendar-clock"
-  },
-  {
-   "type": "Section Break",
    "label": "Setup & Masters",
    "icon": "settings",
    "collapsible": 1,
    "keep_closed": 1
-  },
-  {
-   "type": "Link",
-   "label": "Company Classification",
-   "link_type": "DocType",
-   "link_to": "Company Classification",
-   "icon": "award"
   },
   {
    "type": "Link",

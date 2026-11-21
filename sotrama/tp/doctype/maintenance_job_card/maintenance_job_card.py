@@ -14,10 +14,17 @@ class MaintenanceJobCard(Document):
     def validate(self):
         self._validate_dates()
         self._set_company_and_cost_center()
+        from sotrama.tp.settings import validate_company_access
+
+        validate_company_access(self.company, "Maintenance Job Card")
+        self._validate_breakdown_links()
         self._validate_odometer()
+        self._validate_driver_at_time()
         self._validate_labour_lines()
+        self._validate_other_costs()
         self._calculate_totals()
         self._validate_maintenance_schedule()
+        self._validate_system_managed_fields()
 
     def on_submit(self):
         self._post_stock_entries()
@@ -35,6 +42,84 @@ class MaintenanceJobCard(Document):
             )
         self._check_parts_available()
 
+    def _validate_system_managed_fields(self):
+        fields = (
+            "stock_entry",
+            "linked_maintenance_schedule",
+            "previous_schedule_last_service_date",
+            "previous_schedule_last_service_odometer",
+            "previous_schedule_last_service_job_card",
+            "previous_schedule_next_due_date",
+            "previous_schedule_next_due_odometer",
+            "applied_schedule_last_service_odometer",
+            "linked_breakdown",
+            "linked_breakdown_incident",
+        )
+        previous = self.get_doc_before_save()
+        if not previous:
+            if any(self.get(fieldname) for fieldname in fields):
+                allowed_breakdown_link = (
+                    frappe.flags.get("in_breakdown_job_card_creation")
+                    and self.linked_breakdown_incident
+                    and not self.linked_breakdown
+                    and not any(
+                        self.get(fieldname)
+                        for fieldname in fields
+                        if fieldname != "linked_breakdown_incident"
+                    )
+                )
+                if allowed_breakdown_link:
+                    return
+                frappe.throw(
+                    _(
+                        "Stock Entry and schedule history fields are managed by the maintenance workflow."
+                    )
+                )
+            return
+        for fieldname in fields:
+            if self.get(fieldname) != previous.get(fieldname):
+                frappe.throw(
+                    _("{0} is managed by the maintenance workflow.").format(
+                        frappe.get_meta(self.doctype).get_label(fieldname)
+                    )
+                )
+
+    def _validate_breakdown_links(self):
+        """Keep any breakdown reference within this Job Card's Vehicle and Company."""
+        for fieldname in ("linked_breakdown", "linked_breakdown_incident"):
+            incident_name = self.get(fieldname)
+            if not incident_name:
+                continue
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            validate_linked_document_read_permission(
+                "Breakdown Incident", incident_name
+            )
+            incident = frappe.db.get_value(
+                "Breakdown Incident",
+                incident_name,
+                ["company", "vehicle", "docstatus"],
+                as_dict=True,
+            )
+            if not incident:
+                frappe.throw(
+                    _("Linked Breakdown Incident {0} does not exist.").format(
+                        incident_name
+                    )
+                )
+            if incident.company:
+                from sotrama.tp.settings import validate_company_access
+
+                validate_company_access(incident.company, "Breakdown Incident")
+            if incident.company != self.company or incident.vehicle != self.vehicle:
+                frappe.throw(
+                    _(
+                        "Linked Breakdown Incident must belong to the same Company and Vehicle as this Job Card."
+                    )
+                )
+            if incident.docstatus != 1:
+                frappe.throw(_("Linked Breakdown Incident must be submitted."))
+
     # ------------------------------------------------------------------
 
     def _validate_dates(self):
@@ -48,6 +133,10 @@ class MaintenanceJobCard(Document):
     def _set_company_and_cost_center(self):
         from sotrama.tp.settings import get_tp_company_setting, get_tp_setting
 
+        if self.vehicle:
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            validate_linked_document_read_permission("Vehicle", self.vehicle)
         vehicle = (
             frappe.db.get_value(
                 "Vehicle", self.vehicle, ["company", "cost_center"], as_dict=True
@@ -56,6 +145,10 @@ class MaintenanceJobCard(Document):
             else None
         )
         vehicle_company = vehicle.company if vehicle else None
+        if vehicle_company:
+            from sotrama.tp.settings import validate_company_access
+
+            validate_company_access(vehicle_company, "Vehicle")
         if self.company and vehicle_company and self.company != vehicle_company:
             frappe.throw(
                 _("Maintenance Job Card Company must match its Vehicle Company.")
@@ -66,13 +159,22 @@ class MaintenanceJobCard(Document):
         self.cost_center = (
             self.cost_center
             or (vehicle.cost_center if vehicle else None)
-            or get_tp_company_setting(self.company, "default_cost_center")
+            or get_tp_company_setting(
+                self.company, "default_cost_center", "Maintenance Job Card"
+            )
         )
 
         if self.company and self.cost_center:
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            validate_linked_document_read_permission("Cost Center", self.cost_center)
             cost_center_company = frappe.db.get_value(
                 "Cost Center", self.cost_center, "company"
             )
+            if cost_center_company:
+                from sotrama.tp.settings import validate_company_access
+
+                validate_company_access(cost_center_company, "Cost Center")
             if cost_center_company and cost_center_company != self.company:
                 frappe.throw(
                     _("Cost Center {0} does not belong to Company {1}.").format(
@@ -91,20 +193,37 @@ class MaintenanceJobCard(Document):
 
         schedule_filters = {
             "vehicle": self.vehicle,
+            "company": self.company,
             "job_type": self.job_type,
             "status": "Active",
             "docstatus": 1,
         }
         if self.maintenance_schedule:
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            validate_linked_document_read_permission(
+                "Maintenance Schedule", self.maintenance_schedule
+            )
             schedule = frappe.db.get_value(
                 "Maintenance Schedule",
                 self.maintenance_schedule,
-                ["vehicle", "job_type", "status", "docstatus"],
+                ["vehicle", "job_type", "status", "docstatus", "company"],
                 as_dict=True,
             )
-            if not schedule or any(
+            if not schedule:
+                frappe.throw(
+                    _(
+                        "Select an active Maintenance Schedule matching this Vehicle and Job Type."
+                    )
+                )
+            if schedule.company:
+                from sotrama.tp.settings import validate_company_access
+
+                validate_company_access(schedule.company, "Maintenance Schedule")
+            if any(
                 (
                     schedule.vehicle != self.vehicle,
+                    schedule.company != self.company,
                     schedule.job_type != self.job_type,
                     schedule.status != "Active",
                     schedule.docstatus != 1,
@@ -117,10 +236,10 @@ class MaintenanceJobCard(Document):
                 )
             return
 
-        schedules = frappe.get_all(
+        schedules = frappe.get_list(
             "Maintenance Schedule",
             filters=schedule_filters,
-            fields=["name"],
+            fields=["name", "company"],
             order_by="creation desc",
             limit_page_length=2,
         )
@@ -131,7 +250,21 @@ class MaintenanceJobCard(Document):
                 )
             )
         if schedules:
-            self.maintenance_schedule = schedules[0].name
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            schedule = schedules[0]
+            validate_linked_document_read_permission(
+                "Maintenance Schedule", schedule.name
+            )
+            if schedule.company:
+                from sotrama.tp.settings import validate_company_access
+
+                validate_company_access(schedule.company, "Maintenance Schedule")
+            if schedule.company != self.company:
+                frappe.throw(
+                    _("The Maintenance Schedule must belong to the Job Card Company.")
+                )
+            self.maintenance_schedule = schedule.name
 
     def _validate_odometer(self):
         if (
@@ -169,27 +302,60 @@ class MaintenanceJobCard(Document):
                     _("Labour rate cannot be negative on row {0}.").format(row.idx)
                 )
             if not row.mechanic:
+                row.mechanic_name = None
                 continue
+            _validate_workshop_employee_lookup_access(
+                self.company, "Maintenance Job Card"
+            )
 
             employee = frappe.db.get_value(
                 "Employee",
-                row.mechanic,
+                {"name": row.mechanic, "company": self.company},
                 ["company", "employee_name"],
                 as_dict=True,
             )
             if not employee:
                 frappe.throw(
-                    _("Employee {0} on labour row {1} does not exist.").format(
-                        row.mechanic, row.idx
-                    )
-                )
-            if self.company and employee.company and employee.company != self.company:
-                frappe.throw(
                     _(
-                        "Employee {0} on labour row {1} belongs to Company {2}, not {3}."
-                    ).format(row.mechanic, row.idx, employee.company, self.company)
+                        "Employee {0} on labour row {1} does not exist in the Job Card Company."
+                    ).format(row.mechanic, row.idx)
+                )
+            if employee.company != self.company:
+                frappe.throw(
+                    _("The selected Employee is not part of the Job Card Company.")
                 )
             row.mechanic_name = employee.employee_name
+
+    def _validate_other_costs(self):
+        """Other Costs are expenses, so negative values must not reduce totals."""
+        for row in self.other_costs or []:
+            if row.amount is not None and row.amount < 0:
+                frappe.throw(
+                    _("Other cost amount cannot be negative on row {0}.").format(
+                        row.idx
+                    )
+                )
+
+    def _validate_driver_at_time(self):
+        """Keep historical driver attribution within the Job Card Company."""
+        if not self.driver_at_time:
+            return
+        from sotrama.tp.validation import validate_linked_document_read_permission
+
+        validate_linked_document_read_permission("Driver", self.driver_at_time)
+        driver = frappe.db.get_value(
+            "Driver", self.driver_at_time, ["company"], as_dict=True
+        )
+        if not driver:
+            frappe.throw(_("The Driver at Time of Issue does not exist."))
+        if driver.company:
+            from sotrama.tp.settings import validate_company_access
+
+            validate_company_access(driver.company, "Driver")
+        if self.company and driver.company and driver.company != self.company:
+            frappe.throw(
+                _("Driver at Time of Issue must belong to the Job Card Company.")
+            )
 
     def _calculate_totals(self):
         total_parts = 0
@@ -213,13 +379,31 @@ class MaintenanceJobCard(Document):
 
     def _check_parts_available(self):
         for row in self.parts_used or []:
-            if not row.item or not frappe.db.exists("Item", row.item):
+            if not row.item:
                 frappe.throw(
                     _("Select a valid Item for maintenance part row {0}.").format(
                         row.idx
                     )
                 )
-            if not frappe.db.get_value("Item", row.item, "is_stock_item"):
+            from sotrama.tp.validation import validate_linked_document_read_permission
+
+            validate_linked_document_read_permission("Item", row.item)
+            item = frappe.db.get_value(
+                "Item", row.item, ["is_stock_item", "disabled"], as_dict=True
+            )
+            if not item:
+                frappe.throw(
+                    _("Select a valid Item for maintenance part row {0}.").format(
+                        row.idx
+                    )
+                )
+            if item.disabled:
+                frappe.throw(
+                    _("Disabled Item {0} cannot be used as a maintenance part.").format(
+                        row.item
+                    )
+                )
+            if not item.is_stock_item:
                 frappe.throw(_("Item {0} is not a stock item.").format(row.item))
             if not row.quantity or row.quantity <= 0:
                 frappe.throw(_("Part quantity must be greater than zero."))
@@ -245,9 +429,10 @@ class MaintenanceJobCard(Document):
                 ).format(vehicle.name)
             )
         from sotrama.tp.settings import get_tp_company_setting
+        from sotrama.tp.validation import validate_linked_document_read_permission
 
         warehouse = vehicle.parts_warehouse or get_tp_company_setting(
-            company, "default_parts_warehouse"
+            company, "default_parts_warehouse", "Maintenance Job Card"
         )
         if not warehouse:
             frappe.throw(
@@ -255,6 +440,8 @@ class MaintenanceJobCard(Document):
                     "Set a Parts Warehouse on Vehicle {0} or in TP Settings before issuing stock."
                 ).format(vehicle.name)
             )
+
+        validate_linked_document_read_permission("Warehouse", warehouse)
 
         warehouse_company = frappe.db.get_value(
             "Warehouse", warehouse, ["company", "is_group", "disabled"], as_dict=True
@@ -265,6 +452,9 @@ class MaintenanceJobCard(Document):
                     warehouse, company
                 )
             )
+        from sotrama.tp.settings import validate_company_access
+
+        validate_company_access(warehouse_company.company, "Warehouse")
         if warehouse_company.is_group or warehouse_company.disabled:
             frappe.throw(_("Parts Warehouse must be an enabled leaf Warehouse."))
 
@@ -275,9 +465,21 @@ class MaintenanceJobCard(Document):
         stock_entry.posting_date = self.job_date or frappe.utils.today()
 
         for row in self.parts_used:
-            if not row.item or not frappe.db.exists("Item", row.item):
+            if not row.item:
                 frappe.throw(_("Select a valid stock Item in the Parts Used table."))
-            if not frappe.db.get_value("Item", row.item, "is_stock_item"):
+            validate_linked_document_read_permission("Item", row.item)
+            item = frappe.db.get_value(
+                "Item", row.item, ["is_stock_item", "disabled"], as_dict=True
+            )
+            if not item:
+                frappe.throw(_("Select a valid stock Item in the Parts Used table."))
+            if item.disabled:
+                frappe.throw(
+                    _("Disabled Item {0} cannot be used as a maintenance part.").format(
+                        row.item
+                    )
+                )
+            if not item.is_stock_item:
                 frappe.throw(_("Item {0} is not a stock item.").format(row.item))
             if not row.quantity or row.quantity <= 0:
                 frappe.throw(_("Part quantity must be greater than zero."))
@@ -408,33 +610,36 @@ class MaintenanceJobCard(Document):
             )
 
 
-def _validate_workshop_employee_lookup_access(company):
-    """Allow fleet roles to see only names for a Company they can operate."""
+def _validate_workshop_employee_lookup_access(company, target_doctype):
+    """Allow a limited Employee projection only for an authorized Fleet workflow."""
     frappe.only_for(["System Manager", "Fleet Manager", "Workshop"])
     if not isinstance(company, str) or not company.strip():
         frappe.throw(_("A valid Company is required to search workshop Employees."))
 
     company = company.strip()
+    if target_doctype not in {
+        "Maintenance Job Card",
+        "Vehicle Inspection",
+        "Operational Task",
+    }:
+        frappe.throw(
+            _("Employee lookup is not available for this DocType."),
+            frappe.PermissionError,
+        )
     if not (
-        frappe.has_permission("Maintenance Job Card", "write")
-        or frappe.has_permission("Maintenance Job Card", "create")
+        frappe.has_permission(target_doctype, "write")
+        or frappe.has_permission(target_doctype, "create")
     ):
         frappe.throw(
-            _("You do not have permission to add Employees to a Maintenance Job Card."),
+            _("You do not have permission to look up Employees for this Fleet record."),
             frappe.PermissionError,
         )
 
-    visible_vehicles = frappe.get_list(
-        "Vehicle",
-        filters={"company": company},
-        fields=["name"],
-        limit_page_length=1,
-    )
-    if not visible_vehicles:
-        frappe.throw(
-            _("You do not have access to the fleet of Company {0}.").format(company),
-            frappe.PermissionError,
-        )
+    from sotrama.tp.settings import validate_company_access
+
+    validate_company_access(company, target_doctype)
+    validate_company_access(company, "Employee")
+    validate_company_access(company, "Vehicle")
 
 
 @frappe.whitelist()
@@ -456,10 +661,11 @@ def search_workshop_employees(
     if not isinstance(filters, dict):
         frappe.throw(_("Invalid Employee search filters."))
     company = filters.get("company")
+    target_doctype = filters.get("target_doctype")
     if not company:
         return []
 
-    _validate_workshop_employee_lookup_access(company)
+    _validate_workshop_employee_lookup_access(company, target_doctype)
     company = company.strip()
     search_text = f"%{txt or ''}%"
     return frappe.get_all(
@@ -478,11 +684,13 @@ def search_workshop_employees(
 
 
 @frappe.whitelist()
-def get_workshop_employee_name(employee, company):
+def get_workshop_employee_name(
+    employee, company, target_doctype="Maintenance Job Card"
+):
     """Return only the display name of an active Employee in an accessible Company."""
     if not employee or not company:
         frappe.throw(_("Select an Employee and Company."))
-    _validate_workshop_employee_lookup_access(company)
+    _validate_workshop_employee_lookup_access(company, target_doctype)
     company = company.strip()
     employee_name = frappe.db.get_value(
         "Employee",

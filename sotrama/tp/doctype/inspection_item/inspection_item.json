@@ -40,6 +40,7 @@
    "label": "Safety Critical",
    "fieldname": "is_safety_critical",
    "fieldtype": "Check",
+   "permlevel": 1,
    "default": "0",
    "description": "When enabled, a defective result automatically marks the vehicle Out of Service."
   },

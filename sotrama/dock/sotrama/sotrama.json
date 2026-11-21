@@ -10,15 +10,15 @@
    "hidden": 0,
    "icon": "building-2",
    "link_to": "Sotrama",
-   "link_type": "Sidebar",
+   "link_type": "Workspace",
    "title": "Overview"
   },
   {
    "added": 0,
    "hidden": 0,
    "icon": "truck",
-   "link_to": "TP",
-   "link_type": "Sidebar",
+   "link_to": "Sotrama Fleet",
+   "link_type": "Workspace",
    "title": "Fleet"
   },
   {
@@ -26,7 +26,7 @@
    "hidden": 0,
    "icon": "landmark",
    "link_to": "Algerian Localization",
-   "link_type": "Sidebar",
+   "link_type": "Workspace",
    "title": "Algeria"
   }
  ],

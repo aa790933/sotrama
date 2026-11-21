@@ -8,6 +8,7 @@ class TPSettings(Document):
     """Central configuration for fleet-wide defaults and operational policies."""
 
     def validate(self):
+        self._validate_company_defaults_permissions()
         self._validate_company_defaults()
 
         for fieldname in (
@@ -17,17 +18,25 @@ class TPSettings(Document):
         ):
             days = self.get(fieldname)
             if days is not None and (int(days) < 0 or int(days) > 3650):
-                frappe.throw(_("{0} must be between 0 and 3650 days.").format(self.meta.get_label(fieldname)))
+                frappe.throw(
+                    _("{0} must be between 0 and 3650 days.").format(
+                        self.meta.get_label(fieldname)
+                    )
+                )
 
         if not self.default_company:
-            if any((
-                self.default_company_classification,
-                self.default_parts_warehouse,
-                self.default_cost_center,
-                self.default_department,
-            )):
+            if any(
+                (
+                    self.default_company_classification,
+                    self.default_parts_warehouse,
+                    self.default_cost_center,
+                    self.default_department,
+                )
+            ):
                 frappe.throw(
-                    _("Select a Default Company before setting a default Warehouse, Cost Center or Department.")
+                    _(
+                        "Select a Default Company before setting a default Warehouse, Cost Center or Department."
+                    )
                 )
             return
 
@@ -42,11 +51,20 @@ class TPSettings(Document):
                 frappe.throw(_("Default Company Classification must be active."))
             if classification.docstatus != 1:
                 frappe.throw(_("Default Company Classification must be submitted."))
-            if classification.expiry_date and getdate(classification.expiry_date) < getdate(frappe.utils.today()):
-                frappe.throw(_("Default Company Classification certificate has expired."))
-            if classification.company and classification.company != self.default_company:
+            if classification.expiry_date and getdate(
+                classification.expiry_date
+            ) < getdate(frappe.utils.today()):
                 frappe.throw(
-                    _("Default Company Classification must belong to the Default Company.")
+                    _("Default Company Classification certificate has expired.")
+                )
+            if (
+                classification.company
+                and classification.company != self.default_company
+            ):
+                frappe.throw(
+                    _(
+                        "Default Company Classification must belong to the Default Company."
+                    )
                 )
 
         if self.default_parts_warehouse:
@@ -94,6 +112,50 @@ class TPSettings(Document):
                     _("Default Department must belong to the Default Company.")
                 )
 
+    def _validate_company_defaults_permissions(self):
+        """Keep the global per-company matrix under System Manager control."""
+        if (
+            frappe.session.user == "Administrator"
+            or "System Manager" in frappe.get_roles()
+        ):
+            return
+
+        previous = self.get_doc_before_save()
+        if not previous:
+            if any(
+                self.get(fieldname)
+                for fieldname in (
+                    "default_company",
+                    "default_company_classification",
+                    "default_department",
+                    "default_cost_center",
+                    "default_parts_warehouse",
+                    "company_defaults",
+                )
+            ):
+                frappe.throw(
+                    _(
+                        "Only System Manager can set the primary Company and per-Company fleet defaults."
+                    ),
+                    frappe.PermissionError,
+                )
+            return
+
+        # These fields are hidden above permlevel 0. Preserve their stored values
+        # when lower-level users save the other global policy fields.
+        for fieldname in (
+            "default_company",
+            "default_company_classification",
+            "default_department",
+            "default_cost_center",
+            "default_parts_warehouse",
+        ):
+            self.set(fieldname, previous.get(fieldname))
+        self.set(
+            "company_defaults",
+            [row.as_dict() for row in previous.get("company_defaults") or []],
+        )
+
     def _validate_company_defaults(self):
         seen_companies = set()
         for row in self.company_defaults or []:
@@ -101,7 +163,9 @@ class TPSettings(Document):
                 frappe.throw(_("Company is required in each Company Defaults row."))
             if row.company in seen_companies:
                 frappe.throw(
-                    _("Company {0} has more than one TP defaults row.").format(row.company)
+                    _("Company {0} has more than one TP defaults row.").format(
+                        row.company
+                    )
                 )
             seen_companies.add(row.company)
 
@@ -117,19 +181,29 @@ class TPSettings(Document):
                 )
                 if not classification or not classification.active:
                     frappe.throw(
-                        _("Company Classification in row {0} must be active.").format(row.idx)
+                        _("Company Classification in row {0} must be active.").format(
+                            row.idx
+                        )
                     )
                 if classification.docstatus != 1:
                     frappe.throw(
-                        _("Company Classification in row {0} must be submitted.").format(row.idx)
+                        _(
+                            "Company Classification in row {0} must be submitted."
+                        ).format(row.idx)
                     )
-                if classification.expiry_date and getdate(classification.expiry_date) < getdate(frappe.utils.today()):
+                if classification.expiry_date and getdate(
+                    classification.expiry_date
+                ) < getdate(frappe.utils.today()):
                     frappe.throw(
-                        _("Company Classification in row {0} has expired.").format(row.idx)
+                        _("Company Classification in row {0} has expired.").format(
+                            row.idx
+                        )
                     )
                 if classification.company and classification.company != row.company:
                     frappe.throw(
-                        _("Company Classification in row {0} belongs to another Company.").format(row.idx)
+                        _(
+                            "Company Classification in row {0} belongs to another Company."
+                        ).format(row.idx)
                     )
 
             if row.default_department:
@@ -138,7 +212,9 @@ class TPSettings(Document):
                 )
                 if department_company and department_company != row.company:
                     frappe.throw(
-                        _("Department in Company Defaults row {0} belongs to another Company.").format(row.idx)
+                        _(
+                            "Department in Company Defaults row {0} belongs to another Company."
+                        ).format(row.idx)
                     )
 
             if row.default_cost_center:
@@ -155,7 +231,9 @@ class TPSettings(Document):
                     or cost_center.disabled
                 ):
                     frappe.throw(
-                        _("Cost Center in Company Defaults row {0} must be an enabled leaf Cost Center for that Company.").format(row.idx)
+                        _(
+                            "Cost Center in Company Defaults row {0} must be an enabled leaf Cost Center for that Company."
+                        ).format(row.idx)
                     )
 
             if row.default_parts_warehouse:
@@ -172,5 +250,7 @@ class TPSettings(Document):
                     or warehouse.disabled
                 ):
                     frappe.throw(
-                        _("Parts Warehouse in Company Defaults row {0} must be an enabled leaf Warehouse for that Company.").format(row.idx)
+                        _(
+                            "Parts Warehouse in Company Defaults row {0} must be an enabled leaf Warehouse for that Company."
+                        ).format(row.idx)
                     )

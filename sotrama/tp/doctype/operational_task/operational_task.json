@@ -48,6 +48,43 @@
    "mandatory_depends_on": "eval:doc.task_type == 'Transport'"
   },
   {
+   "label": "Transport Basis",
+   "fieldname": "transport_basis",
+   "fieldtype": "Select",
+   "options": "\nCompte d'autrui\nCompte propre",
+   "depends_on": "eval:doc.task_type == 'Transport'",
+   "mandatory_depends_on": "eval:doc.task_type == 'Transport'",
+   "description": "Specify whether this transport is performed for a third party or for the Company's own account."
+  },
+  {
+   "label": "Regulatory Applicability",
+   "fieldname": "transport_regulatory_status",
+   "fieldtype": "Select",
+   "options": "\nÀ confirmer\nRéglementé\nNon soumis (confirmation officielle)",
+   "default": "À confirmer",
+   "depends_on": "eval:doc.task_type == 'Transport'",
+   "mandatory_depends_on": "eval:doc.task_type == 'Transport'",
+   "description": "Do not assume own-account hauling is exempt or regulated. Confirm applicability with the competent authority before submission."
+  },
+  {
+   "label": "Authority Decision Reference",
+   "fieldname": "transport_authority_reference",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+  },
+  {
+   "label": "Authority Decision Date",
+   "fieldname": "transport_authority_decision_date",
+   "fieldtype": "Date",
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+  },
+  {
+   "label": "Authority Decision Evidence",
+   "fieldname": "transport_authority_evidence",
+   "fieldtype": "Attach",
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+  },
+  {
    "fieldtype": "Column Break",
    "fieldname": "column_task_assignment"
   },
@@ -64,6 +101,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "options": "Company",
+   "reqd": 1,
    "read_only": 1,
    "in_standard_filter": 1
   },
@@ -220,18 +258,17 @@
    "print": 1,
    "email": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
+   "report": 1
   },
   {
    "role": "Workshop",
    "permlevel": 0,
    "read": 1,
-   "write": 1,
-   "create": 1,
+   "write": 0,
+   "create": 0,
    "delete": 0,
-   "submit": 1,
-   "cancel": 1,
+   "submit": 0,
+   "cancel": 0,
    "amend": 0,
    "print": 1,
    "email": 0,

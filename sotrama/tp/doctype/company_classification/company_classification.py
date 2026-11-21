@@ -14,6 +14,11 @@ class CompanyClassification(Document):
     """
 
     def validate(self):
+        if not self.company:
+            frappe.throw(_("Company is required for a Company Classification."))
+        from sotrama.tp.settings import validate_company_access
+
+        validate_company_access(self.company, "Company Classification")
         self._validate_grade()
         self._calculate_total_score()
 
@@ -22,9 +27,7 @@ class CompanyClassification(Document):
             frappe.throw(_("Grade is required"))
         valid_grades = list(range(1, 10))
         if int(self.grade) not in valid_grades:
-            frappe.throw(
-                _("Grade must be between 1 and 9, got {0}").format(self.grade)
-            )
+            frappe.throw(_("Grade must be between 1 and 9, got {0}").format(self.grade))
 
     def _calculate_total_score(self):
         """
@@ -51,13 +54,14 @@ class CompanyClassification(Document):
         hr_base += (self.training_coefficient or 1) * (self.training_score or 0)
 
         # Material Value: CB5 × VM
-        material = (self.material_value_coefficient or 1) * (self.material_value_score or 0)
+        material = (self.material_value_coefficient or 1) * (
+            self.material_value_score or 0
+        )
 
         # Financial: (CB6 × CS) + (CB7 × CA)
-        financial = (
-            (self.capital_coefficient or 1) * (self.capital_score or 0)
-            + (self.revenue_coefficient or 1) * (self.revenue_score or 0)
-        )
+        financial = (self.capital_coefficient or 1) * (self.capital_score or 0) + (
+            self.revenue_coefficient or 1
+        ) * (self.revenue_score or 0)
 
         # Good Execution: CB8 × ABE (score 1 to 1.8)
         execution = (self.abe_coefficient or 1) * (self.abe_score or 1)

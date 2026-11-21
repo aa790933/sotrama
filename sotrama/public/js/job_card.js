@@ -44,7 +44,10 @@ frappe.ui.form.on('Maintenance Job Card', {
         frm.set_query('item', 'parts_used', () => ({ filters: { is_stock_item: 1, disabled: 0 } }));
         frm.set_query('mechanic', 'labour_lines', () => ({
             query: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.search_workshop_employees',
-            filters: { company: frm.doc.company || '' },
+            filters: {
+                company: frm.doc.company || '',
+                target_doctype: 'Maintenance Job Card',
+            },
         }));
     },
 
