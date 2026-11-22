@@ -141,8 +141,30 @@ class MaintenanceSchedule(Document):
             limit_page_length=0,
         )
         for predecessor in predecessors:
+            predecessor_doc = frappe.get_doc("Maintenance Schedule", predecessor)
+            if predecessor_doc.company != self.company:
+                frappe.throw(
+                    _("Cannot update a predecessor schedule from another Company."),
+                    frappe.PermissionError,
+                )
+            from sotrama.tp.settings import validate_company_access
+
+            validate_company_access(predecessor_doc.company, "Maintenance Schedule")
+            if not frappe.has_permission(
+                "Maintenance Schedule", "write", doc=predecessor_doc
+            ):
+                frappe.throw(
+                    _("You do not have permission to update the predecessor Maintenance Schedule."),
+                    frappe.PermissionError,
+                )
             frappe.db.set_value(
                 "Maintenance Schedule", predecessor, "next_schedule", None
+            )
+            predecessor_doc.add_comment(
+                "Info",
+                _("Generated successor Maintenance Schedule {0} was cancelled.").format(
+                    self.name
+                ),
             )
 
     def before_cancel(self):

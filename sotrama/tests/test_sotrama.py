@@ -5152,6 +5152,18 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
         successor = frappe.get_doc("Maintenance Schedule", successor_name)
         successor.cancel()
         self.schedule.reload()
+        self.assertFalse(self.schedule.next_schedule)
+        comments = frappe.get_all(
+            "Comment",
+            filters={
+                "reference_doctype": "Maintenance Schedule",
+                "reference_name": self.schedule.name,
+            },
+            fields=["content"],
+        )
+        self.assertTrue(
+            any(successor_name in (comment.content or "") for comment in comments)
+        )
         self.schedule.before_cancel()
 
     def test_mileage_plan_cannot_complete_without_a_last_service_reading(self):
