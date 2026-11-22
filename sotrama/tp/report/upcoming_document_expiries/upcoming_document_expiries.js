@@ -3,8 +3,11 @@ frappe.query_reports["Upcoming Document Expiries"] = {
         {
             fieldname: "company",
             label: __("Company"),
-            fieldtype: "Data",
-            description: __("Enter the exact ERPNext Company name."),
+            fieldtype: "Link",
+            options: "Company",
+            get_query() {
+                return { query: "sotrama.tp.settings.search_fleet_report_companies" };
+            },
         },
         {
             fieldname: "vehicle",

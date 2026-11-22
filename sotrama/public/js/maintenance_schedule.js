@@ -8,12 +8,14 @@ frappe.ui.form.on('Maintenance Schedule', {
 
     vehicle(frm) {
         if (!frm.doc.vehicle) return;
-        return frappe.db.get_value('Vehicle', frm.doc.vehicle, 'company').then(({ message }) => {
-            if (message && message.company) frm.set_value('company', message.company);
+        const vehicle = frm.doc.vehicle;
+        return frappe.db.get_value('Vehicle', vehicle, 'company').then(({ message }) => {
+            if (message && message.company && frm.doc.vehicle === vehicle) frm.set_value('company', message.company);
         });
     },
 
     refresh(frm) {
+        const canWrite = !!frm.perm?.[0]?.write;
         if (frm.is_new() || frm.doc.docstatus !== 1) return;
 
         const updateStatus = (status) => frappe.call({
@@ -22,11 +24,15 @@ frappe.ui.form.on('Maintenance Schedule', {
         }).then(() => frm.reload_doc());
 
         if (frm.doc.status === 'Active') {
-            frm.add_custom_button(__('Pause Schedule'), () => updateStatus('Paused'));
-            frm.add_custom_button(__('Complete Schedule'), () => updateStatus('Completed'));
+            if (canWrite) {
+                frm.add_custom_button(__('Pause Schedule'), () => updateStatus('Paused'));
+                frm.add_custom_button(__('Complete Schedule'), () => updateStatus('Completed'));
+            }
         } else if (frm.doc.status === 'Paused') {
-            frm.add_custom_button(__('Resume Schedule'), () => updateStatus('Active'));
-            frm.add_custom_button(__('Complete Schedule'), () => updateStatus('Completed'));
+            if (canWrite) {
+                frm.add_custom_button(__('Resume Schedule'), () => updateStatus('Active'));
+                frm.add_custom_button(__('Complete Schedule'), () => updateStatus('Completed'));
+            }
         } else if (frm.doc.next_schedule) {
             frm.add_custom_button(__('Open Next Schedule'), () => {
                 frappe.set_route('Form', 'Maintenance Schedule', frm.doc.next_schedule);

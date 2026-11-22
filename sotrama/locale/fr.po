@@ -13,6 +13,9 @@ msgstr "Parc Sotrama"
 msgid "Fleet Overview"
 msgstr "Vue d'ensemble du parc"
 
+msgid "Fleet Management"
+msgstr "Gestion du parc"
+
 msgid "Fleet Operations"
 msgstr "Exploitation du parc"
 
@@ -2508,6 +2511,9 @@ msgstr "Le conducteur principal sélectionné n'existe pas."
 
 msgid "Selected Vehicle does not exist."
 msgstr "Le véhicule sélectionné n'existe pas."
+
+msgid "This lookup is available only for Company filters."
+msgstr "Cette recherche est réservée aux filtres Société."
 
 msgid "Select a submitted Vehicle."
 msgstr "Sélectionnez un véhicule soumis."

@@ -1,11 +1,12 @@
 // Vehicle — client-side validations and auto-calculations
 function applyTpVehicleDefaults(frm) {
     if (!frm.is_new() || !frm.doc.company) return;
+    const company = frm.doc.company;
     return frappe.call({
         method: 'sotrama.tp.settings.get_tp_company_defaults',
-        args: { company: frm.doc.company },
+        args: { company },
     }).then(({ message }) => {
-        if (!message) return;
+        if (!message || frm.doc.company !== company) return;
         const values = {};
         const fields = {
             default_department: 'department',
@@ -21,6 +22,9 @@ function applyTpVehicleDefaults(frm) {
 
 frappe.ui.form.on('Vehicle', {
     setup(frm) {
+        frm.set_query('company', () => ({
+            query: 'sotrama.tp.settings.search_vehicle_companies',
+        }));
         frm.set_query('vehicle_make', () => ({ filters: { active: 1 } }));
         frm.set_query('model', () => ({
             filters: {
@@ -72,32 +76,39 @@ frappe.ui.form.on('Vehicle', {
         }
 
         if (!frm.is_new()) {
-            frm.add_custom_button(__('Create Breakdown Incident'), function() {
-                frappe.new_doc('Breakdown Incident', {
-                    vehicle: frm.doc.name,
-                    location: frm.doc.current_location
+            if (frappe.model.can_create('Breakdown Incident')) {
+                frm.add_custom_button(__('Create Breakdown Incident'), function() {
+                    frappe.new_doc('Breakdown Incident', {
+                        vehicle: frm.doc.name,
+                        location: frm.doc.current_location
+                    });
                 });
-            });
+            }
 
-            frm.add_custom_button(__('Create Inspection'), function() {
-                frappe.new_doc('Vehicle Inspection', {
-                    vehicle: frm.doc.name,
-                    inspection_type: 'Pre-Use'
+            if (frappe.model.can_create('Vehicle Inspection')) {
+                frm.add_custom_button(__('Create Inspection'), function() {
+                    frappe.new_doc('Vehicle Inspection', {
+                        vehicle: frm.doc.name,
+                        inspection_type: 'Pre-Use'
+                    });
                 });
-            });
+            }
 
-            frm.add_custom_button(__('Create Job Card'), function() {
-                frappe.new_doc('Maintenance Job Card', {
-                    vehicle: frm.doc.name,
-                    company: frm.doc.company,
-                    cost_center: frm.doc.cost_center
+            if (frappe.model.can_create('Maintenance Job Card')) {
+                frm.add_custom_button(__('Create Job Card'), function() {
+                    frappe.new_doc('Maintenance Job Card', {
+                        vehicle: frm.doc.name,
+                        company: frm.doc.company,
+                        cost_center: frm.doc.cost_center
+                    });
                 });
-            });
+            }
         }
     },
 
     company(frm) {
         if (!frm.doc.company) return;
+        const company = frm.doc.company;
 
         const scopedFields = [
             ['parts_warehouse', 'Warehouse'],
@@ -109,11 +120,14 @@ frappe.ui.form.on('Vehicle', {
             const current = frm.doc[fieldname];
             if (!current) return;
             return frappe.db.get_value(doctype, current, 'company').then(({ message }) => {
-                if (message && message.company && message.company !== frm.doc.company) {
+                if (frm.doc.company !== company || frm.doc[fieldname] !== current) return;
+                if (message && message.company && message.company !== company) {
                     return frm.set_value(fieldname, '');
                 }
             });
-        })).then(() => applyTpVehicleDefaults(frm));
+        })).then(() => {
+            if (frm.doc.company === company) return applyTpVehicleDefaults(frm);
+        });
     },
 
     vehicle_make(frm) {

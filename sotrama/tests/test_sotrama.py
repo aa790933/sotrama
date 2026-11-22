@@ -101,6 +101,222 @@ class TestSotramaHooks(unittest.TestCase):
                     offenders.append(f"{path}:{node.lineno}")
         self.assertEqual(offenders, [])
 
+    def test_fleet_workspace_number_cards_count_only_submitted_records(self):
+        number_cards = {
+            "active_vehicles": "Vehicle",
+            "vehicles_out_of_service": "Vehicle",
+            "active_maintenance_plans": "Maintenance Schedule",
+        }
+        for card_name, doctype in number_cards.items():
+            with self.subTest(card=card_name):
+                card_path = (
+                    _sotrama_package_path()
+                    / "tp"
+                    / "number_card"
+                    / card_name
+                    / f"{card_name}.json"
+                )
+                card = json.loads(card_path.read_text(encoding="utf-8"))
+                filters = json.loads(card["filters_json"])
+                self.assertIn([doctype, "docstatus", "=", 1], filters)
+
+    def test_sotrama_home_workspace_has_a_role_scoped_fleet_entry_point(self):
+        workspace_path = (
+            _sotrama_package_path()
+            / "sotrama"
+            / "workspace"
+            / "sotrama"
+            / "sotrama.json"
+        )
+        workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
+        fleet_link = next(
+            link
+            for link in workspace["links"]
+            if link.get("link_type") == "Workspace"
+            and link.get("link_to") == "Sotrama Fleet"
+        )
+        self.assertEqual(fleet_link["label"], "Fleet Overview")
+        workspace_roles = {row["role"] for row in workspace["roles"]}
+        self.assertTrue({"System Manager", "Fleet Manager", "Workshop"}.issubset(workspace_roles))
+
+    def test_fleet_report_company_filters_use_permission_scoped_link_lookup(self):
+        for report in ("fleet_cost_analysis", "upcoming_document_expiries"):
+            with self.subTest(report=report):
+                source = (
+                    _sotrama_package_path()
+                    / "tp"
+                    / "report"
+                    / report
+                    / f"{report}.js"
+                ).read_text(encoding="utf-8")
+                self.assertIn('fieldtype: "Link"', source)
+                self.assertIn('options: "Company"', source)
+                self.assertIn(
+                    "sotrama.tp.settings.search_fleet_report_companies", source
+                )
+
+    def test_company_classification_company_link_uses_user_permission_scoped_lookup(self):
+        source = (
+            _sotrama_package_path() / "public" / "js" / "company_classification.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("frm.set_query('company'", source)
+        self.assertIn(
+            "sotrama.tp.settings.search_company_classification_companies", source
+        )
+
+        from sotrama.tp.settings import search_company_classification_companies
+
+        with (
+            patch("sotrama.tp.settings.frappe.has_permission") as has_permission,
+            patch(
+                "frappe.permissions.get_user_permissions",
+                return_value={
+                    "Company": [
+                        {"doc": "SOTRAMA", "applicable_for": "Company Classification"},
+                        {"doc": "SOTRAMA-QUARRY", "applicable_for": "Vehicle"},
+                    ]
+                },
+            ),
+            patch(
+                "frappe.permissions.get_allowed_docs_for_doctype",
+                return_value=["SOTRAMA"],
+            ) as get_allowed,
+            patch(
+                "sotrama.tp.settings.frappe.get_all",
+                return_value=[frappe._dict(name="SOTRAMA")],
+            ) as get_all,
+        ):
+            result = search_company_classification_companies(
+                "Company", "SOT", "name", 0, 20
+            )
+
+        has_permission.assert_called_once_with(
+            "Company Classification", "read", throw=True
+        )
+        get_allowed.assert_called_once_with(
+            [
+                {"doc": "SOTRAMA", "applicable_for": "Company Classification"},
+                {"doc": "SOTRAMA-QUARRY", "applicable_for": "Vehicle"},
+            ],
+            "Company Classification",
+        )
+        get_all.assert_called_once_with(
+            "Company",
+            fields=["name"],
+            filters=[
+                ["name", "like", "%SOT%"],
+                ["name", "in", ["SOTRAMA"]],
+            ],
+            order_by="name asc",
+            start=0,
+            page_length=20,
+        )
+        self.assertEqual(result, [["SOTRAMA"]])
+
+    def test_vehicle_and_driver_company_links_use_their_user_permission_scopes(self):
+        package_path = _sotrama_package_path()
+        vehicle_source = (package_path / "public" / "js" / "vehicle.js").read_text(
+            encoding="utf-8"
+        )
+        driver_source = (package_path / "public" / "js" / "driver.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("search_vehicle_companies", vehicle_source)
+        self.assertIn("search_driver_companies", driver_source)
+
+        from sotrama.tp.settings import search_driver_companies, search_vehicle_companies
+
+        company_permissions = [
+            {"doc": "SOTRAMA", "applicable_for": "Vehicle"},
+            {"doc": "SOTRAMA-QUARRY", "applicable_for": "Driver"},
+        ]
+        for doctype, query in (
+            ("Vehicle", search_vehicle_companies),
+            ("Driver", search_driver_companies),
+        ):
+            with self.subTest(doctype=doctype):
+                expected_company = (
+                    "SOTRAMA" if doctype == "Vehicle" else "SOTRAMA-QUARRY"
+                )
+                with (
+                    patch("sotrama.tp.settings.frappe.has_permission") as has_permission,
+                    patch(
+                        "frappe.permissions.get_user_permissions",
+                        return_value={"Company": company_permissions},
+                    ),
+                    patch(
+                        "frappe.permissions.get_allowed_docs_for_doctype",
+                        return_value=["SOTRAMA" if doctype == "Vehicle" else "SOTRAMA-QUARRY"],
+                    ) as get_allowed,
+                    patch(
+                        "sotrama.tp.settings.frappe.get_all",
+                        return_value=[frappe._dict(name=expected_company)],
+                    ) as get_all,
+                ):
+                    result = query("Company", "SOT", "name", 0, 20)
+
+                has_permission.assert_called_once_with(doctype, "read", throw=True)
+                get_allowed.assert_called_once_with(company_permissions, doctype)
+                self.assertEqual(
+                    get_all.call_args.kwargs["filters"][1][1], [expected_company]
+                )
+                self.assertEqual(result, [[expected_company]])
+
+    def test_fleet_report_company_lookup_uses_only_permission_visible_vehicles(self):
+        from sotrama.tp.settings import search_fleet_report_companies
+
+        with (
+            patch("sotrama.tp.settings.frappe.has_permission") as has_permission,
+            patch(
+                "sotrama.tp.settings.frappe.get_list",
+                return_value=[frappe._dict(company="SOTRAMA")],
+            ) as get_list,
+        ):
+            result = search_fleet_report_companies(
+                "Company", "SOT", "name", 0, 20
+            )
+
+        has_permission.assert_called_once_with("Vehicle", "read", throw=True)
+        get_list.assert_called_once_with(
+            "Vehicle",
+            fields=["company"],
+            filters=[["company", "like", "%SOT%"]],
+            group_by="company",
+            order_by="company asc",
+            start=0,
+            page_length=20,
+        )
+        self.assertEqual(result, [["SOTRAMA"]])
+
+        with (
+            patch("sotrama.tp.settings.frappe.has_permission", side_effect=frappe.PermissionError),
+            self.assertRaises(frappe.PermissionError),
+        ):
+            search_fleet_report_companies("Company", "", "name", 0, 20)
+
+    def test_fleet_list_views_keep_hr_only_and_valuation_fields_out_of_shared_lists(self):
+        package_path = _sotrama_package_path()
+        vehicle = json.loads(
+            (package_path / "tp" / "doctype" / "vehicle" / "vehicle.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        driver = json.loads(
+            (package_path / "tp" / "doctype" / "driver" / "driver.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        vehicle_list_fields = {
+            field["fieldname"] for field in vehicle["fields"] if field.get("in_list_view")
+        }
+        driver_list_fields = {
+            field["fieldname"] for field in driver["fields"] if field.get("in_list_view")
+        }
+        self.assertTrue({"company", "current_odometer", "vehicle_status"}.issubset(vehicle_list_fields))
+        self.assertFalse({"acquisition_date", "acquisition_value"}.intersection(vehicle_list_fields))
+        self.assertTrue({"driver_name", "company", "license_class", "license_expiry", "status"}.issubset(driver_list_fields))
+        self.assertFalse({"license_number", "safety_training_expiry", "hire_date"}.intersection(driver_list_fields))
+
     def test_app_install_does_not_trigger_an_unnecessary_yarn_install(self):
         app_path = Path(frappe.get_app_path("sotrama"))
         self.assertFalse(
@@ -2205,6 +2421,14 @@ class TestSotramaHooks(unittest.TestCase):
                 if row.role == "Workshop" and row.permlevel > 0
             ]
         )
+        hr_level_two = [
+            row
+            for row in driver_meta.permissions
+            if row.role == "HR Manager" and row.permlevel == 2
+        ]
+        self.assertTrue(hr_level_two)
+        self.assertTrue(hr_level_two[0].read)
+        self.assertTrue(hr_level_two[0].write)
 
         inspection_item = frappe.get_meta("Inspection Item", cached=False)
         self.assertEqual(inspection_item.get_field("is_safety_critical").permlevel, 1)
@@ -3350,6 +3574,14 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertEqual(settings.get_tp_default_company("Vehicle"), "COMPANY-A")
         validate_company.assert_called_once_with("COMPANY-A", "Vehicle")
 
+        with (
+            patch.object(settings.frappe, "has_permission"),
+            patch.object(settings, "get_tp_setting", return_value="COMPANY-A"),
+            patch("sotrama.tp.settings.validate_company_access") as validate_company,
+        ):
+            self.assertEqual(settings.get_tp_default_company("Driver"), "COMPANY-A")
+        validate_company.assert_called_once_with("COMPANY-A", "Driver")
+
         with self.assertRaises(frappe.PermissionError):
             settings.get_tp_default_company("TP Settings")
 
@@ -4087,13 +4319,14 @@ class TestVehicle(unittest.TestCase):
     def test_vehicle_registration_or_fleet_number_is_unique_within_company(self):
         vehicle = frappe.new_doc("Vehicle")
         vehicle.company = self.company
-        vehicle.license_plate = "DUPLICATE-FLEET-001"
+        vehicle.license_plate = " duplicate-fleet-001 "
         vehicle.vehicle_category = "Truck"
         vehicle.insert(ignore_permissions=True)
+        self.assertEqual(vehicle.license_plate, "DUPLICATE-FLEET-001")
 
         duplicate = frappe.new_doc("Vehicle")
         duplicate.company = self.company
-        duplicate.license_plate = "DUPLICATE-FLEET-001"
+        duplicate.license_plate = "duplicate-fleet-001"
         duplicate.vehicle_category = "Truck"
         with self.assertRaises(frappe.ValidationError):
             duplicate.insert(ignore_permissions=True)
@@ -6452,9 +6685,11 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         with (
             patch(
                 "sotrama.tp.scheduler.frappe.get_all",
-                return_value=["fleet-a@example.invalid", "fleet-b@example.invalid"],
-            ),
-            patch("sotrama.tp.scheduler.frappe.db.get_value", return_value=1),
+                side_effect=[
+                    ["fleet-a@example.invalid", "fleet-b@example.invalid"],
+                    ["fleet-a@example.invalid", "fleet-b@example.invalid"],
+                ],
+            ) as get_all,
             patch("sotrama.tp.scheduler.frappe.db.exists", return_value=True),
             patch(
                 "sotrama.tp.scheduler.frappe.has_permission",
@@ -6466,6 +6701,116 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(assigned, "fleet-b@example.invalid")
         self.assertEqual(has_permission.call_count, 2)
         self.assertEqual(has_permission.call_args_list[0].kwargs["doc"], "VEHICLE-B")
+        self.assertEqual(get_all.call_count, 2)
+
+    def test_role_assignment_reuses_enabled_role_users_within_one_scheduler_run(self):
+        from sotrama.tp.scheduler import _user_for_role
+
+        role_users_cache = {}
+        with (
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[["fleet@example.invalid"], ["fleet@example.invalid"]],
+            ) as get_all,
+            patch("sotrama.tp.scheduler.frappe.db.exists") as exists,
+            patch("sotrama.tp.scheduler.frappe.has_permission", return_value=True) as has_permission,
+        ):
+            first = _user_for_role(
+                "Fleet Manager",
+                "Vehicle",
+                "VEH-001",
+                role_users_cache=role_users_cache,
+                known_existing=True,
+            )
+            second = _user_for_role(
+                "Fleet Manager",
+                "Vehicle",
+                "VEH-002",
+                role_users_cache=role_users_cache,
+                known_existing=True,
+            )
+
+        self.assertEqual(first, "fleet@example.invalid")
+        self.assertEqual(second, "fleet@example.invalid")
+        self.assertEqual(get_all.call_count, 2, "Role membership and enabled users should be fetched once per role")
+        self.assertEqual(has_permission.call_count, 2, "Read permission must still be checked for every exact document")
+        exists.assert_not_called()
+
+    def test_role_assignment_falls_back_if_a_batched_document_was_deleted(self):
+        from sotrama.tp.scheduler import _user_for_role
+
+        with (
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[ ["fleet@example.invalid"], ["fleet@example.invalid"] ],
+            ),
+            patch(
+                "sotrama.tp.scheduler.frappe.has_permission",
+                side_effect=frappe.DoesNotExistError,
+            ),
+        ):
+            assigned = _user_for_role(
+                "Fleet Manager", "Vehicle", "VEH-DELETED", known_existing=True
+            )
+
+        self.assertEqual(assigned, "Administrator")
+
+    def test_maintenance_due_scheduler_batches_vehicle_odometer_and_open_todos(self):
+        from sotrama.tp.scheduler import check_maintenance_due
+
+        schedules = [
+            frappe._dict(
+                name="SCH-DATE",
+                vehicle="VEH-DATE",
+                next_due_date=add_days(today(), 2),
+                next_due_odometer=500,
+                job_type="Oil Change",
+            ),
+            frappe._dict(
+                name="SCH-ODO",
+                vehicle="VEH-ODO",
+                next_due_date=None,
+                next_due_odometer=1000,
+                job_type="Inspection",
+            ),
+        ]
+        vehicles = [
+            frappe._dict(name="VEH-DATE", current_odometer=450),
+            frappe._dict(name="VEH-ODO", current_odometer=1200),
+        ]
+        existing_todo = frappe._dict(name="TODO-DATE", reference_name="SCH-DATE")
+        created_todo = Mock(name="TODO-ODO")
+        created_todo.name = "TODO-ODO"
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=14),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[schedules, vehicles, [existing_todo]],
+            ) as get_all,
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                return_value="fleet@example.invalid",
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.get_value") as get_value,
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc", return_value=created_todo),
+        ):
+            check_maintenance_due()
+
+        self.assertEqual(get_all.call_count, 3)
+        self.assertEqual(get_all.call_args_list[1].args[0], "Vehicle")
+        self.assertEqual(get_all.call_args_list[2].args[0], "ToDo")
+        self.assertEqual(
+            get_all.call_args_list[2].kwargs["filters"]["reference_name"],
+            ["in", ["SCH-DATE", "SCH-ODO"]],
+        )
+        get_value.assert_not_called()
+        set_value.assert_called_once()
+        self.assertEqual(set_value.call_args.args[:2], ("ToDo", "TODO-DATE"))
+        self.assertIn(str(schedules[0].next_due_date), set_value.call_args.args[2]["description"])
+        self.assertIn("1200", created_todo.description)
+        self.assertIn("1000", created_todo.description)
+        created_todo.insert.assert_called_once_with(ignore_permissions=True)
 
     def test_legacy_driver_alerts_are_sanitized_and_routed_to_the_right_role(self):
         from sotrama.tp.scheduler import remediate_fleet_alert_todo_assignments
@@ -6493,14 +6838,16 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                 description="Review the restricted professional-driver compliance records. Medical result: POSITIVE",
             ),
         ]
-        driver_license = frappe._dict(
-            driver_name="Test Driver", license_expiry=add_days(today(), 1)
-        )
-        driver_safety = frappe._dict(
-            driver_name="Test Driver", safety_training_expiry=add_days(today(), 2)
+        driver = frappe._dict(
+            name="DRV-TEST-001",
+            driver_name="Test Driver",
+            license_expiry=add_days(today(), 1),
+            safety_training_expiry=add_days(today(), 2),
         )
         with (
-            patch("sotrama.tp.scheduler.frappe.get_all", return_value=todos),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all", side_effect=[todos, [driver]]
+            ) as get_all,
             patch(
                 "sotrama.tp.scheduler._user_for_role",
                 side_effect=[
@@ -6509,14 +6856,12 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                     "hr@example.invalid",
                 ],
             ),
-            patch(
-                "sotrama.tp.scheduler.frappe.db.get_value",
-                side_effect=[driver_license, driver_safety],
-            ),
             patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
         ):
             remediate_fleet_alert_todo_assignments()
 
+        self.assertEqual(get_all.call_count, 2)
+        self.assertEqual(get_all.call_args_list[1].args[0], "Driver")
         license_update = set_value.call_args_list[0].args[2]
         safety_update = set_value.call_args_list[1].args[2]
         compliance_update = set_value.call_args_list[2].args[2]
@@ -6545,7 +6890,8 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         with (
             patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
             patch(
-                "sotrama.tp.scheduler.frappe.get_all", side_effect=[[], [driver]]
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[], [driver], []],
             ) as get_all,
             patch("sotrama.tp.scheduler.frappe.db.exists", return_value=False),
             patch(
@@ -6565,6 +6911,49 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(
             get_all.call_args_list[0].kwargs["filters"]["transport_regulatory_status"],
             "Regulated",
+        )
+        self.assertEqual(get_all.call_args_list[2].args[0], "ToDo")
+        self.assertEqual(
+            get_all.call_args_list[2].kwargs["filters"]["reference_name"],
+            ["in", [driver.name]],
+        )
+
+    def test_driver_compliance_scheduler_reads_only_active_regulated_drivers(self):
+        from sotrama.tp.scheduler import check_driver_license_expiry
+
+        active_driver = frappe._dict(
+            name="DRV-ACTIVE-REGULATED",
+            status="Active",
+            driver_name="Active Driver",
+            license_expiry=None,
+            safety_training_expiry=None,
+        )
+        inactive_driver = frappe._dict(
+            name="DRV-INACTIVE-REGULATED",
+            status="Inactive",
+            driver_name="Inactive Driver",
+            license_expiry=None,
+            safety_training_expiry=None,
+        )
+        tasks = [
+            frappe._dict(driver=active_driver.name),
+            frappe._dict(driver=inactive_driver.name),
+        ]
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[tasks, [active_driver], [], []],
+            ) as get_all,
+            patch("sotrama.tp.scheduler.frappe.db.exists", return_value=True),
+        ):
+            check_driver_license_expiry()
+
+        compliance_query = get_all.call_args_list[2]
+        self.assertEqual(compliance_query.args[0], "Driver Compliance Record")
+        self.assertEqual(
+            compliance_query.kwargs["filters"]["parent"],
+            ["in", [active_driver.name]],
         )
 
 

@@ -54,16 +54,21 @@ frappe.ui.form.on('Maintenance Job Card', {
 
     vehicle(frm) {
         if (!frm.doc.vehicle) return;
+        const vehicle = frm.doc.vehicle;
+        const costCenterBeforeLookup = frm.doc.cost_center;
+        const odometerBeforeLookup = frm.doc.odometer_before;
 
         frm.set_value('maintenance_schedule', '');
 
-        return frappe.db.get_value('Vehicle', frm.doc.vehicle, [
+        return frappe.db.get_value('Vehicle', vehicle, [
             'company', 'cost_center', 'current_odometer',
         ]).then(({ message }) => {
-            if (!message) return;
+            if (!message || frm.doc.vehicle !== vehicle) return;
             if (message.company) frm.set_value('company', message.company);
-            if (message.cost_center) frm.set_value('cost_center', message.cost_center);
-            if (!frm.doc.odometer_before && message.current_odometer) {
+            if (message.cost_center && frm.doc.cost_center === costCenterBeforeLookup) {
+                frm.set_value('cost_center', message.cost_center);
+            }
+            if (message.current_odometer && frm.doc.odometer_before === odometerBeforeLookup) {
                 frm.set_value('odometer_before', message.current_odometer);
             }
         });
@@ -77,9 +82,9 @@ frappe.ui.form.on('Maintenance Job Card', {
         // A saved draft needs write permission; create permission applies only
         // while the document is still new. Do not show add-row actions that the
         // user cannot save on an existing draft.
-        const canEdit = (frm.perm || []).some((permission) =>
-            frm.is_new() ? permission.create : permission.write,
-        );
+        const canEdit = frm.is_new()
+            ? !!frm.perm?.[0]?.create
+            : !!frm.perm?.[0]?.write;
         if (frm.doc.docstatus === 0 && canEdit) {
             const addRow = (fieldname, description) => {
                 frm.add_child(fieldname);
@@ -109,6 +114,7 @@ frappe.ui.form.on('Maintenance Job Card', {
 
         // Auto-set odometer before from vehicle
         if (frm.is_new() && frm.doc.vehicle && !frm.doc.odometer_before) {
+            const vehicle = frm.doc.vehicle;
             frappe.call({
                 method: 'frappe.client.get_value',
                 args: {
@@ -117,7 +123,7 @@ frappe.ui.form.on('Maintenance Job Card', {
                     fieldname: 'current_odometer'
                 },
                 callback: function(r) {
-                    if (r.message && r.message.current_odometer) {
+                    if (r.message && r.message.current_odometer && frm.doc.vehicle === vehicle && !frm.doc.odometer_before) {
                         frm.set_value('odometer_before', r.message.current_odometer);
                     }
                 }
@@ -155,22 +161,26 @@ frappe.ui.form.on('Maintenance Job Card', {
         (frm.doc.other_costs || []).forEach(function(c) {
             total += c.amount || 0;
         });
-        frm.set_value('total_cost', total);
+        return frm.set_value('total_cost', total);
     }
 });
 
 frappe.ui.form.on('Job Card Part', {
-    // Frappe 16 Grid emits <table_field>_delete on the child DocType.
+    // Single-row removal and bulk deletion are separate Frappe Grid events.
+    parts_used_remove(frm) {
+        return updateTotals(frm);
+    },
     parts_used_delete(frm) {
         return updateTotals(frm);
     },
     item(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (!row.item) return;
+        const item = row.item;
 
-        return frappe.db.get_value('Item', row.item, ['item_name', 'stock_uom'])
+        return frappe.db.get_value('Item', item, ['item_name', 'stock_uom'])
             .then(({ message }) => {
-                if (!message) return;
+                if (!message || row.item !== item) return;
                 return Promise.all([
                     frappe.model.set_value(cdt, cdn, 'item_name', message.item_name),
                     frappe.model.set_value(cdt, cdn, 'uom', message.stock_uom),
@@ -186,6 +196,9 @@ frappe.ui.form.on('Job Card Part', {
 });
 
 frappe.ui.form.on('Job Card Labour', {
+    labour_lines_remove(frm) {
+        return updateTotals(frm);
+    },
     labour_lines_delete(frm) {
         return updateTotals(frm);
     },
@@ -194,12 +207,14 @@ frappe.ui.form.on('Job Card Labour', {
         if (!row.mechanic) {
             return frappe.model.set_value(cdt, cdn, 'mechanic_name', '');
         }
+        const mechanic = row.mechanic;
+        const company = frm.doc.company;
 
         return frappe.call({
             method: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.get_workshop_employee_name',
-            args: { employee: row.mechanic, company: frm.doc.company },
+            args: { employee: mechanic, company },
         }).then(({ message }) => {
-            if (message) {
+            if (message && row.mechanic === mechanic && frm.doc.company === company) {
                 return frappe.model.set_value(cdt, cdn, 'mechanic_name', message);
             }
         });
@@ -213,6 +228,9 @@ frappe.ui.form.on('Job Card Labour', {
 });
 
 frappe.ui.form.on('Job Card Other Cost', {
+    other_costs_remove(frm) {
+        return updateTotals(frm);
+    },
     other_costs_delete(frm) {
         return updateTotals(frm);
     },

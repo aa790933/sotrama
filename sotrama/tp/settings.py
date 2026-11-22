@@ -122,7 +122,7 @@ def get_tp_default_company(applicable_for: str = "Vehicle"):
     general TP Settings field read. Company access follows the requested
     DocType's User Permission scope, without requiring broad Company read access.
     """
-    if applicable_for not in {"Vehicle", "Company Classification"}:
+    if applicable_for not in {"Vehicle", "Driver", "Company Classification"}:
         frappe.throw(
             frappe._("Unsupported Company default context."), frappe.PermissionError
         )
@@ -132,6 +132,107 @@ def get_tp_default_company(applicable_for: str = "Vehicle"):
     if company:
         validate_company_access(company, applicable_for)
     return company
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_fleet_report_companies(
+    doctype, txt, searchfield, start, page_len, filters=None
+):
+    """Suggest only Companies represented by Fleet records the caller can read.
+
+    Report filters use a Company Link for autocomplete without granting Fleet
+    users general read access to ERPNext's Company DocType. `get_list` applies
+    Vehicle permissions and Company User Permissions before returning values.
+    """
+    if doctype != "Company":
+        frappe.throw(
+            frappe._("This lookup is available only for Company filters."),
+            frappe.PermissionError,
+        )
+    frappe.has_permission("Vehicle", "read", throw=True)
+
+    rows = frappe.get_list(
+        "Vehicle",
+        fields=["company"],
+        filters=[["company", "like", f"%{txt or ''}%"]],
+        group_by="company",
+        order_by="company asc",
+        start=max(int(start or 0), 0),
+        page_length=min(max(int(page_len or 20), 1), 50),
+    )
+    return [[row.company] for row in rows if row.company]
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_vehicle_companies(doctype, txt, searchfield, start, page_len, filters=None):
+    """Search Companies permitted for Vehicle operations without Company read."""
+    if doctype != "Company":
+        frappe.throw(
+            frappe._("This lookup is available only for Company filters."),
+            frappe.PermissionError,
+        )
+    frappe.has_permission("Vehicle", "read", throw=True)
+    return _search_company_names(txt, start, page_len, applicable_for="Vehicle")
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_driver_companies(doctype, txt, searchfield, start, page_len, filters=None):
+    """Search Companies permitted for Driver operations without Company read."""
+    if doctype != "Company":
+        frappe.throw(
+            frappe._("This lookup is available only for Company filters."),
+            frappe.PermissionError,
+        )
+    frappe.has_permission("Driver", "read", throw=True)
+    return _search_company_names(txt, start, page_len, applicable_for="Driver")
+
+
+def _search_company_names(txt, start, page_len, *, applicable_for):
+    """Return Company names within the same User Permission scope as validation."""
+    from frappe.permissions import get_allowed_docs_for_doctype, get_user_permissions
+
+    company_permissions = get_user_permissions(frappe.session.user).get("Company", [])
+    allowed_companies = get_allowed_docs_for_doctype(
+        company_permissions, applicable_for
+    )
+
+    company_filters = [["name", "like", f"%{txt or ''}%"]]
+    if allowed_companies:
+        company_filters.append(["name", "in", allowed_companies])
+
+    rows = frappe.get_all(
+        "Company",
+        fields=["name"],
+        filters=company_filters,
+        order_by="name asc",
+        start=max(int(start or 0), 0),
+        page_length=min(max(int(page_len or 20), 1), 50),
+    )
+    return [[row.name] for row in rows]
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def search_company_classification_companies(
+    doctype, txt, searchfield, start, page_len, filters=None
+):
+    """Search Company names allowed by Company Classification User Permissions.
+
+    This narrow Link lookup does not grant general Company read access. Its
+    scope mirrors `validate_company_access` for this DocType.
+    """
+    if doctype != "Company":
+        frappe.throw(
+            frappe._("This lookup is available only for Company filters."),
+            frappe.PermissionError,
+        )
+    frappe.has_permission("Company Classification", "read", throw=True)
+    return _search_company_names(
+        txt, start, page_len, applicable_for="Company Classification"
+    )
 
 
 def _get_accessible_company_default(company: str, fieldname: str, doctype: str):

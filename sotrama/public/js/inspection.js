@@ -63,9 +63,9 @@ frappe.ui.form.on('Vehicle Inspection', {
         // A saved draft needs write permission; create permission applies only
         // while the document is still new. Do not show add-row actions that the
         // user cannot save on an existing draft.
-        const canEdit = (frm.perm || []).some((permission) =>
-            frm.is_new() ? permission.create : permission.write,
-        );
+        const canEdit = frm.is_new()
+            ? !!frm.perm?.[0]?.create
+            : !!frm.perm?.[0]?.write;
         if (frm.doc.docstatus === 0 && canEdit) {
             frm.add_custom_button(__('Add Inspection Check'), () => {
                 const row = frm.add_child('inspection_items');
@@ -102,14 +102,16 @@ frappe.ui.form.on('Vehicle Inspection', {
 
         if (!frm.is_new() && frm.doc.docstatus === 1 && frm.doc.has_critical_defect) {
             if (frm.doc.critical_defect_cleared_by) {
-                frm.add_custom_button(__('Open Follow-up Inspection'), () => {
-                    frappe.set_route(
-                        'Form',
-                        'Vehicle Inspection',
-                        frm.doc.critical_defect_cleared_by,
-                    );
-                });
-            } else {
+                if (frappe.perm.has_perm('Vehicle Inspection', 0, 'read')) {
+                    frm.add_custom_button(__('Open Follow-up Inspection'), () => {
+                        frappe.set_route(
+                            'Form',
+                            'Vehicle Inspection',
+                            frm.doc.critical_defect_cleared_by,
+                        );
+                    });
+                }
+            } else if (frappe.model.can_create('Vehicle Inspection')) {
                 frm.add_custom_button(__('Create Follow-up Inspection'), () => {
                     frappe.new_doc('Vehicle Inspection', {
                         vehicle: frm.doc.vehicle,
@@ -124,10 +126,11 @@ frappe.ui.form.on('Vehicle Inspection', {
 
     vehicle(frm) {
         if (!frm.doc.vehicle) return;
-        return frappe.db.get_value('Vehicle', frm.doc.vehicle, [
+        const vehicle = frm.doc.vehicle;
+        return frappe.db.get_value('Vehicle', vehicle, [
             'company', 'primary_driver', 'current_odometer',
         ]).then(({ message }) => {
-            if (!message) return;
+            if (!message || frm.doc.vehicle !== vehicle) return;
             if (message.company) frm.set_value('company', message.company);
             if (!frm.doc.driver && message.primary_driver) frm.set_value('driver', message.primary_driver);
             if (!frm.doc.odometer && message.current_odometer) frm.set_value('odometer', message.current_odometer);
@@ -140,7 +143,7 @@ frappe.ui.form.on('Vehicle Inspection', {
 });
 
 frappe.ui.form.on('Inspection Item', {
-    // Frappe 16 Grid emits these table events on the child DocType.
+    // Frappe Grid uses _remove for one row and _delete for bulk deletion.
     inspection_items_add(frm) {
         updateInspectionSummary(frm);
     },
@@ -154,6 +157,9 @@ frappe.ui.form.on('Inspection Item', {
         updateInspectionSummary(frm);
     },
     remarks(frm) {
+        updateInspectionSummary(frm);
+    },
+    inspection_items_remove(frm) {
         updateInspectionSummary(frm);
     },
     inspection_items_delete(frm) {

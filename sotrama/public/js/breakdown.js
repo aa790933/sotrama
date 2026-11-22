@@ -14,10 +14,11 @@ frappe.ui.form.on('Breakdown Incident', {
 
     vehicle(frm) {
         if (!frm.doc.vehicle) return;
-        return frappe.db.get_value('Vehicle', frm.doc.vehicle, [
+        const vehicle = frm.doc.vehicle;
+        return frappe.db.get_value('Vehicle', vehicle, [
             'company', 'primary_driver', 'current_location',
         ]).then(({ message }) => {
-            if (!message) return;
+            if (!message || frm.doc.vehicle !== vehicle) return;
             if (message.company) frm.set_value('company', message.company);
             if (!frm.doc.driver && message.primary_driver) frm.set_value('driver', message.primary_driver);
             if (!frm.doc.location && message.current_location) frm.set_value('location', message.current_location);
@@ -25,13 +26,17 @@ frappe.ui.form.on('Breakdown Incident', {
     },
 
     refresh: function(frm) {
-        if (frm.doc.linked_job_card) {
+        if (
+            frm.doc.linked_job_card &&
+            frappe.perm.has_perm('Maintenance Job Card', 0, 'read')
+        ) {
             frm.add_custom_button(__('Open Job Card'), function() {
                 frappe.set_route('Form', 'Maintenance Job Card', frm.doc.linked_job_card);
             });
         }
 
-        if (!frm.is_new() && frm.doc.docstatus === 1) {
+        const canWrite = !!frm.perm?.[0]?.write;
+        if (!frm.is_new() && frm.doc.docstatus === 1 && canWrite) {
             const transition = (status, values = {}) => frappe.call({
                 method: 'sotrama.tp.doctype.breakdown_incident.breakdown_incident.update_breakdown_status',
                 args: { name: frm.doc.name, status, ...values },

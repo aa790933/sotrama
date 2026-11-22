@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-function loadHandlers(path) {
+function loadHandlers(path, { canCreate = () => true, frappeOverrides = {}, locals = {} } = {}) {
 	const handlers = {};
 	const frappe = {
 		ui: {
@@ -13,24 +13,32 @@ function loadHandlers(path) {
 			},
 		},
 		utils: { flt: (value) => Number(value) || 0 },
+		model: { can_create: canCreate },
+			perm: { has_perm: () => true },
 	};
+	Object.assign(frappe, frappeOverrides);
 
 	vm.runInNewContext(fs.readFileSync(path, "utf8"), {
 		frappe,
-		locals: {},
+		locals,
 		__: (value) => value,
 	});
 
 	return handlers;
 }
 
-function makeForm({ isNew = false, docstatus = 0, permissions = [], company = "SOTRAMA" } = {}) {
+function makeForm({ isNew = false, docstatus = 0, permissions = [], company = "SOTRAMA", doc = {} } = {}) {
 	return {
 		perm: permissions,
-        doc: { docstatus, company },
+	    doc: { docstatus, company, ...doc },
+		fields_dict: {},
 		buttons: [],
         queries: {},
 		is_new: () => isNew,
+		set_value(values, value) {
+			Object.assign(this.doc, typeof values === "string" ? { [values]: value } : values);
+			return Promise.resolve();
+		},
 		add_custom_button(...args) {
 			this.buttons.push(args);
 		},
@@ -57,6 +65,9 @@ assert.equal(form.buttons.length, 3, "Create permission must expose all add-entr
 form = makeForm({ isNew: false, permissions: [{ create: false, write: true }] });
 jobCard.refresh(form);
 assert.equal(form.buttons.length, 3, "Write permission must expose all add-entry actions on saved drafts");
+form = makeForm({ isNew: false, permissions: [{ write: false }, { write: false }, { write: true }] });
+jobCard.refresh(form);
+assert.equal(form.buttons.length, 0, "Field-level write permission must not expose draft add-entry actions");
 
 form = makeForm({ isNew: false, docstatus: 1, permissions: [{ create: true, write: true }] });
 jobCard.refresh(form);
@@ -82,10 +93,140 @@ assert.equal(form.buttons.length, 1, "Create permission must expose the checklis
 form = makeForm({ isNew: false, permissions: [{ create: false, write: true }] });
 inspection.refresh(form);
 assert.equal(form.buttons.length, 1, "Write permission must expose the checklist action on saved drafts");
+form = makeForm({ isNew: false, permissions: [{ write: false }, { write: false }, { write: true }] });
+inspection.refresh(form);
+assert.equal(form.buttons.length, 0, "Field-level write permission must not expose draft checklist actions");
 
 form = makeForm({ isNew: false, docstatus: 1, permissions: [{ create: true, write: true }] });
 inspection.refresh(form);
 assert.equal(form.buttons.length, 0, "Submitted inspections must not expose draft checklist actions");
+
+const jobCardChildren = loadHandlers("sotrama/public/js/job_card.js");
+for (const [childDoctype, fieldname] of [
+	["Job Card Part", "parts_used"],
+	["Job Card Labour", "labour_lines"],
+	["Job Card Other Cost", "other_costs"],
+]) {
+	const handlers = jobCardChildren[childDoctype];
+	assert.equal(typeof handlers[`${fieldname}_remove`], "function", `${fieldname} must recalculate after removing one row`);
+	assert.equal(typeof handlers[`${fieldname}_delete`], "function", `${fieldname} must recalculate after bulk deletion`);
+}
+
+form = makeForm({ doc: {
+	parts_used: [],
+	labour_lines: [{ amount: 12 }],
+	other_costs: [{ amount: 3 }],
+} });
+jobCardChildren["Job Card Part"].parts_used_remove(form);
+assert.equal(form.doc.total_parts_cost, 0);
+assert.equal(form.doc.total_labour_cost, 12);
+assert.equal(form.doc.total_other_cost, 3);
+assert.equal(form.doc.total_cost, 15, "Single-row part removal must refresh the job-card total");
+
+form = makeForm({ doc: {
+	parts_used: [{ amount: 20 }],
+	labour_lines: [],
+	other_costs: [{ amount: 3 }],
+} });
+jobCardChildren["Job Card Labour"].labour_lines_remove(form);
+assert.equal(form.doc.total_cost, 23, "Single-row labour removal must refresh the job-card total");
+
+form = makeForm({ doc: {
+	parts_used: [{ amount: 20 }],
+	labour_lines: [{ amount: 12 }],
+	other_costs: [],
+} });
+jobCardChildren["Job Card Other Cost"].other_costs_remove(form);
+assert.equal(form.doc.total_cost, 32, "Single-row other-cost removal must refresh the job-card total");
+
+form = makeForm({ doc: {
+	parts_used: [],
+	labour_lines: [{ amount: 5 }],
+	other_costs: [],
+} });
+jobCardChildren["Job Card Part"].parts_used_delete(form);
+assert.equal(form.doc.total_cost, 5, "Bulk row deletion must refresh the job-card total");
+
+const inspectionChildren = loadHandlers("sotrama/public/js/inspection.js");
+const inspectionItems = inspectionChildren["Inspection Item"];
+assert.equal(typeof inspectionItems.inspection_items_remove, "function", "Inspection summary must refresh after one check is removed");
+assert.equal(typeof inspectionItems.inspection_items_delete, "function", "Inspection summary must refresh after bulk deletion");
+form = makeForm({ doc: {
+	inspection_items: [{ status: "Okay", remarks: "" }],
+} });
+inspectionItems.inspection_items_remove(form);
+assert.equal(form.doc.total_defects, 0);
+assert.equal(form.doc.overall_status, "Pass", "Removing a defective check must refresh the inspection result");
+inspectionItems.inspection_items_delete(form);
+assert.equal(form.doc.overall_status, "Pass", "Bulk deletion must refresh the inspection result");
+
+const vehicleHandlers = loadHandlers("sotrama/public/js/vehicle.js", {
+	canCreate: (doctype) => doctype === "Maintenance Job Card",
+})["Vehicle"];
+form = makeForm({ docstatus: 1, doc: { name: "VEH-001", company: "SOTRAMA" } });
+vehicleHandlers.refresh(form);
+assert.deepEqual(form.buttons.map(([label]) => label), ["Create Job Card"], "Vehicle actions must only show doctypes the user can create");
+
+const breakdownRefresh = loadHandlers("sotrama/public/js/breakdown.js")["Breakdown Incident"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "BRK-001", status: "Reported" } });
+breakdownRefresh(form);
+assert.equal(form.buttons.length, 0, "Read-only users must not see Breakdown status actions");
+form = makeForm({ docstatus: 1, doc: { name: "BRK-001", status: "Reported", linked_job_card: "MC-001" } });
+breakdownRefresh(form);
+assert.deepEqual(form.buttons.map(([label]) => label), ["Open Job Card"], "Read-only users with linked-record access must retain navigation");
+const breakdownWithoutJobCardRead = loadHandlers("sotrama/public/js/breakdown.js", {
+	frappeOverrides: { perm: { has_perm: () => false } },
+})["Breakdown Incident"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "BRK-001", status: "Reported", linked_job_card: "MC-001" } });
+breakdownWithoutJobCardRead(form);
+assert.equal(form.buttons.length, 0, "Users without Job Card read permission must not see the navigation action");
+form = makeForm({ docstatus: 1, permissions: [{ write: true }], doc: { name: "BRK-001", status: "Reported" } });
+breakdownRefresh(form);
+assert.equal(form.buttons.length, 2, "Users with write permission must see valid Breakdown status actions");
+form = makeForm({ docstatus: 1, permissions: [{ write: false }, { write: false }, { write: true }], doc: { name: "BRK-001", status: "Reported" } });
+breakdownRefresh(form);
+assert.equal(form.buttons.length, 0, "Field-level write permission must not expose document status actions");
+
+const driverRefresh = loadHandlers("sotrama/public/js/driver.js")["Driver"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "DRV-001", status: "Active" } });
+driverRefresh(form);
+assert.equal(form.buttons.length, 0, "Read-only users must not see Driver status actions");
+form = makeForm({ docstatus: 1, permissions: [{ write: true }], doc: { name: "DRV-001", status: "Active" } });
+driverRefresh(form);
+assert.equal(form.buttons.length, 3, "Users with write permission must see valid Driver status actions");
+form = makeForm({ docstatus: 1, permissions: [{ write: false }, { write: false }, { write: true }], doc: { name: "DRV-001", status: "Active" } });
+driverRefresh(form);
+assert.equal(form.buttons.length, 0, "Field-level write permission must not expose Driver status actions");
+
+const scheduleRefresh = loadHandlers("sotrama/public/js/maintenance_schedule.js")["Maintenance Schedule"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "SCH-001", status: "Active" } });
+scheduleRefresh(form);
+assert.equal(form.buttons.length, 0, "Read-only users must not see Maintenance Schedule status actions");
+form = makeForm({ docstatus: 1, permissions: [{ write: true }], doc: { name: "SCH-001", status: "Active" } });
+scheduleRefresh(form);
+assert.equal(form.buttons.length, 2, "Users with write permission must see valid Maintenance Schedule status actions");
+form = makeForm({ docstatus: 1, permissions: [{ write: false }, { write: false }, { write: true }], doc: { name: "SCH-001", status: "Active" } });
+scheduleRefresh(form);
+assert.equal(form.buttons.length, 0, "Field-level write permission must not expose schedule status actions");
+form = makeForm({ docstatus: 1, doc: { name: "SCH-001", status: "Completed", next_schedule: "SCH-002" } });
+scheduleRefresh(form);
+assert.deepEqual(form.buttons.map(([label]) => label), ["Open Next Schedule"], "Read-only users must retain navigation to the generated successor schedule");
+
+form = makeForm({ docstatus: 1, doc: { name: "INSP-001", has_critical_defect: 1, critical_defect_cleared_by: "INSP-002" } });
+inspection.refresh(form);
+assert.deepEqual(form.buttons.map(([label]) => label), ["Open Follow-up Inspection"], "Users with read access must retain follow-up navigation");
+const inspectionWithoutRead = loadHandlers("sotrama/public/js/inspection.js", {
+	frappeOverrides: { perm: { has_perm: () => false } },
+})["Vehicle Inspection"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "INSP-001", has_critical_defect: 1, critical_defect_cleared_by: "INSP-002" } });
+inspectionWithoutRead(form);
+assert.equal(form.buttons.length, 0, "Users without follow-up read access must not see the navigation action");
+const inspectionWithoutCreate = loadHandlers("sotrama/public/js/inspection.js", {
+	canCreate: () => false,
+})["Vehicle Inspection"].refresh;
+form = makeForm({ docstatus: 1, doc: { name: "INSP-001", has_critical_defect: 1 } });
+inspectionWithoutCreate(form);
+assert.equal(form.buttons.length, 0, "Users without Inspection create permission must not see the follow-up action");
 
 const operationalTask = loadHandlers("sotrama/public/js/operational_task.js")["Operational Task"];
 form = makeForm();
@@ -107,4 +248,110 @@ assert.match(driverSource, /'employee_name', 'company', 'company_email'/);
 assert.doesNotMatch(driverSource, /phone:\s*message\./);
 assert.doesNotMatch(driverSource, /email:\s*message\.company_email\s*\|\|/);
 
-process.stdout.write("Fleet form permission tests passed.\n");
+async function runAsyncRaceTests() {
+	const driver = loadHandlers("sotrama/public/js/driver.js", {
+		frappeOverrides: {
+			db: {
+				get_value: () => Promise.resolve({
+					message: {
+						employee_name: "Old Employee",
+						company: "OLD-COMPANY",
+						company_email: "old@example.invalid",
+						date_of_joining: "2020-01-01",
+					},
+				}),
+			},
+		},
+	})["Driver"];
+	form = makeForm({ doc: { employee: "EMP-OLD", driver_name: "Current Name", company: "CURRENT-COMPANY" } });
+	const pending = driver.employee(form);
+	form.doc.employee = "EMP-NEW";
+	await pending;
+	assert.equal(form.doc.driver_name, "Current Name", "A stale Employee lookup must not overwrite the newly selected Employee");
+	assert.equal(form.doc.company, "CURRENT-COMPANY", "A stale Employee lookup must not change the Driver Company");
+
+	const vehicleLookups = {};
+	const vehicle = loadHandlers("sotrama/public/js/vehicle.js", {
+		frappeOverrides: {
+			db: {
+				get_value: (doctype, name) => new Promise((resolve) => {
+					vehicleLookups[name] = resolve;
+				}),
+			},
+		},
+	})["Vehicle"];
+	form = makeForm({ doc: {
+		company: "COMPANY-A",
+		parts_warehouse: "WH-OLD",
+		cost_center: "CC-OLD",
+		department: "DEP-OLD",
+	} });
+	const pendingCompanyLookups = vehicle.company(form);
+	form.doc.parts_warehouse = "WH-NEW";
+	form.doc.cost_center = "CC-NEW";
+	form.doc.department = "DEP-NEW";
+	vehicleLookups["WH-OLD"]({ message: { company: "COMPANY-B" } });
+	vehicleLookups["CC-OLD"]({ message: { company: "COMPANY-B" } });
+	vehicleLookups["DEP-OLD"]({ message: { company: "COMPANY-B" } });
+	await pendingCompanyLookups;
+	assert.equal(form.doc.parts_warehouse, "WH-NEW", "A stale Warehouse lookup must not clear a newly selected same-company value");
+	assert.equal(form.doc.cost_center, "CC-NEW", "A stale Cost Center lookup must not clear a newly selected same-company value");
+	assert.equal(form.doc.department, "DEP-NEW", "A stale Department lookup must not clear a newly selected same-company value");
+
+	let resolveCompanyDefaults;
+	const vehicleDefaults = loadHandlers("sotrama/public/js/vehicle.js", {
+		frappeOverrides: {
+			call: () => new Promise((resolve) => {
+				resolveCompanyDefaults = resolve;
+			}),
+		},
+	})["Vehicle"];
+	form = makeForm({ isNew: true, doc: { company: "COMPANY-A" } });
+	const pendingDefaults = vehicleDefaults.company(form);
+	await new Promise((resolve) => setImmediate(resolve));
+	form.doc.company = "COMPANY-B";
+	resolveCompanyDefaults({
+		message: {
+			default_department: "DEP-A",
+			default_cost_center: "CC-A",
+			default_parts_warehouse: "WH-A",
+		},
+	});
+	await pendingDefaults;
+	assert.equal(form.doc.department, undefined, "A stale Company-default response must not apply another Company's Department");
+	assert.equal(form.doc.cost_center, undefined, "A stale Company-default response must not apply another Company's Cost Center");
+	assert.equal(form.doc.parts_warehouse, undefined, "A stale Company-default response must not apply another Company's Warehouse");
+
+	let resolveJobCardVehicle;
+	const jobCard = loadHandlers("sotrama/public/js/job_card.js", {
+		frappeOverrides: {
+			db: {
+				get_value: () => new Promise((resolve) => {
+					resolveJobCardVehicle = resolve;
+				}),
+			},
+		},
+	})["Maintenance Job Card"];
+	form = makeForm({ doc: {
+		vehicle: "VEH-OLD",
+		maintenance_schedule: "SCH-OLD",
+		cost_center: "CC-OLD",
+		odometer_before: 500,
+	} });
+	const pendingJobCardVehicle = jobCard.vehicle(form);
+	form.doc.cost_center = "CC-MANUAL";
+	form.doc.odometer_before = 650;
+	resolveJobCardVehicle({
+		message: { company: "COMPANY-OLD", cost_center: "CC-OLD", current_odometer: 700 },
+	});
+	await pendingJobCardVehicle;
+	assert.equal(form.doc.cost_center, "CC-MANUAL", "A delayed Vehicle lookup must not overwrite a manually selected Cost Center");
+	assert.equal(form.doc.odometer_before, 650, "A delayed Vehicle lookup must not overwrite a manually entered starting odometer");
+}
+
+runAsyncRaceTests()
+	.then(() => process.stdout.write("Fleet form permission and async-race tests passed.\n"))
+	.catch((error) => {
+		console.error(error);
+		process.exitCode = 1;
+	});

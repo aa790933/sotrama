@@ -72,6 +72,7 @@ def check_document_expiries():
 
     user_languages = {}
     assignees_by_vehicle = {}
+    role_users_cache = {}
     for doc in docs:
         vehicle = vehicles_by_name.get(doc.parent)
         if not vehicle:
@@ -84,7 +85,11 @@ def check_document_expiries():
         )
         if vehicle.name not in assignees_by_vehicle:
             assignees_by_vehicle[vehicle.name] = _user_for_role(
-                "Fleet Manager", "Vehicle", vehicle.name
+                "Fleet Manager",
+                "Vehicle",
+                vehicle.name,
+                role_users_cache=role_users_cache,
+                known_existing=True,
             )
         allocated_to = assignees_by_vehicle[vehicle.name]
         if allocated_to not in user_languages:
@@ -172,21 +177,51 @@ def check_maintenance_due():
         fields=["name", "vehicle", "next_due_date", "next_due_odometer", "job_type"],
         limit_page_length=0,
     )
+    if not schedules:
+        return
+
+    vehicle_names = list({schedule.vehicle for schedule in schedules if schedule.vehicle})
+    vehicle_rows = (
+        frappe.get_all(
+            "Vehicle",
+            filters={"name": ["in", vehicle_names]},
+            fields=["name", "current_odometer"],
+            limit_page_length=0,
+        )
+        if vehicle_names
+        else []
+    )
+    odometers_by_vehicle = {
+        vehicle.name: vehicle.current_odometer or 0 for vehicle in vehicle_rows
+    }
+
+    existing_todos = frappe.get_all(
+        "ToDo",
+        filters={
+            "reference_type": "Maintenance Schedule",
+            "reference_name": ["in", [schedule.name for schedule in schedules]],
+            "status": "Open",
+        },
+        fields=["name", "reference_name"],
+        order_by="creation asc, name asc",
+        limit_page_length=0,
+    )
+    todos_by_schedule = {}
+    for todo in existing_todos:
+        todos_by_schedule.setdefault(todo.reference_name, todo.name)
 
     configured_days = get_tp_setting("maintenance_due_alert_days", 14)
     alert_days = int(14 if configured_days is None else configured_days)
+    due_date_threshold = getdate(add_days(today(), alert_days))
+    role_users_cache = {}
 
     for sched in schedules:
         due_reasons = []
-        if sched.next_due_date and getdate(sched.next_due_date) <= getdate(
-            add_days(today(), alert_days)
-        ):
+        if sched.next_due_date and getdate(sched.next_due_date) <= due_date_threshold:
             due_reasons.append(_("due date {0}").format(sched.next_due_date))
 
         if sched.next_due_odometer:
-            current_odometer = (
-                frappe.db.get_value("Vehicle", sched.vehicle, "current_odometer") or 0
-            )
+            current_odometer = odometers_by_vehicle.get(sched.vehicle, 0)
             if current_odometer >= sched.next_due_odometer:
                 due_reasons.append(
                     _("odometer {0} km (target {1} km)").format(
@@ -198,17 +233,13 @@ def check_maintenance_due():
             continue
 
         allocated_to = _user_for_role(
-            "Fleet Manager", "Maintenance Schedule", sched.name
+            "Fleet Manager",
+            "Maintenance Schedule",
+            sched.name,
+            role_users_cache=role_users_cache,
+            known_existing=True,
         )
-        existing = frappe.db.get_value(
-            "ToDo",
-            {
-                "reference_type": "Maintenance Schedule",
-                "reference_name": sched["name"],
-                "status": "Open",
-            },
-            "name",
-        )
+        existing = todos_by_schedule.get(sched.name)
         if existing:
             frappe.db.set_value(
                 "ToDo",
@@ -251,9 +282,10 @@ def check_maintenance_due():
 
 
 def check_driver_license_expiry():
-    """
-    Scan all active Drivers for licenses expiring within 60 days.
-    Creates a ToDo and blocks vehicle assignment if expired.
+    """Alert Fleet/HR about expiring driver documents and regulated compliance.
+
+    Driver and Operational Task validation independently enforce assignment
+    eligibility; this scheduled job only creates role-scoped follow-up tasks.
     """
     configured_days = get_tp_setting("driver_document_alert_days", 60)
     alert_days = int(60 if configured_days is None else configured_days)
@@ -308,27 +340,58 @@ def check_driver_license_expiry():
         for record in compliance_records:
             compliance_records_by_driver.setdefault(record.parent, []).append(record)
 
+    driver_names = [driver.name for driver in drivers]
+    existing_todos = (
+        frappe.get_all(
+            "ToDo",
+            filters={
+                "reference_type": "Driver",
+                "reference_name": ["in", driver_names],
+                "status": "Open",
+            },
+            or_filters=[
+                ["ToDo", "description", "like", "%license expires%"],
+                [
+                    "ToDo",
+                    "description",
+                    "like",
+                    "%restricted professional-driver compliance records%",
+                ],
+                ["ToDo", "description", "like", "%safety training expires%"],
+            ],
+            fields=["name", "reference_name", "description"],
+            order_by="creation asc, name asc",
+            limit_page_length=0,
+        )
+        if driver_names
+        else []
+    )
+    todos_by_driver = {}
+    for todo in existing_todos:
+        todos_by_driver.setdefault(todo.reference_name, []).append(todo)
+
+    role_users_cache = {}
+
     for d in drivers:
         if d.license_expiry and getdate(d.license_expiry) <= getdate(threshold):
             title = _("Driver License Expiring: {0}").format(d["driver_name"])
             description = _("Driver {0} license expires on {1}.").format(
                 d["driver_name"], d["license_expiry"]
             )
-            allocated_to = _user_for_role("Fleet Manager", "Driver", d.name)
-            existing = frappe.db.get_value(
-                "ToDo",
-                {
-                    "reference_type": "Driver",
-                    "reference_name": d["name"],
-                    "description": ["like", "%license expires%"],
-                    "status": "Open",
-                },
-                "name",
+            allocated_to = _user_for_role(
+                "Fleet Manager",
+                "Driver",
+                d.name,
+                role_users_cache=role_users_cache,
+                known_existing=True,
+            )
+            existing = _find_driver_alert_todo(
+                todos_by_driver, d.name, "license expires"
             )
             if existing:
                 frappe.db.set_value(
                     "ToDo",
-                    existing,
+                    existing.name,
                     {"allocated_to": allocated_to, "description": description},
                     update_modified=False,
                 )
@@ -341,6 +404,13 @@ def check_driver_license_expiry():
                 todo.allocated_to = allocated_to
                 todo.assigned_by = "Administrator"
                 todo.insert(ignore_permissions=True)
+                todos_by_driver.setdefault(d.name, []).append(
+                    frappe._dict(
+                        name=todo.name,
+                        reference_name=d.name,
+                        description=todo.description,
+                    )
+                )
 
         compliance_due = False
         if d.name in regulated_driver_names:
@@ -363,24 +433,20 @@ def check_driver_license_expiry():
                     break
 
         if compliance_due:
-            allocated_to = _user_for_role("HR Manager", "Driver", d.name)
-            existing = frappe.db.get_value(
-                "ToDo",
-                {
-                    "reference_type": "Driver",
-                    "reference_name": d.name,
-                    "description": [
-                        "like",
-                        "%restricted professional-driver compliance records%",
-                    ],
-                    "status": "Open",
-                },
-                "name",
+            allocated_to = _user_for_role(
+                "HR Manager",
+                "Driver",
+                d.name,
+                role_users_cache=role_users_cache,
+                known_existing=True,
+            )
+            existing = _find_driver_alert_todo(
+                todos_by_driver, d.name, "restricted professional-driver compliance records"
             )
             if existing:
                 frappe.db.set_value(
                     "ToDo",
-                    existing,
+                    existing.name,
                     "allocated_to",
                     allocated_to,
                     update_modified=False,
@@ -401,6 +467,13 @@ def check_driver_license_expiry():
                 todo.allocated_to = allocated_to
                 todo.assigned_by = "Administrator"
                 todo.insert(ignore_permissions=True)
+                todos_by_driver.setdefault(d.name, []).append(
+                    frappe._dict(
+                        name=todo.name,
+                        reference_name=d.name,
+                        description=todo.description,
+                    )
+                )
 
         if d.safety_training_expiry and getdate(d.safety_training_expiry) <= getdate(
             threshold
@@ -409,21 +482,20 @@ def check_driver_license_expiry():
             description = _("Driver {0} safety training expires on {1}.").format(
                 d["driver_name"], d["safety_training_expiry"]
             )
-            allocated_to = _user_for_role("HR Manager", "Driver", d.name)
-            existing = frappe.db.get_value(
-                "ToDo",
-                {
-                    "reference_type": "Driver",
-                    "reference_name": d["name"],
-                    "description": ["like", "%safety training expires%"],
-                    "status": "Open",
-                },
-                "name",
+            allocated_to = _user_for_role(
+                "HR Manager",
+                "Driver",
+                d.name,
+                role_users_cache=role_users_cache,
+                known_existing=True,
+            )
+            existing = _find_driver_alert_todo(
+                todos_by_driver, d.name, "safety training expires"
             )
             if existing:
                 frappe.db.set_value(
                     "ToDo",
-                    existing,
+                    existing.name,
                     {"allocated_to": allocated_to, "description": description},
                     update_modified=False,
                 )
@@ -436,6 +508,25 @@ def check_driver_license_expiry():
                 todo.allocated_to = allocated_to
                 todo.assigned_by = "Administrator"
                 todo.insert(ignore_permissions=True)
+                todos_by_driver.setdefault(d.name, []).append(
+                    frappe._dict(
+                        name=todo.name,
+                        reference_name=d.name,
+                        description=todo.description,
+                    )
+                )
+
+
+def _find_driver_alert_todo(todos_by_driver, driver_name, description_phrase):
+    phrase = description_phrase.lower()
+    return next(
+        (
+            todo
+            for todo in todos_by_driver.get(driver_name, [])
+            if phrase in (todo.description or "").lower()
+        ),
+        None,
+    )
 
 
 def remediate_fleet_alert_todo_assignments():
@@ -474,6 +565,23 @@ def remediate_fleet_alert_todo_assignments():
         ],
         limit_page_length=0,
     )
+    driver_names = {
+        todo.reference_name
+        for todo in todos
+        if todo.reference_type == "Driver" and todo.reference_name
+    }
+    drivers = (
+        frappe.get_all(
+            "Driver",
+            filters={"name": ["in", sorted(driver_names)]},
+            fields=["name", "driver_name", "license_expiry", "safety_training_expiry"],
+            limit_page_length=0,
+        )
+        if driver_names
+        else []
+    )
+    drivers_by_name = {driver.name: driver for driver in drivers}
+    role_users_cache = {}
     for todo in todos:
         description = todo.description or ""
         reference_type = todo.reference_type
@@ -485,26 +593,28 @@ def remediate_fleet_alert_todo_assignments():
             description.startswith("Vehicle Document Expiring:")
             or "Document '" in description
         ) and reference_type == "Vehicle":
-            allocated_to = _user_for_role("Fleet Manager", "Vehicle", reference_name)
+            allocated_to = _user_for_role(
+                "Fleet Manager", "Vehicle", reference_name, role_users_cache=role_users_cache
+            )
         elif (
             description.startswith(
                 ("Maintenance Due:", "Scheduled maintenance for vehicle ")
             )
         ) and reference_type == "Maintenance Schedule":
             allocated_to = _user_for_role(
-                "Fleet Manager", "Maintenance Schedule", reference_name
+                "Fleet Manager",
+                "Maintenance Schedule",
+                reference_name,
+                role_users_cache=role_users_cache,
             )
         elif (
             description.startswith("Driver License Expiring:")
             or " license expires on " in description
         ) and reference_type == "Driver":
-            allocated_to = _user_for_role("Fleet Manager", "Driver", reference_name)
-            driver = frappe.db.get_value(
-                "Driver",
-                reference_name,
-                ["driver_name", "license_expiry"],
-                as_dict=True,
+            allocated_to = _user_for_role(
+                "Fleet Manager", "Driver", reference_name, role_users_cache=role_users_cache
             )
+            driver = drivers_by_name.get(reference_name)
             updates["description"] = (
                 _("Driver {0} license expires on {1}.").format(
                     driver.driver_name, driver.license_expiry
@@ -516,13 +626,10 @@ def remediate_fleet_alert_todo_assignments():
             description.startswith("Safety Training Expiring:")
             or " safety training expires on " in description
         ) and reference_type == "Driver":
-            allocated_to = _user_for_role("HR Manager", "Driver", reference_name)
-            driver = frappe.db.get_value(
-                "Driver",
-                reference_name,
-                ["driver_name", "safety_training_expiry"],
-                as_dict=True,
+            allocated_to = _user_for_role(
+                "HR Manager", "Driver", reference_name, role_users_cache=role_users_cache
             )
+            driver = drivers_by_name.get(reference_name)
             updates["description"] = (
                 _("Driver {0} safety training expires on {1}.").format(
                     driver.driver_name, driver.safety_training_expiry
@@ -534,7 +641,9 @@ def remediate_fleet_alert_todo_assignments():
             description.startswith("Restricted Driver Compliance Review")
             or "restricted professional-driver compliance records" in description
         ) and reference_type == "Driver":
-            allocated_to = _user_for_role("HR Manager", "Driver", reference_name)
+            allocated_to = _user_for_role(
+                "HR Manager", "Driver", reference_name, role_users_cache=role_users_cache
+            )
             updates["description"] = _(
                 "Review the restricted professional-driver compliance records. "
                 "This task intentionally contains no medical result or date."
@@ -548,24 +657,40 @@ def remediate_fleet_alert_todo_assignments():
             frappe.db.set_value("ToDo", todo.name, updates, update_modified=False)
 
 
-def _user_for_role(role_name, doctype, docname):
+def _user_for_role(
+    role_name, doctype, docname, *, role_users_cache=None, known_existing=False
+):
     """Return a role user who can read this exact company-scoped document."""
-    if not docname or not frappe.db.exists(doctype, docname):
+    if not docname or (not known_existing and not frappe.db.exists(doctype, docname)):
         return "Administrator"
-    users = frappe.get_all(
-        "Has Role",
-        filters={"role": role_name, "parenttype": "User"},
-        pluck="parent",
-        order_by="parent asc",
-        limit_page_length=0,
-    )
-    for user in users:
-        if (
-            user != "Guest"
-            and frappe.db.get_value("User", user, "enabled")
-            and frappe.has_permission(
-                doctype, "read", doc=docname, user=user
+    role_users_cache = role_users_cache if role_users_cache is not None else {}
+    if role_name not in role_users_cache:
+        role_users = frappe.get_all(
+            "Has Role",
+            filters={"role": role_name, "parenttype": "User"},
+            pluck="parent",
+            order_by="parent asc",
+            limit_page_length=0,
+        )
+        role_users_cache[role_name] = (
+            frappe.get_all(
+                "User",
+                filters={"name": ["in", role_users], "enabled": 1},
+                pluck="name",
+                order_by="name asc",
+                limit_page_length=0,
             )
-        ):
-            return user
+            if role_users
+            else []
+        )
+
+    for user in role_users_cache[role_name]:
+        if user == "Guest":
+            continue
+        try:
+            if frappe.has_permission(doctype, "read", doc=docname, user=user):
+                return user
+        except frappe.DoesNotExistError:
+            # The record may have been deleted after the scheduler batch read.
+            return "Administrator"
     return "Administrator"

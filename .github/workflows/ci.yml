@@ -54,15 +54,11 @@ jobs:
                   )
           PY
 
-      - name: Check and test Desk scripts
+      - name: Check and test Desk and Report scripts
         run: |
-          node --check sotrama/public/js/job_card.js
-          node --check sotrama/public/js/inspection.js
-          node --check sotrama/public/js/driver.js
-          node --check sotrama/public/js/vehicle.js
-          node --check sotrama/public/js/vehicle_model.js
-          node --check sotrama/public/js/tp_settings.js
-          node --check sotrama/public/js/operational_task.js
+          for script in $(find sotrama -type f -name '*.js'); do
+            node --check "$script"
+          done
           node tests/js/test_fleet_form_permissions.js
 
       - name: Validate JSON metadata
@@ -601,7 +597,10 @@ jobs:
           assert "Upcoming Document Expiries" not in {row.get("link_to") for row in tp_sidebar["items"]}
           assert "Company Classification" not in {row.get("link_to") for row in tp_sidebar["items"]}
           parent_workspace = json.loads(Path("sotrama/sotrama/workspace/sotrama/sotrama.json").read_text(encoding="utf-8"))
-          assert "Sotrama Fleet" not in {row.get("link_to") for row in parent_workspace["links"]}
+          fleet_entry = next(
+              row for row in parent_workspace["links"] if row.get("link_to") == "Sotrama Fleet"
+          )
+          assert fleet_entry["label"] == "Fleet Overview"
 
           app_path = Path("sotrama")
           assert not Path("package.json").exists(), "Sotrama must not trigger Bench's automatic Yarn install"
@@ -636,6 +635,9 @@ jobs:
               assert "sotrama/public/js/inspection.js" in names
               assert "sotrama/public/js/driver.js" in names
               assert "sotrama/public/js/vehicle.js" in names
+              assert "sotrama/public/js/breakdown.js" in names
+              assert "sotrama/public/js/maintenance_schedule.js" in names
+              assert "sotrama/public/js/company_classification.js" in names
               assert "sotrama/public/js/vehicle_model.js" in names
               assert "sotrama/public/js/tp_settings.js" in names
               assert "sotrama/public/js/operational_task.js" in names
@@ -646,6 +648,9 @@ jobs:
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json" in names
               assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
+              assert "sotrama/tp/settings.py" in names
+              assert "sotrama/tp/report/fleet_cost_analysis/fleet_cost_analysis.js" in names
+              assert "sotrama/tp/report/upcoming_document_expiries/upcoming_document_expiries.js" in names
               assert not any(name.endswith("/package.json") for name in names)
           print(f"Verified {wheels[0]}")
           PY

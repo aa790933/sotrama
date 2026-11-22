@@ -23,9 +23,10 @@ frappe.ui.form.on('Operational Task', {
 
     refresh(frm) {
         if (!frm.doc.vehicle) return;
-        frappe.db.get_value('Vehicle', frm.doc.vehicle, 'vehicle_status')
+        const vehicle = frm.doc.vehicle;
+        frappe.db.get_value('Vehicle', vehicle, 'vehicle_status')
             .then(({ message }) => {
-                if (message && ['Out of Service', 'Under Repair', 'Retired', 'Scrapped'].includes(message.vehicle_status)) {
+                if (message && frm.doc.vehicle === vehicle && ['Out of Service', 'Under Repair', 'Retired', 'Scrapped'].includes(message.vehicle_status)) {
                     frappe.msgprint({
                         title: __('Warning'),
                         indicator: 'orange',
@@ -39,11 +40,12 @@ frappe.ui.form.on('Operational Task', {
         if (!frm.doc.vehicle) {
             return frm.set_value('company', '');
         }
-        return frappe.db.get_value('Vehicle', frm.doc.vehicle, [
+        const vehicle = frm.doc.vehicle;
+        return frappe.db.get_value('Vehicle', vehicle, [
             'primary_driver', 'vehicle_status', 'company',
         ])
             .then(({ message }) => {
-                if (!message) return;
+                if (!message || frm.doc.vehicle !== vehicle) return;
                 if (message.primary_driver && !frm.doc.driver) {
                     frm.set_value('driver', message.primary_driver);
                 }

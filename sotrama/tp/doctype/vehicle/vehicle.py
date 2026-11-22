@@ -44,7 +44,9 @@ class Vehicle(Document):
     # ------------------------------------------------------------------
 
     def _validate_license_plate(self):
-        self.license_plate = (self.license_plate or "").strip()
+        # Normalize in the controller as well as the form script so imports and
+        # API-created records use the same company-level uniqueness key.
+        self.license_plate = (self.license_plate or "").strip().upper()
         if not self.license_plate:
             frappe.throw(_("Registration / Fleet Number is required."))
 

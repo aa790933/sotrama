@@ -289,9 +289,13 @@ printing with a full-page preview and server-rendered report output.
   using them in new operations. For restrictions across all Fleet DocTypes, set
   the User Permission to **Apply To All Document Types**; otherwise Frappe's
   `Applicable For` scope is respected.
-- Report Company filters accept the exact Company name without expanding
-  Fleet Manager's permissions on the standard Company DocType. Vehicle filters
-  remain linked to the permission-controlled Vehicle register.
+- Report Company filters provide autocomplete from Company values on Vehicle
+  records visible to the current user; they do not expand Fleet Manager's read
+  permissions on the standard Company DocType. Vehicle filters remain linked
+  to the permission-controlled Vehicle register.
+- Vehicle, Driver and Company Classification Company selectors use narrow
+  Link lookups scoped to the corresponding Company User Permission context,
+  without granting general Company read access.
 - System Manager controls the Algerian Company extension. HR Manager can
   change only the level-1 HR designation option; Accounts Manager can read the
   settings page but cannot change its options.
@@ -308,7 +312,7 @@ to show installed apps alongside ERPNext and Frappe HR.
 - Python `>=3.14,<3.15`
 - Node.js 24 is required by the Frappe v16 Bench asset toolchain; Sotrama
   itself currently has no Node.js package dependencies or bundle build.
-- Sotrama version: **1.3.6-dev**
+- Sotrama version: **1.3.6 (unreleased development tree)**
 
 The minimum version reflects the v16.60 platform baseline. It does not mean
 that an existing site has been upgraded: verify the installed versions with

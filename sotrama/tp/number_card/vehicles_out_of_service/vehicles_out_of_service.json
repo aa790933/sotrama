@@ -5,7 +5,7 @@
  "doctype": "Number Card",
  "document_type": "Vehicle",
  "dynamic_filters_json": "[]",
- "filters_json": "[[\"Vehicle\",\"vehicle_status\",\"=\",\"Out of Service\"]]",
+ "filters_json": "[[\"Vehicle\",\"docstatus\",\"=\",1],[\"Vehicle\",\"vehicle_status\",\"=\",\"Out of Service\"]]",
  "function": "Count",
  "is_public": 1,
  "is_standard": 1,

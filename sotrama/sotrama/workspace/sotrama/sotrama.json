@@ -17,6 +17,20 @@
  "links": [
   {
    "type": "Card Break",
+   "label": "Fleet Management",
+   "link_count": 1,
+   "hidden": 0
+  },
+  {
+   "type": "Link",
+   "label": "Fleet Overview",
+   "link_type": "Workspace",
+   "link_to": "Sotrama Fleet",
+   "hidden": 0,
+   "onboard": 0
+  },
+  {
+   "type": "Card Break",
    "label": "Business Modules",
    "link_count": 1,
    "hidden": 0

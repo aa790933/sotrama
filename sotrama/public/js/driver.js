@@ -5,6 +5,10 @@ frappe.ui.form.on('Driver', {
             frappe.user.has_role('System Manager') || frappe.user.has_role('HR Manager');
         frm.set_df_property('employee', 'read_only', !canManageEmployeeLink);
 
+        frm.set_query('company', () => ({
+            query: 'sotrama.tp.settings.search_driver_companies',
+        }));
+
         frm.set_query('employee', () => {
             const filters = {};
             if (!frm.doc.status || frm.doc.status === 'Active') {
@@ -16,6 +20,15 @@ frappe.ui.form.on('Driver', {
     },
 
     refresh(frm) {
+        if (frm.is_new() && !frm.doc.company) {
+            frappe.call({
+                method: 'sotrama.tp.settings.get_tp_default_company',
+                args: { applicable_for: 'Driver' },
+            }).then(({ message: company }) => {
+                if (company && !frm.doc.company) frm.set_value('company', company);
+            }).catch(() => {});
+        }
+
         // Keep this field visible: the Employee link is optional by default,
         // but a site administrator may require it from TP Settings.
         if (
@@ -28,7 +41,8 @@ frappe.ui.form.on('Driver', {
                 .catch(() => frm.set_df_property('employee', 'reqd', false));
         }
 
-        if (frm.is_new() || frm.doc.docstatus !== 1 || frm.doc.status === 'Terminated') return;
+        const canWrite = !!frm.perm?.[0]?.write;
+        if (frm.is_new() || frm.doc.docstatus !== 1 || frm.doc.status === 'Terminated' || !canWrite) return;
 
         const updateStatus = (status) => frappe.call({
             method: 'sotrama.tp.doctype.driver.driver.update_driver_status',
@@ -54,11 +68,12 @@ frappe.ui.form.on('Driver', {
 
     employee(frm) {
         if (!frm.doc.employee) return;
+        const employee = frm.doc.employee;
 
-        return frappe.db.get_value('Employee', frm.doc.employee, [
+        return frappe.db.get_value('Employee', employee, [
             'employee_name', 'company', 'company_email', 'date_of_joining',
         ]).then(({ message }) => {
-            if (!message) return;
+            if (!message || frm.doc.employee !== employee) return;
 
             const values = {
                 driver_name: message.employee_name,
@@ -69,6 +84,7 @@ frappe.ui.form.on('Driver', {
 
             return frm.set_value(values);
         }).catch(() => {
+            if (frm.doc.employee !== employee) return;
             frappe.show_alert({
                 message: __('You do not have permission to read this Employee record. Ask an HR Manager to grant the appropriate access.'),
                 indicator: 'orange',
