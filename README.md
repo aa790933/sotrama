@@ -22,9 +22,9 @@ do not grant access to Company, HR or Fleet records.
 
 The current source review was checked against Frappe **16.60.2**, ERPNext
 **16.60.0** and HRMS **16.60.0**. HRMS 16.60 requires Frappe 16.60.0 or later.
-The latest published release is **1.3.5**. The current unreleased development
-tree is **1.3.6** and must not be treated as a production release until its
-site-level migration and permission checks have been completed.
+The application and target release version is **1.3.6**. This source tree is
+the release candidate for `v1.3.6`; publish it only after CI and packaging
+verification succeed.
 
 ## Architecture and source of truth
 
