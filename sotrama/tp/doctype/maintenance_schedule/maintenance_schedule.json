@@ -57,16 +57,14 @@
    "fieldname": "interval_months",
    "fieldtype": "Int",
    "depends_on": "eval:doc.schedule_type == 'Calendar'",
-   "mandatory_depends_on": "eval:doc.schedule_type == 'Calendar'",
-   "min_value": 1
+   "mandatory_depends_on": "eval:doc.schedule_type == 'Calendar'"
   },
   {
    "label": "Interval KM",
    "fieldname": "interval_km",
    "fieldtype": "Float",
    "depends_on": "eval:doc.schedule_type == 'Mileage'",
-   "mandatory_depends_on": "eval:doc.schedule_type == 'Mileage'",
-   "min_value": 1
+   "mandatory_depends_on": "eval:doc.schedule_type == 'Mileage'"
   },
   {
    "fieldtype": "Section Break",

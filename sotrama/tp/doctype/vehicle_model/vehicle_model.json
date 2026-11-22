@@ -55,8 +55,7 @@
  "title_field": "model_name",
  "show_title_field_in_link": 0,
  "naming_rule": "Expression",
- "naming_expression": "{vehicle_make}-{model_name}",
- "autoname": "format",
+ "autoname": "format:{vehicle_make}-{model_name}",
  "permissions": [
   {
    "role": "System Manager",

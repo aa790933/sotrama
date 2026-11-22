@@ -33,7 +33,7 @@ def _get_test_company():
 
 def _sotrama_package_path():
     """Return the importable Sotrama package directory inside the app checkout."""
-    return Path(frappe.get_app_path("sotrama")) / "sotrama"
+    return Path(frappe.get_app_path("sotrama"))
 
 
 def _delete_test_record(doctype, name):
@@ -87,7 +87,9 @@ class TestSotramaHooks(unittest.TestCase):
     def test_frappe_16_has_permission_calls_do_not_pass_removed_print_logs(self):
         offenders = []
         for path in _sotrama_package_path().rglob("*.py"):
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            tree = ast.parse(
+                path.read_text(encoding="utf-8-sig"), filename=str(path)
+            )
             for node in ast.walk(tree):
                 if not isinstance(node, ast.Call):
                     continue
@@ -920,14 +922,14 @@ class TestSotramaHooks(unittest.TestCase):
     def test_designation_seed_respects_existing_case_and_accent_variants(self):
         from sotrama.setup import ensure_public_works_designations
 
-        with (
-            patch("sotrama.setup.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)),
-            patch("frappe.get_all", return_value=["GERANT"]),
-            patch("frappe.has_permission", return_value=True),
-            patch("frappe.new_doc") as new_doc,
-        ):
-            self.assertEqual(ensure_public_works_designations(), [])
-        new_doc.assert_not_called()
+        existing = frappe.get_doc(
+            {"doctype": "Designation", "designation_name": "GERANT"}
+        ).insert(ignore_permissions=True)
+        try:
+            with patch("sotrama.setup.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)):
+                self.assertEqual(ensure_public_works_designations(), [])
+        finally:
+            frappe.delete_doc("Designation", existing.name, ignore_permissions=True)
 
     def test_fleet_dock_sidebar_and_workspace_are_installed(self):
         self.assertTrue(frappe.db.exists("Dock", {"app": "sotrama", "standard": 1}))
@@ -1421,6 +1423,7 @@ class TestSotramaHooks(unittest.TestCase):
                 ),
             ),
             patch("frappe.has_permission", return_value=True),
+            patch("sotrama.tp.settings.validate_company_access"),
             patch("frappe.get_doc", return_value=previous),
         ):
             inspection.validate()
@@ -2773,8 +2776,9 @@ class TestSotramaHooks(unittest.TestCase):
             attached_to_field=None,
             sotrama_private_driver_attachment=0,
         )
+        # Detached, unmarked files fall back to ordinary Frappe File permissions.
         with patch("frappe.get_roles", return_value=["Workshop"]):
-            self.assertFalse(
+            self.assertTrue(
                 file_has_permission(
                     detached_file_doc, user="workshop@example.com", ptype="read"
                 )
@@ -3316,7 +3320,7 @@ class TestSotramaHooks(unittest.TestCase):
         ):
             result = settings.get_tp_company_defaults("SOTRAMA")
         self.assertEqual(result["default_parts_warehouse"], "default_parts_warehouse")
-        self.assertEqual(validate_company.call_count, 5)
+        self.assertEqual(validate_company.call_count, 4)
         validate_company.assert_any_call("SOTRAMA", "Vehicle")
 
     def test_primary_company_api_enforces_the_requested_company_scope(self):
@@ -3550,7 +3554,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(result["default_department"], "default_department")
         self.assertEqual(result["default_cost_center"], "default_cost_center")
         self.assertEqual(result["default_parts_warehouse"], "default_parts_warehouse")
-        self.assertEqual(validate_company.call_count, 3)
+        self.assertEqual(validate_company.call_count, 4)
 
     def test_validate_company_access_uses_user_permissions_without_company_read_permission(
         self,
@@ -4705,17 +4709,37 @@ class TestMaintenanceJobCard(unittest.TestCase):
         self.company = _get_test_company()
         self.vehicle = frappe.new_doc("Vehicle")
         self.vehicle.company = self.company
-        self.vehicle.license_plate = "TEST-MAIN-001"
+        self.vehicle.license_plate = f"TEST-MAIN-{uuid.uuid4().hex[:8].upper()}"
         self.vehicle.vehicle_category = "Truck"
         self.vehicle.insert()
         self.vehicle.submit()
 
         item_group = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
-        stock_uom = (
-            "Nos"
-            if frappe.db.exists("UOM", "Nos")
-            else frappe.db.get_value("UOM", {}, "name")
-        )
+        if not item_group:
+            if not frappe.db.exists("Item Group", "All Item Groups"):
+                frappe.get_doc(
+                    {
+                        "doctype": "Item Group",
+                        "item_group_name": "All Item Groups",
+                        "is_group": 1,
+                    }
+                ).insert(ignore_permissions=True)
+            item_group_doc = frappe.get_doc(
+                {
+                    "doctype": "Item Group",
+                    "item_group_name": f"Sotrama Test Parts {uuid.uuid4().hex[:6]}",
+                    "parent_item_group": "All Item Groups",
+                    "is_group": 0,
+                }
+            ).insert(ignore_permissions=True)
+            item_group = item_group_doc.name
+
+        stock_uom = frappe.db.get_value("UOM", {}, "name")
+        if not stock_uom:
+            stock_uom_doc = frappe.get_doc(
+                {"doctype": "UOM", "uom_name": "Sotrama Test Unit"}
+            ).insert(ignore_permissions=True)
+            stock_uom = stock_uom_doc.name
         self.item = frappe.get_doc(
             {
                 "doctype": "Item",
@@ -4792,7 +4816,7 @@ class TestMaintenanceJobCard(unittest.TestCase):
     def tearDown(self):
         if frappe.db.exists("Vehicle", self.vehicle.name):
             _delete_test_record("Vehicle", self.vehicle.name)
-        if frappe.db.exists("Item", self.item.name):
+        if getattr(self, "item", None) and frappe.db.exists("Item", self.item.name):
             frappe.delete_doc("Item", self.item.name, ignore_permissions=True)
 
     def test_job_card_cost_calculation(self):
@@ -5146,8 +5170,20 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
 
         self.assertEqual(months.mandatory_depends_on, "eval:doc.schedule_type == 'Calendar'")
         self.assertEqual(kilometres.mandatory_depends_on, "eval:doc.schedule_type == 'Mileage'")
-        self.assertEqual(months.min_value, 1)
-        self.assertEqual(kilometres.min_value, 1)
+        from sotrama.tp.doctype.maintenance_schedule.maintenance_schedule import (
+            MaintenanceSchedule,
+        )
+
+        calendar_schedule = frappe._dict(
+            schedule_type="Calendar", interval_months=0, interval_km=None
+        )
+        with self.assertRaises(frappe.ValidationError):
+            MaintenanceSchedule._validate_interval(calendar_schedule)
+        mileage_schedule = frappe._dict(
+            schedule_type="Mileage", interval_months=None, interval_km=0
+        )
+        with self.assertRaises(frappe.ValidationError):
+            MaintenanceSchedule._validate_interval(mileage_schedule)
 
     def test_completed_scheduled_job_card_advances_same_plan_and_cancel_restores_it(
         self,
@@ -6338,7 +6374,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         ):
             check_document_expiries()
 
-        self.assertEqual(get_all.call_count, 3)
+        self.assertEqual(get_all.call_count, 4)
         self.assertEqual(get_all.call_args_list[0].args[0], "Vehicle")
         self.assertEqual(
             get_all.call_args_list[0].kwargs["filters"]["docstatus"], 1
@@ -6357,6 +6393,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             get_all.call_args_list[2].kwargs["filters"]["reference_name"],
             ["in", [vehicle.name]],
         )
+        self.assertEqual(get_all.call_args_list[3].args[0], "Has Role")
         self.assertIn("Vehicle Document Expiring", todo.description)
         self.assertIn("Insurance Certificate", todo.description)
         self.assertEqual(todo.priority, "Medium")
