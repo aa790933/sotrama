@@ -142,7 +142,8 @@ jobs:
                   for removed_api in removed_hrms_apis:
                       assert removed_api not in source_text, f"Removed HRMS API {removed_api} referenced in {source_path}"
           job_card_js = Path("sotrama/public/js/job_card.js").read_text(encoding="utf-8")
-          assert "frm.is_new() ? permission.create : permission.write" in job_card_js
+          assert "frm.perm?.[0]?.create" in job_card_js
+          assert "frm.perm?.[0]?.write" in job_card_js
           assert "Add Spare Part (Item)" in job_card_js
           assert "Add Mechanic (Employee)" in job_card_js
           job_card_controller = Path("sotrama/tp/doctype/maintenance_job_card/maintenance_job_card.py").read_text(encoding="utf-8")
@@ -168,7 +169,8 @@ jobs:
           driver_controller = Path("sotrama/tp/doctype/driver/driver.py").read_text(encoding="utf-8")
           assert 'frappe.only_for(["System Manager", "HR Manager"])' in driver_controller
           inspection_js = Path("sotrama/public/js/inspection.js").read_text(encoding="utf-8")
-          assert "frm.is_new() ? permission.create : permission.write" in inspection_js
+          assert "frm.perm?.[0]?.create" in inspection_js
+          assert "frm.perm?.[0]?.write" in inspection_js
           assert "Add Inspection Check" in inspection_js
           assert "inspection_items_add" in inspection_js
           assert "inspection_items_delete" in inspection_js
@@ -336,11 +338,26 @@ jobs:
           assert "ignore_share_permissions=True" in permissions_source
           assert 'doc.get("everyone")' in permissions_source
           scheduler_source = Path("sotrama/tp/scheduler/__init__.py").read_text(encoding="utf-8")
-          assert "def _user_for_role(role_name, doctype, docname)" in scheduler_source
-          assert '"Fleet Manager", "Vehicle", vehicle.name' in scheduler_source
-          assert '"Fleet Manager", "Maintenance Schedule", sched.name' in scheduler_source
-          assert '"Fleet Manager", "Driver", d.name' in scheduler_source
-          assert '"HR Manager", "Driver", d.name' in scheduler_source
+          assert "def _user_for_role(" in scheduler_source
+          assert "role_users_cache=None" in scheduler_source
+          assert "known_existing=False" in scheduler_source
+          scheduler_tree = ast.parse(scheduler_source)
+          scheduler_role_scopes = {
+              (call.args[0].value, call.args[1].value)
+              for call in ast.walk(scheduler_tree)
+              if isinstance(call, ast.Call)
+              and isinstance(call.func, ast.Name)
+              and call.func.id == "_user_for_role"
+              and len(call.args) >= 2
+              and isinstance(call.args[0], ast.Constant)
+              and isinstance(call.args[1], ast.Constant)
+          }
+          assert {
+              ("Fleet Manager", "Vehicle"),
+              ("Fleet Manager", "Maintenance Schedule"),
+              ("Fleet Manager", "Driver"),
+              ("HR Manager", "Driver"),
+          } <= scheduler_role_scopes
           assert 'fields=["name", "driver_name", "license_expiry", "safety_training_expiry"]' in scheduler_source
           assert "(License: {1})" not in scheduler_source
           assert '"Driver {0} safety training expires on {1}."' in scheduler_source
