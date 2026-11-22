@@ -120,7 +120,7 @@ class TestSotramaHooks(unittest.TestCase):
                 filters = json.loads(card["filters_json"])
                 self.assertIn([doctype, "docstatus", "=", 1], filters)
 
-    def test_sotrama_home_workspace_has_a_role_scoped_fleet_entry_point(self):
+    def test_sotrama_home_workspace_has_central_setup_cards(self):
         workspace_path = (
             _sotrama_package_path()
             / "sotrama"
@@ -129,13 +129,24 @@ class TestSotramaHooks(unittest.TestCase):
             / "sotrama.json"
         )
         workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
-        fleet_link = next(
-            link
-            for link in workspace["links"]
-            if link.get("link_type") == "Workspace"
-            and link.get("link_to") == "Sotrama Fleet"
+        card_names = {
+            block.get("data", {}).get("card_name")
+            for block in json.loads(workspace["content"])
+            if block.get("type") == "card"
+        }
+        self.assertEqual(card_names, {"Company & HR Setup", "Fleet Configuration"})
+        links = {link.get("link_to") for link in workspace["links"] if link.get("type") == "Link"}
+        self.assertEqual(
+            links,
+            {"Company", "Designation", "Sotrama Settings", "TP Settings"},
         )
-        self.assertEqual(fleet_link["label"], "Fleet Overview")
+        self.assertTrue(
+            all(
+                link.get("link_type") in {"DocType", "Page", "Report"}
+                for link in workspace["links"]
+                if link.get("type") == "Link"
+            )
+        )
         workspace_roles = {row["role"] for row in workspace["roles"]}
         self.assertTrue({"System Manager", "Fleet Manager", "Workshop"}.issubset(workspace_roles))
 
@@ -3539,9 +3550,12 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertNotIn(
             "Company Classification", {row.link_to for row in sidebar.items}
         )
+        self.assertNotIn("TP Settings", {row.link_to for row in sidebar.items})
 
         parent = frappe.get_doc("Workspace", "Sotrama")
-        self.assertIn("Sotrama Fleet", {row.link_to for row in parent.links})
+        self.assertNotIn("Sotrama Fleet", {row.link_to for row in parent.links})
+        dock = frappe.get_doc("Dock", {"app": "sotrama", "standard": 1})
+        self.assertIn("Sotrama Fleet", {row.link_to for row in dock.items})
 
     def test_dock_workspace_entries_are_gated_by_workspace_permissions(self):
         from frappe.desk.doctype.dock.dock import is_reachable
@@ -3560,7 +3574,7 @@ class TestSotramaHooks(unittest.TestCase):
                 )
             )
 
-        accounting_user_workspaces = {"Sotrama", "Algerian Localization"}
+        accounting_user_workspaces = {"Sotrama"}
         with patch(
             "frappe.desk.doctype.dock.dock.permitted_workspaces",
             return_value=accounting_user_workspaces,
@@ -3568,7 +3582,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertFalse(
                 is_reachable({"link_type": "Workspace", "link_to": "Sotrama Fleet"})
             )
-            self.assertTrue(
+            self.assertFalse(
                 is_reachable(
                     {"link_type": "Workspace", "link_to": "Algerian Localization"}
                 )
@@ -3604,7 +3618,7 @@ class TestSotramaHooks(unittest.TestCase):
             )
 
         accounts_context = frappe._dict(
-            allowed_workspaces=["Sotrama", "Algerian Localization"],
+            allowed_workspaces=["Sotrama"],
             can_read=[],
             restricted_doctypes=[],
             allowed_pages={},
@@ -3620,7 +3634,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertFalse(
                 is_item_allowed("TP Settings", "DocType", accounts_context)
             )
-            self.assertTrue(
+            self.assertFalse(
                 is_item_allowed("Algerian Localization", "Workspace", accounts_context)
             )
 
@@ -4416,7 +4430,11 @@ class TestVehicle(unittest.TestCase):
             self.assertTrue(vehicle_meta.get_field(section).collapsible, section)
         self.assertEqual(
             [field.fieldname for field in vehicle_meta.fields if field.fieldtype == "Tab Break"],
-            ["tab_vehicle_identity"],
+            [
+                "tab_vehicle_identity",
+                "tab_vehicle_value",
+                "tab_vehicle_assignment",
+            ],
         )
 
         # Cleanup
