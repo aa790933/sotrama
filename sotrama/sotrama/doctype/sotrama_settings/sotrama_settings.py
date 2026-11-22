@@ -39,7 +39,7 @@ def create_missing_public_works_designations():
     if not settings.add_public_works_designations:
         frappe.throw(
             _(
-                "Enable 'Create Missing BTPH Designation Records' before running this action."
+                "Enable the BTPH job-title option before running this action."
             )
         )
 

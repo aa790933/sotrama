@@ -53,8 +53,57 @@ function makeForm({ isNew = false, docstatus = 0, permissions = [], company = "S
 	};
 }
 
+let form;
+const settingsHandlers = loadHandlers("sotrama/public/js/sotrama_settings.js", {
+	frappeOverrides: {
+		user: { has_role: (role) => role === "HR Manager" },
+		perm: { has_perm: (doctype, level, permission) => {
+			if (doctype === "Company") return permission === "read";
+			if (doctype === "Designation") return permission === "read" || permission === "create";
+			return false;
+		} },
+		set_route() {},
+	},
+})["Sotrama Settings"];
+form = makeForm({ doc: { add_public_works_designations: 1 } });
+settingsHandlers.refresh(form);
+assert.deepEqual(
+	form.buttons.map(([label]) => label),
+	["Open Companies", "Open Designations", "Create Missing Job Titles"],
+	"Company, HR navigation and designation creation actions must appear only for permitted users",
+);
+
+const settingsWithoutDesignationCreate = loadHandlers("sotrama/public/js/sotrama_settings.js", {
+	frappeOverrides: {
+		user: { has_role: (role) => role === "HR Manager" },
+		perm: { has_perm: (doctype, level, permission) => {
+			if (doctype === "Company") return permission === "read";
+			return doctype === "Designation" && permission === "read";
+		} },
+		set_route() {},
+	},
+})["Sotrama Settings"];
+form = makeForm({ doc: { add_public_works_designations: 1 } });
+settingsWithoutDesignationCreate.refresh(form);
+assert.deepEqual(
+	form.buttons.map(([label]) => label),
+	["Open Companies", "Open Designations"],
+	"HR users without Designation create permission must not see the seed action",
+);
+
+const settingsWithoutCompanyRead = loadHandlers("sotrama/public/js/sotrama_settings.js", {
+	frappeOverrides: {
+		user: { has_role: () => false },
+		perm: { has_perm: () => false },
+		set_route() {},
+	},
+})["Sotrama Settings"];
+form = makeForm({ doc: { add_public_works_designations: 1 } });
+settingsWithoutCompanyRead.refresh(form);
+assert.equal(form.buttons.length, 0, "Users without Company or HR permissions must not see setup navigation actions");
+
 const jobCard = loadHandlers("sotrama/public/js/job_card.js")["Maintenance Job Card"];
-let form = makeForm({ isNew: false, permissions: [{ create: true, write: false }] });
+form = makeForm({ isNew: false, permissions: [{ create: true, write: false }] });
 jobCard.refresh(form);
 assert.equal(form.buttons.length, 0, "Create-only users must not edit saved job-card drafts");
 

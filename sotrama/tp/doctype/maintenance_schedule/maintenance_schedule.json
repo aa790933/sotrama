@@ -67,6 +67,11 @@
    "mandatory_depends_on": "eval:doc.schedule_type == 'Mileage'"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_service_tracking",
+   "label": "Service Tracking"
+  },
+  {
    "fieldtype": "Section Break",
    "fieldname": "section_last_service",
    "label": "Last and Next Service",

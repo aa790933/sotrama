@@ -129,6 +129,11 @@
    "description": "Latest recorded odometer reading in km"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_vehicle_value",
+   "label": "Acquisition & Value"
+  },
+  {
    "fieldtype": "Section Break",
    "fieldname": "section_acquisition",
    "label": "Acquisition & Valuation",
@@ -177,6 +182,11 @@
    "fieldtype": "Currency",
    "description": "Insured value of the vehicle",
    "permlevel": 1
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_vehicle_assignment",
+   "label": "Assignment & Documents"
   },
   {
    "fieldtype": "Section Break",

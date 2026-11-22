@@ -15,14 +15,28 @@
   },
   {
    "type": "Section Break",
-   "label": "Company & HR Configuration",
+   "label": "Company & HR Setup",
    "icon": "settings-2",
    "collapsible": 1,
    "keep_closed": 0
   },
   {
    "type": "Link",
-   "label": "Company Registration & HR Job Titles Settings",
+   "label": "Companies",
+   "link_type": "DocType",
+   "link_to": "Company",
+   "icon": "building-2"
+  },
+  {
+   "type": "Link",
+   "label": "Designations",
+   "link_type": "DocType",
+   "link_to": "Designation",
+   "icon": "users"
+  },
+  {
+   "type": "Link",
+   "label": "Algerian Company & HR Settings",
    "link_type": "DocType",
    "link_to": "Sotrama Settings",
    "icon": "sliders-horizontal"

@@ -3,7 +3,7 @@
  "creation": "2026-11-17 00:00:00",
  "docstatus": 0,
  "doctype": "Workspace",
- "content": "[{\"id\":\"sotrama_active_vehicles\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Vehicles\",\"col\":4}},{\"id\":\"sotrama_out_of_service\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Vehicles Out of Service\",\"col\":4}},{\"id\":\"sotrama_active_maintenance\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Maintenance Plans\",\"col\":4}}]",
+ "content": "[{\"id\":\"fleet_overview_heading\",\"type\":\"header\",\"data\":{\"text\":\"Fleet at a glance\",\"level\":4,\"col\":12}},{\"id\":\"sotrama_active_vehicles\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Vehicles\",\"col\":4}},{\"id\":\"sotrama_out_of_service\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Vehicles Out of Service\",\"col\":4}},{\"id\":\"sotrama_active_maintenance\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Maintenance Plans\",\"col\":4}},{\"id\":\"fleet_daily_work_heading\",\"type\":\"header\",\"data\":{\"text\":\"Daily fleet work\",\"level\":4,\"col\":12}},{\"id\":\"fleet_operations_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Fleet Operations\",\"col\":6}},{\"id\":\"fleet_maintenance_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Maintenance & Safety\",\"col\":6}},{\"id\":\"fleet_reports_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Analysis\",\"col\":6}},{\"id\":\"fleet_masters_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup & Masters\",\"col\":6}}]",
  "for_user": "",
  "hide_custom": 0,
  "icon": "truck",
@@ -14,6 +14,8 @@
   {
    "hidden": 0,
    "label": "Fleet Operations",
+   "description": "Register vehicles and drivers, assign equipment and follow daily tasks and breakdowns.",
+   "icon": "truck",
    "link_count": 4,
    "onboard": 0,
    "type": "Card Break"
@@ -53,6 +55,8 @@
   {
    "hidden": 0,
    "label": "Maintenance & Safety",
+   "description": "Plan servicing, record workshop work and document vehicle inspections.",
+   "icon": "wrench",
    "link_count": 3,
    "onboard": 0,
    "type": "Card Break"
@@ -84,6 +88,8 @@
   {
    "hidden": 0,
    "label": "Reports & Analysis",
+   "description": "Review upcoming document expiries and analyze fleet operating costs.",
+   "icon": "chart-column",
    "link_count": 1,
    "onboard": 0,
    "type": "Card Break"
@@ -100,7 +106,9 @@
   {
    "hidden": 0,
    "label": "Setup & Masters",
-   "link_count": 4,
+   "description": "Maintain vehicle makes, models and maintenance service types.",
+   "icon": "settings-2",
+   "link_count": 3,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -124,14 +132,6 @@
    "hidden": 0,
    "label": "Maintenance Job Types",
    "link_to": "Maintenance Job Type",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "label": "TP Settings",
-   "link_to": "TP Settings",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"

@@ -2866,11 +2866,128 @@ msgstr "Créé à partir de l'inspection du véhicule {0}.\n\n{1}"
 msgid "Added {0} missing public-works designations to Frappe HR."
 msgstr "{0} désignations manquantes des travaux publics ont été ajoutées à Frappe RH."
 
-msgid "Enable 'Create Missing BTPH Designation Records' before running this action."
-msgstr "Activez « Créer les désignations BTPH manquantes » avant d'exécuter cette action."
+msgid "Enable the BTPH job-title option before running this action."
+msgstr "Activez l'option des intitulés de poste BTPH avant d'exécuter cette action."
 
 msgid "All BTPH job titles in the catalogue already exist. No records were changed."
 msgstr "Tous les intitulés de poste BTPH du catalogue existent déjà. Aucune fiche n'a été modifiée."
+
+msgid "Company and application setup"
+msgstr "Configuration de la société et de l'application"
+
+msgid "Company & HR Setup"
+msgstr "Configuration société et RH"
+
+msgid "Fleet Configuration"
+msgstr "Configuration du parc"
+
+msgid "Maintain ERPNext Company records, enable Algerian registration fields and prepare the standard Frappe HR designation catalogue."
+msgstr "Gérez les sociétés ERPNext, activez les champs d'immatriculation algériens et préparez le catalogue standard des fonctions dans Frappe RH."
+
+msgid "Set company-specific fleet defaults, warehouses and operational compliance policies."
+msgstr "Définissez les paramètres du parc, les entrepôts et les règles de conformité opérationnelle pour chaque société."
+
+msgid "Algerian Company & HR Settings"
+msgstr "Paramètres de la société algérienne et des RH"
+
+msgid "Designations"
+msgstr "Désignations"
+
+msgid "Fleet Settings"
+msgstr "Paramètres du parc"
+
+msgid "Fleet at a glance"
+msgstr "Vue d'ensemble du parc"
+
+msgid "Fleet reports"
+msgstr "Rapports du parc"
+
+msgid "Fleet Analysis"
+msgstr "Analyse du parc"
+
+msgid "Analyze fleet maintenance and operating costs by vehicle and company."
+msgstr "Analysez les coûts d'entretien et d'exploitation du parc par véhicule et par société."
+
+msgid "Daily fleet work"
+msgstr "Activités quotidiennes du parc"
+
+msgid "Register vehicles and drivers, assign equipment and follow daily tasks and breakdowns."
+msgstr "Enregistrez les véhicules et conducteurs, affectez les engins et suivez les tâches et les pannes quotidiennes."
+
+msgid "Plan servicing, record workshop work and document vehicle inspections."
+msgstr "Planifiez l'entretien, consignez les travaux d'atelier et documentez les inspections des véhicules."
+
+msgid "Review upcoming document expiries and analyze fleet operating costs."
+msgstr "Suivez les prochaines échéances documentaires et analysez les coûts d'exploitation du parc."
+
+msgid "Maintain vehicle makes, models and maintenance service types."
+msgstr "Gérez les marques, les modèles et les types de services de maintenance."
+
+msgid "Company registration identifiers"
+msgstr "Identifiants d'immatriculation de la société"
+
+msgid "Show additional Algerian fields"
+msgstr "Afficher les champs algériens supplémentaires"
+
+msgid "Enable the additional Article d'imposition, NIS, RC and Capital Social fields on the standard Company form. They appear only when Company Country is Algeria. Enter NIF in ERPNext's Tax ID field. Turning this off hides Sotrama-managed fields but preserves their metadata and saved values."
+msgstr "Activez les champs Article d'imposition, NIS, RC et Capital social dans le formulaire standard Société. Ils apparaissent uniquement lorsque le pays de la société est l'Algérie. Saisissez le NIF dans le champ Tax ID d'ERPNext. La désactivation masque les champs gérés par Sotrama sans supprimer leur définition ni leurs valeurs."
+
+msgid "Optional registration details for Algerian legal entities. Company remains the standard ERPNext record."
+msgstr "Informations d'immatriculation facultatives pour les entités juridiques algériennes. La société reste un enregistrement ERPNext standard."
+
+msgid "Add the Algerian identifiers to the standard ERPNext Company form. NIF uses ERPNext's existing Tax ID field; Sotrama adds Article d'imposition, NIS, RC and Capital Social."
+msgstr "Ajoutez les identifiants algériens au formulaire Société standard d'ERPNext. Le NIF utilise le champ Tax ID existant ; Sotrama ajoute l'Article d'imposition, le NIS, le RC et le capital social."
+
+msgid "Prepare the French BTPH job-title catalogue in the standard Frappe HR Designation master."
+msgstr "Préparez le catalogue français des intitulés BTPH dans le référentiel standard des désignations de Frappe RH."
+
+msgid "BTPH job-title catalogue"
+msgstr "Catalogue des intitulés de poste BTPH"
+
+msgid "Add the curated French public-works job titles to Frappe HR. Employees and their assignments continue to be managed in the standard HRMS Employee form."
+msgstr "Ajoutez les intitulés français sélectionnés des travaux publics dans Frappe RH. Les employés et leurs affectations restent gérés dans le formulaire Employé standard de HRMS."
+
+msgid "Import BTPH job titles on save"
+msgstr "Importer les intitulés de poste BTPH à l'enregistrement"
+
+msgid "When checked and saved, Sotrama adds only missing entries from the curated 202-title French BTPH list to HRMS > Designation. This creates job-title master records only; it does not create Employees or assign jobs. After the first import, use Create Missing Job Titles to add later catalogue additions. Existing designations are never renamed, overwritten or deleted."
+msgstr "Lorsque cette option est cochée puis enregistrée, Sotrama ajoute uniquement les entrées manquantes du catalogue français BTPH de 202 intitulés dans HRMS > Désignation. Seules des fiches de référentiel sont créées ; aucun employé ni aucune affectation n'est créé. Après le premier import, utilisez Créer les intitulés manquants pour ajouter les futurs intitulés du catalogue. Les désignations existantes ne sont jamais renommées, remplacées ou supprimées."
+
+msgid "Central Sotrama setup for Algerian Company registration and the Frappe HR job-title catalogue. Fleet operating policies are available from Fleet Settings."
+msgstr "Configuration centrale de Sotrama pour l'immatriculation des sociétés algériennes et le catalogue des fonctions Frappe RH. Les règles d'exploitation du parc sont accessibles dans Paramètres du parc."
+
+msgid "Open Companies"
+msgstr "Ouvrir les sociétés"
+
+msgid "Open Designations"
+msgstr "Ouvrir les désignations"
+
+msgid "Create Missing Job Titles"
+msgstr "Créer les intitulés manquants"
+
+msgid "Acquisition & Value"
+msgstr "Acquisition et valeur"
+
+msgid "Assignment & Documents"
+msgstr "Affectation et documents"
+
+msgid "Execution & Costs"
+msgstr "Exécution et coûts"
+
+msgid "Parts & Evidence"
+msgstr "Pièces et justificatifs"
+
+msgid "Execution"
+msgstr "Exécution"
+
+msgid "Output"
+msgstr "Production"
+
+msgid "Resolution & Evidence"
+msgstr "Résolution et justificatifs"
+
+msgid "Service Tracking"
+msgstr "Suivi des entretiens"
 
 msgid "Document "
 msgstr "Document "

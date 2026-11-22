@@ -76,6 +76,20 @@
   },
   {
    "type": "Section Break",
+   "label": "Reports & Analysis",
+   "icon": "chart-column",
+   "collapsible": 1,
+   "keep_closed": 0
+  },
+  {
+   "type": "Link",
+   "label": "Fleet Management Reports",
+   "link_type": "Workspace",
+   "link_to": "Fleet Management Reports",
+   "icon": "chart-column"
+  },
+  {
+   "type": "Section Break",
    "label": "Setup & Masters",
    "icon": "settings",
    "collapsible": 1,
@@ -101,13 +115,6 @@
    "link_type": "DocType",
    "link_to": "Maintenance Job Type",
    "icon": "settings"
-  },
-  {
-   "type": "Link",
-   "label": "TP Settings",
-   "link_type": "DocType",
-   "link_to": "TP Settings",
-   "icon": "sliders-horizontal"
   }
  ],
  "modified": "2026-11-17 00:00:00",

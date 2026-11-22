@@ -108,6 +108,11 @@
    "fieldtype": "Text Editor"
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_execution_costs",
+   "label": "Execution & Costs"
+  },
+  {
    "fieldtype": "Section Break",
    "fieldname": "section_execution",
    "label": "Work Execution & Vehicle Readings",
@@ -278,6 +283,11 @@
    "hidden": 1,
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_parts_evidence",
+   "label": "Parts & Evidence"
   },
   {
    "fieldtype": "Section Break",

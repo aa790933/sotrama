@@ -7,10 +7,11 @@ permissions and accounting/inventory transactions. It does not fork or patch
 Frappe, ERPNext or HRMS core.
 
 The app is designed to grow by adding standard Frappe modules. It includes the
-**Sotrama** landing module plus **Algerian Localization** and **TP** (public-
-works fleet operations). The Sotrama Desk workspace is the app landing page.
-Frappe filters its module and settings links by the destination workspace's or
-DocType's permissions, so users only see destinations they are allowed to open.
+**Sotrama** landing module and **TP** (public-works fleet operations). Algerian
+Company registration and HR designation setup are surfaced from the central
+Sotrama workspace rather than a separate Algerian Localization Desk destination.
+Frappe filters navigation links by the destination DocType permissions; links
+do not grant access to Company, HR or Fleet records.
 
 ## Compatibility
 
@@ -47,7 +48,7 @@ company records.
 
 ## Modules
 
-### Algerian Localization
+### Algerian Company Setup
 
 The optional Algerian Company extension adds these fields to the standard
 ERPNext `Company` DocType only after an administrator explicitly enables it:
@@ -61,7 +62,7 @@ ERPNext `Company` DocType only after an administrator explicitly enables it:
 | `custom_capital_social` | Registered share capital, stored as Currency using the Company's default currency |
 
 **Enable the extension:** sign in as System Manager, open **Sotrama → Sotrama
-Settings**, and enable **Enable Algerian Company Registration Fields**. The
+Settings → Algerian Company**, and enable **Show additional Algerian fields**. The
 fields are displayed on Company records whose Country is Algeria. They remain
 optional and do not replace standard ERPNext Company fields.
 
@@ -89,13 +90,13 @@ overwritten. Conflicting values, unowned legacy fields and unresolved schema
 cases remain visible/untouched and are reported in Error Log for manual
 reconciliation. The legacy field and its original values are retained.
 
-### HR — Public Works Designations
+### HR & Designations — Public Works Catalogue
 
 Sotrama can optionally add the company's curated **202-title French BTPH
 catalogue** to the standard Frappe HR `Designation` master. Open **Sotrama →
-Company Registration & HR Job Titles Settings**, check **Create Missing BTPH
-Designation Records**, and save. When the setting is enabled, the **HR Job
-Titles → Create Missing BTPH Job Titles** form action can also be used later
+Sotrama Settings → HR & Designations**, enable **Import BTPH job titles on save**,
+and save. When the setting is enabled, the **HR & Designations →
+Create Missing Job Titles** form action can also be used later
 to add newly introduced catalogue entries without toggling the setting. This
 creates job-title master records only;
 it does not create Employees, Drivers or employee assignments. The app creates
@@ -130,6 +131,13 @@ The TP module currently provides:
 
 Supporting child tables hold vehicle documents, job-card parts/labour/costs,
 photos, inspection items and restricted driver compliance history.
+
+The **Sotrama Fleet** workspace presents submitted-fleet indicators first, then
+descriptive cards for daily operations, maintenance and safety, reports, and
+reference masters. Fleet Cost Analysis is reachable from the role-restricted
+Fleet Management Reports workspace in the TP sidebar. Long entry forms use
+task-oriented tabs (identity, acquisition, execution, costs and evidence) while
+short reference forms remain compact and follow the standard Frappe form layout.
 
 On a draft Maintenance Job Card, the **Add Entry** toolbar group names the
 record type explicitly: **Add Spare Part (Item)** selects an ERPNext stock
@@ -267,13 +275,19 @@ printing with a full-page preview and server-rendered report output.
 
 ## Navigation and permissions
 
-- **Sotrama** is the app workspace and home route (`/desk/sotrama`).
-- **Algerian Localization** and **TP** are separate Frappe modules with their
-  own standard Workspace and Sidebar records.
-- The app Dock exposes role-scoped Workspace shortcuts for the Sotrama overview,
-  Fleet and Algerian Localization. Frappe filters each shortcut using the
-  destination Workspace permissions; the TP sidebar also filters its individual
-  DocType and Report links by the current user's permissions.
+- **Sotrama** is the app workspace and home route (`/desk/sotrama`). Its Company
+  & HR Setup card links to standard Company and Designation records and the
+  Sotrama settings form. Its Fleet Configuration card links to Fleet Settings.
+- **TP** is the public-works Fleet module. The app Dock exposes the Sotrama
+  overview and Fleet workspace; the Fleet workspace groups operational lists,
+  maintenance, reports and reference masters into descriptive cards.
+- The former Algerian Localization workspace and sidebar are retired by a
+  one-time migration cleanup. Algerian Company fields and the HR designation
+  catalogue remain available from the central Sotrama setup; no Company or HR
+  records are moved or duplicated.
+- Fleet operational defaults and compliance policies remain in the dedicated
+  Fleet Settings singleton, linked from the same Sotrama setup workspace. Its
+  field-level permissions remain distinct from Company and HR settings.
 - App visibility is controlled by `sotrama.permissions.has_app_permission`;
   visibility does not grant DocType permissions. Normal Frappe role and
   document permissions still apply.

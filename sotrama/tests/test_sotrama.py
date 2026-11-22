@@ -376,11 +376,6 @@ class TestSotramaHooks(unittest.TestCase):
             / "workspace"
             / "fleet_management_reports"
             / "fleet_management_reports.json": "Fleet Management Reports",
-            app_path
-            / "algerian_localization"
-            / "workspace"
-            / "algerian_localization"
-            / "algerian_localization.json": "Algerian Localization",
         }
 
         for path, expected_name in workspace_files.items():
@@ -567,12 +562,14 @@ class TestSotramaHooks(unittest.TestCase):
                     "section_assignment",
                     "section_documents",
                 ),
-                "single_tab": True,
+                "single_tab": False,
+                "tab_count": 3,
             },
             "Breakdown Incident": {
                 "open": ("section_incident",),
                 "collapsed": ("section_resolution", "section_evidence"),
-                "single_tab": True,
+                "single_tab": False,
+                "tab_count": 2,
             },
             "Maintenance Job Card": {
                 "open": ("section_work_order",),
@@ -583,22 +580,26 @@ class TestSotramaHooks(unittest.TestCase):
                     "section_parts",
                     "section_attachments",
                 ),
-                "single_tab": True,
+                "single_tab": False,
+                "tab_count": 3,
             },
             "Maintenance Schedule": {
                 "open": ("section_plan",),
                 "collapsed": ("section_last_service", "section_notes"),
-                "single_tab": True,
+                "single_tab": False,
+                "tab_count": 2,
             },
             "Operational Task": {
                 "open": ("section_assignment",),
                 "collapsed": ("section_time", "section_output"),
-                "single_tab": True,
+                "single_tab": False,
+                "tab_count": 3,
             },
             "Vehicle Inspection": {
                 "open": ("section_inspection", "section_inspection_results"),
                 "collapsed": (),
                 "single_tab": False,
+                "tab_count": 2,
             },
             "Driver": {
                 "open": (
@@ -608,6 +609,7 @@ class TestSotramaHooks(unittest.TestCase):
                 ),
                 "collapsed": ("section_restricted_compliance",),
                 "single_tab": False,
+                "tab_count": 3,
             },
             "Vehicle Document": {
                 "open": ("section_vehicle_document",),
@@ -683,6 +685,8 @@ class TestSotramaHooks(unittest.TestCase):
             tabs = [field.fieldname for field in meta.fields if field.fieldtype == "Tab Break"]
             if expected["single_tab"]:
                 self.assertEqual(len(tabs), 1, doctype)
+            if expected.get("tab_count"):
+                self.assertEqual(len(tabs), expected["tab_count"], doctype)
             for fieldname in expected["open"]:
                 self.assertFalse(meta.get_field(fieldname).collapsible, f"{doctype}.{fieldname}")
             for fieldname in expected["collapsed"]:
@@ -1016,7 +1020,7 @@ class TestSotramaHooks(unittest.TestCase):
         from sotrama.config.desktop import get_data
 
         modules = {entry["module_name"] for entry in get_data()}
-        self.assertEqual(modules, {"Sotrama", "TP", "Algerian Localization"})
+        self.assertEqual(modules, {"Sotrama", "TP"})
         module = frappe.get_doc("Module Def", "Sotrama")
         self.assertEqual(module.app_name, "sotrama")
         self.assertFalse(module.custom)
@@ -1030,7 +1034,6 @@ class TestSotramaHooks(unittest.TestCase):
             {
                 ("Workspace", "Sotrama"),
                 ("Workspace", "Sotrama Fleet"),
-                ("Workspace", "Algerian Localization"),
             },
         )
 
@@ -1054,6 +1057,56 @@ class TestSotramaHooks(unittest.TestCase):
             {"app_name": "sotrama", "custom": 0},
             update_modified=False,
         )
+
+    def test_legacy_localization_patch_deletes_only_standard_navigation(self):
+        from sotrama.tp.patches.v1_3.remove_legacy_algerian_localization_workspace import (
+            execute,
+        )
+
+        workspace = Mock()
+        with (
+            patch("frappe.db.exists", return_value=True),
+            patch(
+                "frappe.db.get_value",
+                side_effect=[
+                    frappe._dict(module="Algerian Localization", standard=1),
+                    frappe._dict(module="Algerian Localization", standard=1),
+                ],
+            ),
+            patch("frappe.get_doc", return_value=workspace),
+            patch("frappe.get_all", return_value=["Algerian Localization Custom Sidebar"]),
+            patch("frappe.delete_doc") as delete_doc,
+        ):
+            execute()
+
+        workspace.drop_sidebar_rows.assert_called_once_with()
+        workspace.delete_desktop_icon.assert_called_once_with()
+        self.assertEqual(
+            [call.args[:2] for call in delete_doc.call_args_list],
+            [
+                ("Custom Workspace", "Algerian Localization"),
+                ("Workspace", "Algerian Localization"),
+                ("Sidebar", "Algerian Localization"),
+                ("Custom Sidebar", "Algerian Localization Custom Sidebar"),
+            ],
+        )
+        self.assertTrue(delete_doc.call_args_list[1].kwargs["ignore_on_trash"])
+
+        with (
+            patch("frappe.db.exists", return_value=True),
+            patch(
+                "frappe.db.get_value",
+                side_effect=[
+                    frappe._dict(module="Algerian Localization", standard=0),
+                    frappe._dict(module="Another Module", standard=1),
+                ],
+            ),
+            patch("frappe.get_all", return_value=[]),
+            patch("frappe.delete_doc") as delete_doc,
+        ):
+            execute()
+
+        delete_doc.assert_not_called()
 
     def test_before_install_normalizes_a_null_custom_flag(self):
         from sotrama.hooks import repair_orphaned_module_definitions
@@ -1156,22 +1209,40 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(frappe.db.exists("Sidebar", "TP"))
         self.assertTrue(frappe.db.exists("Workspace", "Sotrama Fleet"))
         self.assertTrue(frappe.db.exists("Module Def", "Algerian Localization"))
-        self.assertTrue(frappe.db.exists("Sidebar", "Algerian Localization"))
-        self.assertTrue(frappe.db.exists("Workspace", "Algerian Localization"))
+        self.assertFalse(frappe.db.exists("Sidebar", "Algerian Localization"))
+        self.assertFalse(frappe.db.exists("Workspace", "Algerian Localization"))
+        self.assertFalse(frappe.db.exists("Custom Workspace", "Algerian Localization"))
         self.assertTrue(frappe.db.exists("Workspace", "Sotrama"))
         localization_module = frappe.get_doc("Module Def", "Algerian Localization")
         self.assertEqual(localization_module.app_name, "sotrama")
         self.assertFalse(localization_module.custom)
-        localization_workspace = frappe.get_doc("Workspace", "Algerian Localization")
-        self.assertEqual(
-            {row.role for row in localization_workspace.roles},
-            {"System Manager", "Accounts Manager"},
-        )
         app_workspace = frappe.get_doc("Workspace", "Sotrama")
         self.assertEqual(
             {item.link_to for item in app_workspace.links if item.type == "Link"},
-            {"Algerian Localization", "Sotrama Settings", "Sotrama Fleet"},
-            "Frappe filters child workspaces and DocType links by their own permissions.",
+            {"Company", "Designation", "Sotrama Settings", "TP Settings"},
+            (
+                "The central workspace links only to standard DocTypes; "
+                "permissions remain on each target."
+            ),
+        )
+        self.assertTrue(
+            all(
+                item.link_type in {"DocType", "Page", "Report"}
+                for item in app_workspace.links
+                if item.type == "Link"
+            )
+        )
+        app_blocks = json.loads(app_workspace.content or "[]")
+        self.assertEqual(
+            {
+                block.get("data", {}).get("card_name")
+                for block in app_blocks
+                if block.get("type") == "card"
+            },
+            {"Company & HR Setup", "Fleet Configuration"},
+        )
+        self.assertTrue(
+            all(row.description for row in app_workspace.links if row.type == "Card Break")
         )
         workspace = frappe.get_doc("Workspace", "Sotrama Fleet")
         import json
@@ -1186,6 +1257,16 @@ class TestSotramaHooks(unittest.TestCase):
             card_names,
             {"Active Vehicles", "Vehicles Out of Service", "Active Maintenance Plans"},
         )
+        fleet_card_names = {
+            block.get("data", {}).get("card_name")
+            for block in blocks
+            if block.get("type") == "card"
+        }
+        self.assertEqual(
+            fleet_card_names,
+            {"Fleet Operations", "Maintenance & Safety", "Reports & Analysis", "Setup & Masters"},
+        )
+        self.assertTrue(all(block.get("id") for block in blocks))
         for card_name in card_names:
             self.assertTrue(
                 frappe.db.exists("Number Card", card_name),
@@ -1193,8 +1274,27 @@ class TestSotramaHooks(unittest.TestCase):
             )
 
         sidebar = frappe.get_doc("Sidebar", "TP")
-        self.assertTrue(any(item.link_to == "TP Settings" for item in sidebar.items))
-        self.assertTrue(any(item.link_to == "TP Settings" for item in workspace.links))
+        self.assertFalse(any(item.link_to == "TP Settings" for item in sidebar.items))
+        self.assertTrue(
+            any(
+                item.link_type == "Workspace" and item.link_to == "Fleet Management Reports"
+                for item in sidebar.items
+            )
+        )
+        reports_workspace = frappe.get_doc("Workspace", "Fleet Management Reports")
+        reports_blocks = json.loads(reports_workspace.content or "[]")
+        self.assertEqual(
+            {
+                block.get("data", {}).get("card_name")
+                for block in reports_blocks
+                if block.get("type") == "card"
+            },
+            {"Fleet Analysis"},
+        )
+        self.assertTrue(
+            any(row.type == "Card Break" and row.description for row in reports_workspace.links)
+        )
+        self.assertFalse(any(item.link_to == "TP Settings" for item in workspace.links))
         self.assertEqual(
             {row.role for row in workspace.roles},
             {"System Manager", "Fleet Manager", "Workshop"},
@@ -1206,7 +1306,6 @@ class TestSotramaHooks(unittest.TestCase):
             {
                 ("Workspace", "Sotrama"),
                 ("Workspace", "Sotrama Fleet"),
-                ("Workspace", "Algerian Localization"),
             },
         )
 
@@ -1217,6 +1316,8 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(field.fieldtype, "Check")
         self.assertEqual(field.default, "0")
         self.assertEqual(field.permlevel, 1)
+        self.assertEqual(field.label, "Import BTPH job titles on save")
+        self.assertIn("When checked and saved", field.description)
 
         hr_permissions = [
             permission
@@ -1229,6 +1330,8 @@ class TestSotramaHooks(unittest.TestCase):
 
         company_field = meta.get_field("enable_algerian_company_fields")
         self.assertEqual(company_field.permlevel, 0)
+        self.assertEqual(company_field.label, "Show additional Algerian fields")
+        self.assertIn("NIF", company_field.description)
 
         doctype_js = frappe.get_hooks("doctype_js", app_name="sotrama")
         self.assertIn("Sotrama Settings", doctype_js)

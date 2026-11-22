@@ -122,6 +122,11 @@
    "in_list_view": 1
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_task_execution",
+   "label": "Execution"
+  },
+  {
    "fieldtype": "Section Break",
    "fieldname": "section_time",
    "label": "Execution Time",
@@ -167,6 +172,11 @@
    "fieldname": "distance_covered",
    "fieldtype": "Float",
    "read_only": 1
+  },
+  {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_task_output",
+   "label": "Output"
   },
   {
    "fieldtype": "Section Break",

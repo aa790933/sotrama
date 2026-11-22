@@ -3,7 +3,7 @@
  "creation": "2026-11-19 00:00:00",
  "docstatus": 0,
  "doctype": "Workspace",
- "content": "[]",
+ "content": "[{\"id\":\"fleet_reports_heading\",\"type\":\"header\",\"data\":{\"text\":\"Fleet reports\",\"level\":4,\"col\":12}},{\"id\":\"fleet_analysis_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Fleet Analysis\",\"col\":6}}]",
  "for_user": "",
  "hide_custom": 0,
  "icon": "chart-column",
@@ -11,6 +11,14 @@
  "is_hidden": 0,
  "label": "Fleet Management Reports",
  "links": [
+  {
+   "type": "Card Break",
+   "label": "Fleet Analysis",
+   "description": "Analyze fleet maintenance and operating costs by vehicle and company.",
+   "icon": "chart-column",
+   "link_count": 1,
+   "hidden": 0
+  },
   {
    "hidden": 0,
    "label": "Fleet Cost Analysis",

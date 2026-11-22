@@ -1,11 +1,33 @@
 frappe.ui.form.on("Sotrama Settings", {
 	refresh(frm) {
+		if (frappe.perm.has_perm("Company", 0, "read")) {
+			frm.add_custom_button(
+				__("Open Companies"),
+				() => frappe.set_route("List", "Company"),
+				__("Algerian Company"),
+			);
+		}
+
 		const can_manage_hr_titles =
 			frappe.user.has_role("System Manager") || frappe.user.has_role("HR Manager");
-		if (frm.is_new() || !frm.doc.add_public_works_designations || !can_manage_hr_titles) return;
+		if (!can_manage_hr_titles) return;
+
+		if (frappe.perm.has_perm("Designation", 0, "read")) {
+			frm.add_custom_button(
+				__("Open Designations"),
+				() => frappe.set_route("List", "Designation"),
+				__("HR & Designations"),
+			);
+		}
+
+		if (
+			frm.is_new() ||
+			!frm.doc.add_public_works_designations ||
+			!frappe.perm.has_perm("Designation", 0, "create")
+		) return;
 
 		frm.add_custom_button(
-			__("Create Missing BTPH Job Titles"),
+			__("Create Missing Job Titles"),
 			() => {
 				frappe.call({
 					method: "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.create_missing_public_works_designations",
@@ -18,7 +40,7 @@ frappe.ui.form.on("Sotrama Settings", {
 					},
 				});
 			},
-			__("HR Job Titles"),
+				__("HR & Designations"),
 		);
 	},
 });

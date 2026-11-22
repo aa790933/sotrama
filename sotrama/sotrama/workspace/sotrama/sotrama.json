@@ -13,47 +13,53 @@
  "hide_custom": 0,
  "standard": 1,
  "for_user": "",
- "content": "[]",
+ "content": "[{\"id\":\"sotrama_setup_heading\",\"type\":\"header\",\"data\":{\"text\":\"Company and application setup\",\"level\":4,\"col\":12}},{\"id\":\"sotrama_company_setup_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Company & HR Setup\",\"col\":6}},{\"id\":\"sotrama_fleet_setup_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Fleet Configuration\",\"col\":6}}]",
  "links": [
   {
    "type": "Card Break",
-   "label": "Fleet Management",
-   "link_count": 1,
+   "label": "Company & HR Setup",
+   "description": "Maintain ERPNext Company records, enable Algerian registration fields and prepare the standard Frappe HR designation catalogue.",
+   "icon": "building-2",
+   "link_count": 3,
    "hidden": 0
   },
   {
    "type": "Link",
-   "label": "Fleet Overview",
-   "link_type": "Workspace",
-   "link_to": "Sotrama Fleet",
+   "label": "Companies",
+   "link_type": "DocType",
+   "link_to": "Company",
    "hidden": 0,
    "onboard": 0
   },
   {
-   "type": "Card Break",
-   "label": "Business Modules",
-   "link_count": 1,
-   "hidden": 0
-  },
-  {
    "type": "Link",
-   "label": "Algerian Localization",
-   "link_type": "Workspace",
-   "link_to": "Algerian Localization",
+   "label": "Designations",
+   "link_type": "DocType",
+   "link_to": "Designation",
    "hidden": 0,
    "onboard": 0
   },
   {
-   "type": "Card Break",
-   "label": "Company & HR Configuration",
-   "link_count": 1,
-   "hidden": 0
-  },
-  {
    "type": "Link",
-   "label": "Company Registration & HR Job Titles Settings",
+   "label": "Algerian Company & HR Settings",
    "link_type": "DocType",
    "link_to": "Sotrama Settings",
+   "hidden": 0,
+   "onboard": 0
+  },
+  {
+   "type": "Card Break",
+   "label": "Fleet Configuration",
+   "description": "Set company-specific fleet defaults, warehouses and operational compliance policies.",
+   "icon": "truck",
+   "link_count": 1,
+   "hidden": 0
+  },
+  {
+   "type": "Link",
+   "label": "Fleet Settings",
+   "link_type": "DocType",
+   "link_to": "TP Settings",
    "hidden": 0,
    "onboard": 0
   }

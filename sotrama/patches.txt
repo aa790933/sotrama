@@ -5,3 +5,4 @@ sotrama.tp.patches.v1_0.register_doctype_masters
 sotrama.tp.patches.v1_3.ensure_default_masters
 sotrama.tp.patches.v1_3.migrate_fleet_document_options
 sotrama.tp.patches.v1_3.simplify_fleet_reference_masters
+sotrama.tp.patches.v1_3.remove_legacy_algerian_localization_workspace

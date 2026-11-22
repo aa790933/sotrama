@@ -91,6 +91,11 @@
    "description": "Engine, Transmission, Electrical, etc."
   },
   {
+   "fieldtype": "Tab Break",
+   "fieldname": "tab_resolution_evidence",
+   "label": "Resolution & Evidence"
+  },
+  {
    "fieldtype": "Section Break",
    "fieldname": "section_resolution",
    "label": "Repair & Resolution",

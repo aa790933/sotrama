@@ -598,7 +598,6 @@ jobs:
           assert dock_targets == {
               ("Workspace", "Sotrama"),
               ("Workspace", "Sotrama Fleet"),
-              ("Workspace", "Algerian Localization"),
           }
           fleet_workspace = json.loads(Path("sotrama/tp/workspace/sotrama_fleet/sotrama_fleet.json").read_text(encoding="utf-8"))
           assert "HR Manager" not in {row["role"] for row in fleet_workspace["roles"]}
@@ -608,16 +607,29 @@ jobs:
           manager_workspace = json.loads(Path("sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json").read_text(encoding="utf-8"))
           assert {row["role"] for row in manager_workspace["roles"]} == {"Fleet Manager", "System Manager"}
           assert "Fleet Cost Analysis" in {row.get("link_to") for row in manager_workspace["links"]}
+          assert {block.get("data", {}).get("card_name") for block in json.loads(manager_workspace["content"]) if block.get("type") == "card"} == {"Fleet Analysis"}
           assert "Company Classification" not in {row.get("link_to") for row in manager_workspace["links"]}
           tp_sidebar = json.loads(Path("sotrama/tp/sidebar/tp/tp.json").read_text(encoding="utf-8"))
           assert "Fleet Cost Analysis" not in {row.get("link_to") for row in tp_sidebar["items"]}
           assert "Upcoming Document Expiries" not in {row.get("link_to") for row in tp_sidebar["items"]}
           assert "Company Classification" not in {row.get("link_to") for row in tp_sidebar["items"]}
-          parent_workspace = json.loads(Path("sotrama/sotrama/workspace/sotrama/sotrama.json").read_text(encoding="utf-8"))
-          fleet_entry = next(
-              row for row in parent_workspace["links"] if row.get("link_to") == "Sotrama Fleet"
+          assert "TP Settings" not in {row.get("link_to") for row in tp_sidebar["items"]}
+          assert any(
+              row.get("link_type") == "Workspace" and row.get("link_to") == "Fleet Management Reports"
+              for row in tp_sidebar["items"]
           )
-          assert fleet_entry["label"] == "Fleet Overview"
+          parent_workspace = json.loads(Path("sotrama/sotrama/workspace/sotrama/sotrama.json").read_text(encoding="utf-8"))
+          parent_links = [row for row in parent_workspace["links"] if row.get("type") == "Link"]
+          assert {row.get("link_to") for row in parent_links} == {
+              "Company", "Designation", "Sotrama Settings", "TP Settings"
+          }
+          assert all(row.get("link_type") in {"DocType", "Page", "Report"} for row in parent_links)
+          assert not any(row.get("link_to") == "Algerian Localization" for row in parent_links)
+          assert "TP Settings" not in {row.get("link_to") for row in fleet_workspace["links"]}
+          fleet_blocks = json.loads(fleet_workspace["content"])
+          assert {block.get("data", {}).get("card_name") for block in fleet_blocks if block.get("type") == "card"} == {
+              "Fleet Operations", "Maintenance & Safety", "Reports & Analysis", "Setup & Masters"
+          }
 
           app_path = Path("sotrama")
           assert not Path("package.json").exists(), "Sotrama must not trigger Bench's automatic Yarn install"
