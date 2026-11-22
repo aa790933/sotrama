@@ -6941,13 +6941,21 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             safety_training_expiry=None,
         )
         tasks = [active_driver.name, inactive_driver.name]
+        compliance_todo = frappe._dict(
+            name="TODO-RESTRICTED-COMPLIANCE",
+            insert=Mock(),
+        )
         with (
             patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
             patch(
                 "sotrama.tp.scheduler.frappe.get_all",
-                side_effect=[tasks, [active_driver], [], []],
+                side_effect=[tasks, [active_driver], [], [], []],
             ) as get_all,
             patch("sotrama.tp.scheduler.frappe.db.exists", return_value=True),
+            patch(
+                "sotrama.tp.scheduler.frappe.new_doc",
+                return_value=compliance_todo,
+            ),
         ):
             check_driver_license_expiry()
 
@@ -6957,6 +6965,8 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             compliance_query.kwargs["filters"]["parent"],
             ["in", [active_driver.name]],
         )
+        self.assertEqual(get_all.call_args_list[4].args[0], "Has Role")
+        compliance_todo.insert.assert_called_once_with(ignore_permissions=True)
 
 
 class TestFleetLinkedDocumentPermissions(unittest.TestCase):
