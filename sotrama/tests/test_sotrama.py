@@ -1245,8 +1245,6 @@ class TestSotramaHooks(unittest.TestCase):
             all(row.description for row in app_workspace.links if row.type == "Card Break")
         )
         workspace = frappe.get_doc("Workspace", "Sotrama Fleet")
-        import json
-
         blocks = json.loads(workspace.content or "[]")
         card_names = {
             block.get("data", {}).get("number_card_name")
