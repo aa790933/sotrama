@@ -2767,6 +2767,12 @@ msgstr "Le planning suivant et la dernière fiche d'intervention sont gérés pa
 msgid "Cancel the active successor Maintenance Schedule before cancelling this completed schedule."
 msgstr "Annulez le plan de maintenance successeur actif avant d'annuler ce plan terminé."
 
+msgid "You do not have permission to update the predecessor Maintenance Schedule."
+msgstr "Vous ne disposez pas des droits nécessaires pour modifier le plan de maintenance précédent."
+
+msgid "Generated successor Maintenance Schedule {0} was cancelled."
+msgstr "Le plan de maintenance successeur généré {0} a été annulé."
+
 msgid "Cannot update a predecessor schedule from another Company."
 msgstr "Impossible de mettre à jour un plan de maintenance précédent appartenant à une autre société."
 
