@@ -97,8 +97,8 @@ jobs:
           assert designation_setting["fieldtype"] == "Check"
           assert designation_setting["default"] == "0"
           assert designation_setting["permlevel"] == 1
-          assert "Create Missing BTPH Designation Records" == designation_setting["label"]
-          assert "does not create Employees, Drivers" in designation_setting["description"]
+          assert "Import BTPH job titles on save" == designation_setting["label"]
+          assert "does not create Employees or assign jobs" in designation_setting["description"]
           assert any(permission["role"] == "HR Manager" and permission.get("permlevel", 0) == 1 and permission.get("write") for permission in settings["permissions"])
 
           designation_tree = ast.parse(Path("sotrama/designations.py").read_text(encoding="utf-8"))
@@ -676,7 +676,9 @@ jobs:
               assert "sotrama/locale/fr.po" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json" in names
-              assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
+              assert "sotrama/tp/patches/v1_3/remove_legacy_algerian_localization_workspace.py" in names
+              assert not any("algerian_localization/workspace/" in name for name in names)
+              assert not any("algerian_localization/sidebar/" in name for name in names)
               assert "sotrama/tp/settings.py" in names
               assert "sotrama/tp/report/fleet_cost_analysis/fleet_cost_analysis.js" in names
               assert "sotrama/tp/report/upcoming_document_expiries/upcoming_document_expiries.js" in names
