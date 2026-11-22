@@ -741,7 +741,7 @@ jobs:
       - name: Compile Sotrama French translations
         working-directory: /home/runner/frappe-bench
         run: |
-          bench --site test_site execute frappe.gettext.translate.compile_translations --kwargs '{"target_app":"sotrama","locale":"fr","force":true}'
+          bench --site test_site execute frappe.gettext.translate.compile_translations --kwargs "{'target_app': 'sotrama', 'locale': 'fr', 'force': True}"
           test -s sites/assets/locale/fr/LC_MESSAGES/sotrama.mo
 
       - name: Create an ERPNext company for Fleet integration tests
