@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import flt, getdate
 
 
 class MaintenanceJobCard(Document):
@@ -114,7 +114,20 @@ class MaintenanceJobCard(Document):
                 )
             return
         for fieldname in fields:
-            if self.get(fieldname) != previous.get(fieldname):
+            current_value = self.get(fieldname)
+            previous_value = previous.get(fieldname)
+            if fieldname in {
+                "previous_schedule_last_service_odometer",
+                "previous_schedule_next_due_odometer",
+                "applied_schedule_last_service_odometer",
+            }:
+                # Frappe's Float fields can materialize an unset database NULL
+                # as 0 on a fresh document. Treat only that empty-value pair as
+                # equivalent; non-zero workflow history remains protected.
+                changed = flt(current_value) != flt(previous_value)
+            else:
+                changed = current_value != previous_value
+            if changed:
                 frappe.throw(
                     _("{0} is managed by the maintenance workflow.").format(
                         frappe.get_meta(self.doctype).get_label(fieldname)

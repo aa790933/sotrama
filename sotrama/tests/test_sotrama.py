@@ -5185,6 +5185,35 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
         with self.assertRaises(frappe.ValidationError):
             MaintenanceSchedule._validate_interval(mileage_schedule)
 
+    def test_job_card_system_managed_odometer_history_allows_only_empty_float_normalization(
+        self,
+    ):
+        job_card = frappe.new_doc("Maintenance Job Card")
+        job_card.previous_schedule_last_service_odometer = 0
+        previous = frappe._dict(
+            {
+                "stock_entry": None,
+                "linked_maintenance_schedule": None,
+                "previous_schedule_last_service_date": None,
+                "previous_schedule_last_service_odometer": None,
+                "previous_schedule_last_service_job_card": None,
+                "previous_schedule_next_due_date": None,
+                "previous_schedule_next_due_odometer": None,
+                "applied_schedule_last_service_odometer": None,
+                "linked_breakdown": None,
+                "linked_breakdown_incident": None,
+            }
+        )
+        with patch.object(job_card, "get_doc_before_save", return_value=previous):
+            job_card._validate_system_managed_fields()
+
+        job_card.previous_schedule_last_service_odometer = 1250
+        with (
+            patch.object(job_card, "get_doc_before_save", return_value=previous),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            job_card._validate_system_managed_fields()
+
     def test_completed_scheduled_job_card_advances_same_plan_and_cancel_restores_it(
         self,
     ):
