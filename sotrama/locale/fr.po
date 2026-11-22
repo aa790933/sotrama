@@ -2859,3 +2859,6 @@ msgstr "Tous les intitulés de poste BTPH du catalogue existent déjà. Aucune f
 
 msgid "Document "
 msgstr "Document "
+
+msgid "Cannot update a predecessor schedule from another Company."
+msgstr "Impossible de mettre à jour un plan de maintenance précédent appartenant à une autre société."
