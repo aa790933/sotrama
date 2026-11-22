@@ -32,6 +32,11 @@ def _get_test_company():
 class TestSotramaHooks(unittest.TestCase):
     """Protect against incompatible hook value shapes across installed apps."""
 
+    def test_frappe_16_todo_schema_uses_description_not_title(self):
+        todo_meta = frappe.get_meta("ToDo")
+        self.assertTrue(todo_meta.has_field("description"))
+        self.assertFalse(todo_meta.has_field("title"))
+
     def test_app_install_does_not_trigger_an_unnecessary_yarn_install(self):
         app_path = Path(frappe.get_app_path("sotrama")).parent
         self.assertFalse(

@@ -714,8 +714,8 @@ jobs:
       - name: Install ERPNext, HRMS, and Sotrama
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app --branch v16.60.0 erpnext
-          bench get-app --branch v16.60.0 hrms
+          bench get-app --skip-assets --branch v16.60.0 erpnext
+          bench get-app --skip-assets --branch v16.60.0 hrms
           bench get-app --skip-assets sotrama "$GITHUB_WORKSPACE"
           bench setup requirements --dev
 
