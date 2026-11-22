@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_inspection",
-   "label": "Inspection Assignment",
-   "collapsible": 1
+   "label": "Inspection Assignment"
   },
   {
    "label": "Vehicle",
@@ -85,8 +84,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_inspection_results",
-   "label": "Inspection Result",
-   "collapsible": 1
+   "label": "Inspection Result"
   },
   {
    "label": "Overall Status",

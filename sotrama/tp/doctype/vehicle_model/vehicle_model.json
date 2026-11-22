@@ -7,7 +7,7 @@
    "fieldtype": "Section Break",
    "fieldname": "section_model",
    "label": "Model Details",
-   "collapsible": 1
+   "collapsible": 0
   },
   {
    "label": "Vehicle Make",
@@ -21,7 +21,8 @@
    "label": "Make",
    "fieldname": "make",
    "fieldtype": "Data",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldtype": "Column Break",
@@ -49,11 +50,12 @@
  "links": [],
  "istable": 0,
  "issingle": 0,
- "is_submittable": 1,
+ "is_submittable": 0,
  "track_changes": 1,
- "name_field": "model_name",
+ "title_field": "model_name",
+ "show_title_field_in_link": 0,
  "naming_rule": "Expression",
- "naming_expression": "{model_name}",
+ "naming_expression": "{vehicle_make}-{model_name}",
  "autoname": "format",
  "permissions": [
   {
@@ -63,9 +65,6 @@
    "write": 1,
    "create": 1,
    "delete": 1,
-   "submit": 1,
-   "cancel": 1,
-   "amend": 1,
    "print": 1,
    "email": 1,
    "export": 1,
@@ -79,9 +78,6 @@
    "write": 1,
    "create": 1,
    "delete": 1,
-   "submit": 1,
-   "cancel": 1,
-   "amend": 1,
    "print": 1,
    "email": 1,
    "export": 1,

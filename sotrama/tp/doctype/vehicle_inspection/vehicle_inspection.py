@@ -70,10 +70,13 @@ class VehicleInspection(Document):
         if not self.vehicle:
             return
 
-        from sotrama.tp.validation import validate_linked_document_read_permission
+        from sotrama.tp.validation import (
+            validate_linked_document_read_permission,
+            validate_submitted_vehicle,
+        )
 
-        validate_linked_document_read_permission("Vehicle", self.vehicle)
-        vehicle_company = frappe.db.get_value("Vehicle", self.vehicle, "company")
+        vehicle = validate_submitted_vehicle(self.vehicle)
+        vehicle_company = vehicle.company
         if vehicle_company:
             from sotrama.tp.settings import validate_company_access
 

@@ -4,7 +4,9 @@ Test suite for Sotrama — Algerian Localization & TP Fleet Management.
 Run with: bench --site your-site run-tests --app sotrama
 """
 
+import ast
 import json
+import re
 import unittest
 import uuid
 from pathlib import Path
@@ -29,6 +31,51 @@ def _get_test_company():
     return company
 
 
+def _sotrama_package_path():
+    """Return the importable Sotrama package directory inside the app checkout."""
+    return Path(frappe.get_app_path("sotrama")) / "sotrama"
+
+
+def _delete_test_record(doctype, name):
+    """Remove test fixtures without weakening production delete/cancel rules."""
+    if not name or not frappe.db.exists(doctype, name):
+        return
+
+    if doctype == "Breakdown Incident":
+        linked_job_cards = frappe.get_all(
+            "Maintenance Job Card",
+            filters={"linked_breakdown_incident": name},
+            pluck="name",
+        )
+        for job_card_name in linked_job_cards:
+            _delete_test_record("Maintenance Job Card", job_card_name)
+
+    meta = frappe.get_meta(doctype)
+    for field in meta.fields:
+        if (
+            field.fieldtype == "Table"
+            and field.options
+            and frappe.db.table_exists(field.options)
+        ):
+            frappe.db.delete(
+                field.options, {"parent": name, "parenttype": doctype}
+            )
+
+    related_records = (
+        ("Comment", {"reference_doctype": doctype, "reference_name": name}),
+        ("Version", {"ref_doctype": doctype, "docname": name}),
+        ("ToDo", {"reference_type": doctype, "reference_name": name}),
+        ("DocShare", {"share_doctype": doctype, "share_name": name}),
+        ("File", {"attached_to_doctype": doctype, "attached_to_name": name}),
+    )
+    for related_doctype, filters in related_records:
+        if frappe.db.table_exists(related_doctype):
+            frappe.db.delete(related_doctype, filters)
+
+    frappe.db.delete(doctype, {"name": name})
+    frappe.clear_cache(doctype=doctype)
+
+
 class TestSotramaHooks(unittest.TestCase):
     """Protect against incompatible hook value shapes across installed apps."""
 
@@ -37,15 +84,30 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(todo_meta.has_field("description"))
         self.assertFalse(todo_meta.has_field("title"))
 
+    def test_frappe_16_has_permission_calls_do_not_pass_removed_print_logs(self):
+        offenders = []
+        for path in _sotrama_package_path().rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                if not isinstance(node.func, ast.Attribute):
+                    continue
+                if node.func.attr != "has_permission":
+                    continue
+                if any(keyword.arg == "print_logs" for keyword in node.keywords):
+                    offenders.append(f"{path}:{node.lineno}")
+        self.assertEqual(offenders, [])
+
     def test_app_install_does_not_trigger_an_unnecessary_yarn_install(self):
-        app_path = Path(frappe.get_app_path("sotrama")).parent
+        app_path = Path(frappe.get_app_path("sotrama"))
         self.assertFalse(
             (app_path / "package.json").exists(),
             "Sotrama has no Node dependencies; package.json makes Bench run Yarn and can dirty the Git checkout.",
         )
 
     def test_declared_patches_resolve_to_real_python_modules(self):
-        app_path = Path(frappe.get_app_path("sotrama")).parent
+        app_path = _sotrama_package_path()
         patch_file = app_path / "patches.txt"
         for line in patch_file.read_text(encoding="utf-8").splitlines():
             dotted_path = line.strip()
@@ -76,9 +138,22 @@ class TestSotramaHooks(unittest.TestCase):
         )
 
     def test_standard_workspace_exports_have_importable_names(self):
-        app_path = Path(frappe.get_app_path("sotrama")).parent
+        app_path = _sotrama_package_path()
         workspace_files = {
-            app_path / "sotrama" / "workspace" / "sotrama" / "sotrama.json": "Sotrama",
+            app_path
+            / "workspace"
+            / "sotrama"
+            / "sotrama.json": "Sotrama",
+            app_path
+            / "tp"
+            / "workspace"
+            / "sotrama_fleet"
+            / "sotrama_fleet.json": "Sotrama Fleet",
+            app_path
+            / "tp"
+            / "workspace"
+            / "fleet_management_reports"
+            / "fleet_management_reports.json": "Fleet Management Reports",
             app_path
             / "algerian_localization"
             / "workspace"
@@ -92,11 +167,313 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertTrue(workspace.get("name"), f"Missing import name in {path}")
             self.assertEqual(workspace["name"], expected_name)
 
+    def test_french_translation_catalog_is_valid_and_covers_fleet_workflows(self):
+        catalog_path = _sotrama_package_path() / "locale" / "fr.po"
+        catalog = catalog_path.read_text(encoding="utf-8")
+
+        for source, expected in (
+            ("Vehicle", "Véhicule"),
+            ("Technical Specifications", "Caractéristiques techniques"),
+            ("Driver / Operator", "Conducteur / opérateur"),
+            ("Fleet Cost Analysis", "Analyse des coûts du parc"),
+            (
+                "Registration Certificate",
+                "Certificat d'immatriculation (carte grise)",
+            ),
+            (
+                "Officially Confirmed Not Subject",
+                "Non soumis (confirmation officielle)",
+            ),
+        ):
+            self.assertIn(f'msgid "{source}"\nmsgstr "{expected}"', catalog)
+
+    def test_frappe_loads_compiled_french_translations_when_available(self):
+        translation_path = Path(
+            frappe.get_site_path("assets", "locale", "fr", "LC_MESSAGES", "sotrama.mo")
+        )
+        if not translation_path.is_file():
+            self.skipTest("French translations have not been compiled on this site.")
+
+        self.assertEqual(frappe._("Vehicle", lang="fr"), "Véhicule")
+        self.assertEqual(
+            frappe._("Registration Certificate", lang="fr"),
+            "Certificat d'immatriculation (carte grise)",
+        )
+        self.assertEqual(
+            frappe._("VEHICLE INSPECTION", lang="fr"), "CONTRÔLE DU VÉHICULE"
+        )
+
+    def test_french_catalog_covers_custom_doctype_labels_options_and_ui_messages(self):
+        package_path = _sotrama_package_path()
+        from babel.messages.pofile import read_po
+
+        catalog_path = package_path / "locale" / "fr.po"
+        with catalog_path.open("rb") as source_file:
+            catalog = read_po(source_file)
+        translations = {
+            message.id: message.string for message in catalog if message.id
+        }
+        msgids = set(translations)
+
+        def assert_translated(message, description):
+            self.assertIn(message, msgids, description)
+            translation = translations[message]
+            self.assertTrue(translation, f"Empty French translation: {description}")
+
+        non_translatable_options = {
+            "A1",
+            "A",
+            "B",
+            "B(E)",
+            "C1",
+            "C1(E)",
+            "C",
+            "C(E)",
+            "D",
+            "D(E)",
+            "F",
+            "m²",
+            "m³",
+            "t",
+            "km",
+        }
+
+        for path in package_path.rglob("*.json"):
+            try:
+                definition = json.loads(path.read_text(encoding="utf-8-sig"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if definition.get("doctype") == "DocType" and definition.get("description"):
+                assert_translated(
+                    definition["description"],
+                    f"French DocType description: {path}",
+                )
+            for field in definition.get("fields", []):
+                label = field.get("label")
+                if label:
+                    assert_translated(label, f"French label: {path}:{label}")
+                if field.get("description"):
+                    assert_translated(
+                        field["description"],
+                        f"French field description: {path}:{field.get('fieldname')}",
+                    )
+                if field.get("fieldtype") == "Select" and field.get("options"):
+                    for option in field["options"].splitlines():
+                        if option and option not in non_translatable_options:
+                            assert_translated(
+                                option, f"French option: {path}:{option}"
+                            )
+            if any(
+                part in {"workspace", "report", "dashboard", "notification"}
+                for part in path.parts
+            ):
+                def check_workspace_and_report_labels(value, location, path=path):
+                    if isinstance(value, dict):
+                        for key, child in value.items():
+                            if key in {"label", "title", "description"} and isinstance(
+                                child, str
+                            ) and child:
+                                assert_translated(
+                                    child,
+                                    f"French workspace/report text: {path}:{location}/{key}",
+                                )
+                            check_workspace_and_report_labels(
+                                child, f"{location}/{key}"
+                            )
+                    elif isinstance(value, list):
+                        for index, child in enumerate(value):
+                            check_workspace_and_report_labels(
+                                child, f"{location}/{index}"
+                            )
+
+                check_workspace_and_report_labels(definition, "root")
+        for path in package_path.rglob("print_format/**/*.json"):
+            definition = json.loads(path.read_text(encoding="utf-8-sig"))
+            format_data = definition.get("format_data")
+            if not format_data:
+                continue
+            layout = json.loads(format_data)
+
+            def check_print_format_content(value, location, path=path):
+                if isinstance(value, dict):
+                    if value.get("label"):
+                        assert_translated(
+                            value["label"],
+                            f"French print-format label: {path}:{location}",
+                        )
+                    if value.get("text"):
+                        assert_translated(
+                            value["text"],
+                            f"French print-format text: {path}:{location}",
+                        )
+                    if value.get("fieldtype") == "Select" and value.get("options"):
+                        for option in value["options"].splitlines():
+                            if option and option not in non_translatable_options:
+                                assert_translated(
+                                    option,
+                                    f"French print-format option: {path}:{location}",
+                                )
+                    for key, child in value.items():
+                        check_print_format_content(child, f"{location}/{key}")
+                elif isinstance(value, list):
+                    for index, child in enumerate(value):
+                        check_print_format_content(child, f"{location}/{index}")
+
+            check_print_format_content(layout, "format_data")
+
+        for path in package_path.rglob("*.js"):
+            source = path.read_text(encoding="utf-8-sig")
+            for quote, literal in re.findall(r"__\(\s*(['\"])(.*?)\1", source, re.DOTALL):
+                message = ast.literal_eval(f"{quote}{literal}{quote}")
+                assert_translated(message, f"French JavaScript message: {path}:{message}")
+
+        for path in package_path.rglob("*.py"):
+            source = path.read_text(encoding="utf-8-sig")
+            for quote, literal in re.findall(r"_\(\s*(['\"])(.*?)\1", source, re.DOTALL):
+                message = ast.literal_eval(f"{quote}{literal}{quote}")
+                if message == "and ":
+                    continue
+                assert_translated(message, f"French Python message: {path}:{message}")
+
+    def test_primary_fleet_forms_keep_core_sections_open_and_details_collapsed(self):
+        sections = {
+            "Vehicle": {
+                "open": ("section_vehicle_identity",),
+                "collapsed": (
+                    "section_specs",
+                    "section_acquisition",
+                    "section_assignment",
+                    "section_documents",
+                ),
+                "single_tab": True,
+            },
+            "Breakdown Incident": {
+                "open": ("section_incident",),
+                "collapsed": ("section_resolution", "section_evidence"),
+                "single_tab": True,
+            },
+            "Maintenance Job Card": {
+                "open": ("section_work_order",),
+                "collapsed": (
+                    "section_diagnosis",
+                    "section_execution",
+                    "section_cost_summary",
+                    "section_parts",
+                    "section_attachments",
+                ),
+                "single_tab": True,
+            },
+            "Maintenance Schedule": {
+                "open": ("section_plan",),
+                "collapsed": ("section_last_service", "section_notes"),
+                "single_tab": True,
+            },
+            "Operational Task": {
+                "open": ("section_assignment",),
+                "collapsed": ("section_time", "section_output"),
+                "single_tab": True,
+            },
+            "Vehicle Inspection": {
+                "open": ("section_inspection", "section_inspection_results"),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Driver": {
+                "open": (
+                    "section_driver_identity",
+                    "section_licence",
+                    "section_contact",
+                ),
+                "collapsed": ("section_restricted_compliance",),
+                "single_tab": False,
+            },
+            "Vehicle Document": {
+                "open": ("section_vehicle_document",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Vehicle Make": {
+                "open": ("section_make",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Vehicle Model": {
+                "open": ("section_model",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Company Classification": {
+                "open": ("section_certificate",),
+                "collapsed": (
+                    "section_workforce",
+                    "section_resources",
+                    "section_execution",
+                ),
+                "single_tab": False,
+            },
+            "Breakdown Photo": {
+                "open": ("section_breakdown_photo",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Inspection Item": {
+                "open": ("section_checklist_item",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Job Card Labour": {
+                "open": ("section_labour_details",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Job Card Other Cost": {
+                "open": ("section_other_cost",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Job Card Part": {
+                "open": ("section_part_details",),
+                "collapsed": ("section_part_traceability",),
+                "single_tab": False,
+            },
+            "Job Card Photo": {
+                "open": ("section_job_photo",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "Maintenance Job Type": {
+                "open": ("section_job_type",),
+                "collapsed": (),
+                "single_tab": False,
+            },
+            "TP Settings": {
+                "open": ("section_company_defaults",),
+                "collapsed": (
+                    "section_company_matrix",
+                    "section_employee_policy",
+                    "section_alert_windows",
+                ),
+                "single_tab": False,
+            },
+        }
+        for doctype, expected in sections.items():
+            meta = frappe.get_meta(doctype, cached=False)
+            tabs = [field.fieldname for field in meta.fields if field.fieldtype == "Tab Break"]
+            if expected["single_tab"]:
+                self.assertEqual(len(tabs), 1, doctype)
+            for fieldname in expected["open"]:
+                self.assertFalse(meta.get_field(fieldname).collapsible, f"{doctype}.{fieldname}")
+            for fieldname in expected["collapsed"]:
+                self.assertTrue(meta.get_field(fieldname).collapsible, f"{doctype}.{fieldname}")
+
     def test_role_profiles_use_frappe_importable_doctype_sync(self):
         importable_doctypes = frappe.get_hooks(
             "importable_doctypes", app_name="sotrama"
         )
         self.assertIn("Role Profile", importable_doctypes)
+        role_profile_meta = frappe.get_meta("Role Profile", cached=False)
+        self.assertTrue(role_profile_meta.has_field("role_profile"))
+        self.assertFalse(role_profile_meta.has_field("role_profile_name"))
         for profile in ("Fleet Manager", "Workshop", "Driver"):
             self.assertTrue(frappe.db.exists("Role Profile", profile))
 
@@ -186,8 +563,8 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(
             calls,
             [
-                "driver_files",
                 "unsafe_fleet_docshares",
+                "driver_files",
                 "fleet_todos",
                 "company_nif",
                 "company_nif_hidden",
@@ -546,6 +923,7 @@ class TestSotramaHooks(unittest.TestCase):
         with (
             patch("sotrama.setup.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)),
             patch("frappe.get_all", return_value=["GERANT"]),
+            patch("frappe.has_permission", return_value=True),
             patch("frappe.new_doc") as new_doc,
         ):
             self.assertEqual(ensure_public_works_designations(), [])
@@ -634,8 +1012,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("Sotrama Settings", doctype_js)
         self.assertTrue(
             (
-                Path(frappe.get_app_path("sotrama")).parent
-                / "public/js/sotrama_settings.js"
+                _sotrama_package_path() / "public/js/sotrama_settings.js"
             ).is_file()
         )
 
@@ -778,6 +1155,25 @@ class TestSotramaHooks(unittest.TestCase):
                 f"{role} must not read or write global per-Company defaults.",
             )
 
+    def test_hidden_legacy_company_classification_defaults_do_not_block_settings(self):
+        from sotrama.tp.doctype.tp_settings.tp_settings import TPSettings
+
+        settings = frappe.new_doc("TP Settings")
+        settings.default_company_classification = "LEGACY-EXPIRED-CLASSIFICATION"
+        with (
+            patch.object(settings, "_validate_company_defaults_permissions"),
+            patch.object(settings, "_validate_company_defaults"),
+        ):
+            settings.validate()
+
+        row = frappe._dict(
+            company="COMPANY-A",
+            active=1,
+            company_classification="LEGACY-EXPIRED-CLASSIFICATION",
+            idx=1,
+        )
+        TPSettings._validate_company_defaults(frappe._dict(company_defaults=[row]))
+
         company_defaults = frappe.get_meta("TP Company Defaults", cached=False)
         self.assertTrue(company_defaults.istable)
         for fieldname in (
@@ -838,7 +1234,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(labour_meta.get_field("mechanic_name").in_list_view)
 
         script = (
-            Path(frappe.get_app_path("sotrama")).parent / "public/js/job_card.js"
+            _sotrama_package_path() / "public/js/job_card.js"
         ).read_text(encoding="utf-8")
         for action in (
             "Add Spare Part (Item)",
@@ -860,12 +1256,11 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertNotIn("frappe.db.get_value('Employee'", script)
 
         inspection_script = (
-            Path(frappe.get_app_path("sotrama")).parent / "public/js/inspection.js"
+            _sotrama_package_path() / "public/js/inspection.js"
         ).read_text(encoding="utf-8")
         self.assertIn("target_doctype: 'Vehicle Inspection'", inspection_script)
         task_script = (
-            Path(frappe.get_app_path("sotrama")).parent
-            / "public/js/operational_task.js"
+            _sotrama_package_path() / "public/js/operational_task.js"
         ).read_text(encoding="utf-8")
         self.assertIn("target_doctype: 'Operational Task'", task_script)
 
@@ -964,7 +1359,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("Defective", status.options.splitlines())
 
         script = (
-            Path(frappe.get_app_path("sotrama")).parent / "public/js/inspection.js"
+            _sotrama_package_path() / "public/js/inspection.js"
         ).read_text(encoding="utf-8")
         self.assertIn("Add Inspection Check", script)
         self.assertIn("row.status = 'Not Checked'", script)
@@ -1015,10 +1410,16 @@ class TestSotramaHooks(unittest.TestCase):
             docstatus=1,
             has_critical_defect=1,
             vehicle="VEH-TEST-001",
+            company="SOTRAMA-TEST-COMPANY",
             critical_defect_cleared_by=None,
         )
         with (
-            patch("frappe.db.get_value", return_value="SOTRAMA-TEST-COMPANY"),
+            patch(
+                "sotrama.tp.validation.validate_submitted_vehicle",
+                return_value=frappe._dict(
+                    company="SOTRAMA-TEST-COMPANY", docstatus=1
+                ),
+            ),
             patch("frappe.has_permission", return_value=True),
             patch("frappe.get_doc", return_value=previous),
         ):
@@ -1077,7 +1478,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(status_field.read_only_depends_on, "eval:doc.docstatus == 1")
 
         script = (
-            Path(frappe.get_app_path("sotrama")).parent / "public/js/driver.js"
+            _sotrama_package_path() / "public/js/driver.js"
         ).read_text(encoding="utf-8")
         self.assertIn("frappe.user.has_role('HR Manager')", script)
         self.assertIn("set_df_property('employee', 'read_only'", script)
@@ -1203,11 +1604,11 @@ class TestSotramaHooks(unittest.TestCase):
         )
         activities = set((field.options or "").splitlines())
         for activity in (
-            "Transport collectif de personnes",
-            "Transport scolaire",
-            "Transport de marchandises",
-            "Transport de matières dangereuses",
-            "Transport par taxi",
+            "Collective Passenger Transport",
+            "School Transport",
+            "Goods Transport",
+            "Dangerous Goods Transport",
+            "Taxi Transport",
         ):
             self.assertIn(activity, activities)
 
@@ -1228,7 +1629,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.license_number = "LIC-001"
@@ -1239,7 +1640,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.license_class = "C"
@@ -1250,7 +1651,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
     def test_regulated_transport_always_requires_a_current_licence_when_optional_compliance_policy_is_disabled(
@@ -1272,7 +1673,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.license_number = "12345678"
@@ -1281,7 +1682,7 @@ class TestSotramaHooks(unittest.TestCase):
             patch("frappe.get_doc", return_value=driver),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
     def test_regulated_transport_requires_current_certificate_and_screening_when_policy_is_enabled(
@@ -1303,7 +1704,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.professional_certificate_number = "BP-TEST-001"
@@ -1313,7 +1714,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.compliance_records = [
@@ -1337,7 +1738,7 @@ class TestSotramaHooks(unittest.TestCase):
             patch("frappe.get_doc", return_value=driver),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
         driver.compliance_records[0].test_date = add_days(today(), 1)
@@ -1347,7 +1748,7 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             validate_professional_transport_certificate(
-                "DRV-TEST-001", "Transport de marchandises"
+                "DRV-TEST-001", "Goods Transport"
             )
 
     def test_inspection_child_records_safety_and_issue_links(self):
@@ -1459,12 +1860,13 @@ class TestSotramaHooks(unittest.TestCase):
 
         visible_vehicle = frappe._dict(
             name="VEH-REPORT-A",
+            docstatus=1,
             license_plate="REPORT-A",
             company="COMPANY-A",
         )
         visible_document = frappe._dict(
             parent="VEH-REPORT-A",
-            document_type="Insurance",
+            document_type="Insurance Certificate",
             expiry_date=add_days(today(), 5),
             status="Active",
         )
@@ -1477,16 +1879,30 @@ class TestSotramaHooks(unittest.TestCase):
                 frappe, "get_list", return_value=[visible_vehicle]
             ) as get_list,
             patch.object(frappe, "get_all", return_value=[visible_document]) as get_all,
+            patch(
+                "sotrama.tp.report.upcoming_document_expiries.upcoming_document_expiries._",
+                side_effect=lambda message: (
+                    "Certificat d'assurance"
+                    if message == "Insurance Certificate"
+                    else message
+                ),
+            ),
         ):
             rows = get_data(frappe._dict(company="COMPANY-A", vehicle="VEH-REPORT-A"))
 
         self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["document_type"], "Certificat d'assurance")
         vehicle_filters = get_list.call_args.kwargs["filters"]
+        self.assertIn(["docstatus", "=", 1], vehicle_filters)
         self.assertIn(["company", "=", "COMPANY-A"], vehicle_filters)
         self.assertIn(["name", "=", "VEH-REPORT-A"], vehicle_filters)
         self.assertEqual(
             get_all.call_args.kwargs["filters"]["parent"],
             ["in", ["VEH-REPORT-A"]],
+        )
+        self.assertEqual(
+            get_all.call_args.kwargs["filters"]["parentfield"],
+            "vehicle_documents",
         )
 
     def test_fleet_cost_report_scopes_aggregates_to_permission_visible_vehicles(self):
@@ -1494,6 +1910,7 @@ class TestSotramaHooks(unittest.TestCase):
 
         visible_vehicle = frappe._dict(
             name="VEH-COST-A",
+            docstatus=1,
             license_plate="COST-A",
             company="COMPANY-A",
             acquisition_date=None,
@@ -1518,9 +1935,54 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         calls = get_list.call_args_list
         self.assertEqual(calls[0].args[0], "Vehicle")
+        self.assertIn(["docstatus", "=", 1], calls[0].kwargs["filters"])
         self.assertIn(["company", "=", "COMPANY-A"], calls[0].kwargs["filters"])
         for call in calls[1:]:
             self.assertIn(["vehicle", "in", ["VEH-COST-A"]], call.kwargs["filters"])
+
+    def test_fleet_cost_report_uses_frappe_16_aggregate_field_syntax(self):
+        # Exercise the real Frappe 16 query parser, not just mocked get_list calls.
+        maintenance_rows = frappe.get_list(
+            "Maintenance Job Card",
+            fields=[
+                "vehicle",
+                {"SUM": "total_parts_cost", "as": "parts_cost"},
+                {"SUM": "total_labour_cost", "as": "labour_cost"},
+                {"SUM": "total_other_cost", "as": "other_cost"},
+            ],
+            filters={"name": "__sotrama_missing_maintenance_job_card__"},
+            group_by="vehicle",
+            limit_page_length=0,
+        )
+        distance_rows = frappe.get_list(
+            "Operational Task",
+            fields=["vehicle", {"SUM": "distance_covered", "as": "distance_km"}],
+            filters={"name": "__sotrama_missing_operational_task__"},
+            group_by="vehicle",
+            limit_page_length=0,
+        )
+
+        self.assertEqual(maintenance_rows, [])
+        self.assertEqual(distance_rows, [])
+
+    def test_fleet_cost_report_depreciation_counts_inclusive_single_day_period(self):
+        from sotrama.tp.report.fleet_cost_analysis.fleet_cost_analysis import (
+            _estimate_depreciation,
+        )
+
+        report_date = today()
+        vehicle = frappe._dict(
+            acquisition_date=report_date,
+            acquisition_value=365000,
+            depreciation_rate=10,
+            salvage_value=0,
+        )
+        depreciation = _estimate_depreciation(
+            vehicle,
+            frappe._dict(from_date=report_date, to_date=report_date),
+        )
+
+        self.assertEqual(depreciation, 100)
 
     def test_fleet_print_formats_use_the_frappe_16_builder(self):
         import json
@@ -1529,6 +1991,10 @@ class TestSotramaHooks(unittest.TestCase):
             ("Maintenance Job Card Report", "Maintenance Job Card"),
             ("Vehicle Inspection Report", "Vehicle Inspection"),
         )
+
+        def normalized_options(options):
+            return [option for option in (options or "").splitlines() if option]
+
         for name, doctype in formats:
             print_format = frappe.get_doc("Print Format", name)
             self.assertEqual(print_format.doc_type, doctype)
@@ -1567,7 +2033,12 @@ class TestSotramaHooks(unittest.TestCase):
                             f"{name}: unknown field {doctype}.{field['fieldname']}",
                         )
                         self.assertEqual(field.get("fieldtype"), docfield.fieldtype)
-                        if docfield.options:
+                        if docfield.fieldtype == "Select" and docfield.options:
+                            self.assertEqual(
+                                normalized_options(field.get("options")),
+                                normalized_options(docfield.options),
+                            )
+                        elif docfield.options:
                             self.assertEqual(field.get("options"), docfield.options)
                         if field.get("fieldtype") == "Table":
                             self.assertEqual(docfield.fieldtype, "Table")
@@ -1584,7 +2055,15 @@ class TestSotramaHooks(unittest.TestCase):
                                 self.assertEqual(
                                     table_column.get("fieldtype"), child_field.fieldtype
                                 )
-                                if child_field.options:
+                                if (
+                                    child_field.fieldtype == "Select"
+                                    and child_field.options
+                                ):
+                                    self.assertEqual(
+                                        normalized_options(table_column.get("options")),
+                                        normalized_options(child_field.options),
+                                    )
+                                elif child_field.options:
                                     self.assertEqual(
                                         table_column.get("options"), child_field.options
                                     )
@@ -1856,7 +2335,7 @@ class TestSotramaHooks(unittest.TestCase):
             patch(
                 f"{module}.frappe.db.get_value",
                 side_effect=[
-                    "SOTRAMA-TEST-COMPANY",
+                    frappe._dict(company="SOTRAMA-TEST-COMPANY", docstatus=1),
                     frappe._dict(company="SOTRAMA-TEST-COMPANY", status="Suspended"),
                 ],
             ),
@@ -1871,7 +2350,7 @@ class TestSotramaHooks(unittest.TestCase):
             patch(
                 f"{module}.frappe.db.get_value",
                 side_effect=[
-                    "SOTRAMA-TEST-COMPANY",
+                    frappe._dict(company="SOTRAMA-TEST-COMPANY", docstatus=1),
                     frappe._dict(company="SOTRAMA-TEST-COMPANY", status="Suspended"),
                 ],
             ),
@@ -2155,6 +2634,8 @@ class TestSotramaHooks(unittest.TestCase):
             BreakdownIncident.before_cancel(incident)
 
         incident.status = "Resolved"
+        incident.resolution_date = today()
+        incident.resolution_notes = "Test resolution"
         with patch.object(incident, "_restore_vehicle_status"):
             BreakdownIncident.before_cancel(incident)
 
@@ -2266,7 +2747,7 @@ class TestSotramaHooks(unittest.TestCase):
             is_remote_file=False,
         )
         with (
-            patch("frappe.session.user", "fleet@example.com"),
+            patch.dict(frappe.session, {"user": "fleet@example.com"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -2437,12 +2918,12 @@ class TestSotramaHooks(unittest.TestCase):
         file_doc = TestFile()
         with (
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
-            patch("frappe.session.user", "fleet@example.com"),
+            patch.dict(frappe.session, {"user": "fleet@example.com"}),
         ):
             self.assertFalse(file_doc.is_downloadable())
         with (
             patch("frappe.get_roles", return_value=["HR Manager"]),
-            patch("frappe.session.user", "hr@example.com"),
+            patch.dict(frappe.session, {"user": "hr@example.com"}),
             patch(
                 "sotrama.permissions.can_access_driver_private_attachment",
                 return_value=True,
@@ -2454,7 +2935,7 @@ class TestSotramaHooks(unittest.TestCase):
         file_doc.sotrama_private_driver_attachment = 1
         with (
             patch("frappe.get_roles", return_value=["Workshop"]),
-            patch("frappe.session.user", "workshop@example.com"),
+            patch.dict(frappe.session, {"user": "workshop@example.com"}),
         ):
             self.assertFalse(file_doc.is_downloadable())
 
@@ -2712,7 +3193,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn(
             "Fleet Cost Analysis", {row.link_to for row in manager_workspace.links}
         )
-        self.assertIn(
+        self.assertNotIn(
             "Company Classification", {row.link_to for row in manager_workspace.links}
         )
         sidebar = frappe.get_doc("Sidebar", "TP")
@@ -2773,7 +3254,7 @@ class TestSotramaHooks(unittest.TestCase):
             allowed_dashboards={},
         )
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch(
                 "frappe.has_permission",
                 side_effect=lambda doctype: doctype in {"Driver", "TP Settings"},
@@ -2797,7 +3278,7 @@ class TestSotramaHooks(unittest.TestCase):
             allowed_dashboards={},
         )
         with (
-            patch("frappe.session.user", "accounts@example.invalid"),
+            patch.dict(frappe.session, {"user": "accounts@example.invalid"}),
             patch("frappe.has_permission", return_value=False),
         ):
             self.assertFalse(is_item_allowed("Driver", "DocType", accounts_context))
@@ -3051,7 +3532,7 @@ class TestSotramaHooks(unittest.TestCase):
             patch.object(
                 settings.frappe,
                 "has_permission",
-                side_effect=[True, True, False, True, True, True],
+                side_effect=[True, True, True, True, True],
             ),
             patch.object(
                 settings,
@@ -3065,11 +3546,11 @@ class TestSotramaHooks(unittest.TestCase):
         ):
             result = settings.get_tp_company_defaults("SOTRAMA")
 
-        self.assertIsNone(result["default_company_classification"])
+        self.assertNotIn("default_company_classification", result)
         self.assertEqual(result["default_department"], "default_department")
         self.assertEqual(result["default_cost_center"], "default_cost_center")
         self.assertEqual(result["default_parts_warehouse"], "default_parts_warehouse")
-        self.assertEqual(validate_company.call_count, 4)
+        self.assertEqual(validate_company.call_count, 3)
 
     def test_validate_company_access_uses_user_permissions_without_company_read_permission(
         self,
@@ -3492,9 +3973,13 @@ class TestSotramaCustomFields(unittest.TestCase):
             {
                 "dt": "Company",
                 "fieldname": [
-                    field["fieldname"] for field in hooks.get_custom_fields()["Company"]
-                ]
-                + ["custom_nif", "custom_algerian_registration_section"],
+                    "in",
+                    [
+                        field["fieldname"]
+                        for field in hooks.get_custom_fields()["Company"]
+                    ]
+                    + ["custom_nif", "custom_algerian_registration_section"],
+                ],
             },
         )
         self.assertEqual(set_value.call_count, 5)
@@ -3528,15 +4013,6 @@ class TestVehicle(unittest.TestCase):
     def setUp(self):
         """Create test dependencies."""
         self.company = _get_test_company()
-        # Create a Company Classification
-        self.classification = frappe.new_doc("Company Classification")
-        self.classification.company = self.company
-        self.classification.grade = 8
-        self.classification.category = "TP (Travaux Publics)"
-        self.classification.registration_number = "TEST-CLAS-001"
-        self.classification.insert(ignore_permissions=True)
-        self.classification.submit()
-
         # Create a Vehicle Make
         self.make = frappe.new_doc("Vehicle Make")
         self.make.make_name = "Test Make"
@@ -3553,18 +4029,11 @@ class TestVehicle(unittest.TestCase):
         if getattr(self, "created_vehicle", None) and frappe.db.exists(
             "Vehicle", self.created_vehicle
         ):
-            frappe.delete_doc("Vehicle", self.created_vehicle, ignore_permissions=True)
+            _delete_test_record("Vehicle", self.created_vehicle)
         for doctype in ["Vehicle Model", "Vehicle Make"]:
             for name in frappe.get_all(doctype, pluck="name"):
                 if name.startswith("Test"):
-                    frappe.delete_doc(doctype, name, ignore_on_trash=True)
-        if frappe.db.exists("Company Classification", self.classification.name):
-            frappe.get_doc("Company Classification", self.classification.name).cancel()
-            frappe.delete_doc(
-                "Company Classification",
-                self.classification.name,
-                ignore_permissions=True,
-            )
+                    _delete_test_record(doctype, name)
 
     def test_vehicle_creation_with_required_fields(self):
         """Test that a Vehicle can be created with all required fields."""
@@ -3583,23 +4052,612 @@ class TestVehicle(unittest.TestCase):
         vehicle.current_odometer = 50000.0
         vehicle.acquisition_date = today()
         vehicle.acquisition_value = 2000000
-        vehicle.company_classification = self.classification.name
         vehicle.insert()
         self.created_vehicle = vehicle.name
 
         self.assertEqual(vehicle.vehicle_status, "Active")
         self.assertEqual(vehicle.fuel_type, "Diesel")
         self.assertEqual(vehicle.license_plate, "TEST-001")
+        self.assertFalse(vehicle.company_classification)
+
+        vehicle_meta = frappe.get_meta("Vehicle", cached=False)
+        self.assertTrue(vehicle_meta.get_field("company_classification").hidden)
+        self.assertFalse(vehicle_meta.get_field("company_classification").reqd)
+        self.assertFalse(vehicle_meta.get_field("section_vehicle_identity").collapsible)
+        for section in (
+            "section_specs",
+            "section_acquisition",
+            "section_assignment",
+            "section_documents",
+        ):
+            self.assertTrue(vehicle_meta.get_field(section).collapsible, section)
+        self.assertEqual(
+            [field.fieldname for field in vehicle_meta.fields if field.fieldtype == "Tab Break"],
+            ["tab_vehicle_identity"],
+        )
 
         # Cleanup
-        frappe.delete_doc("Vehicle", vehicle.name, ignore_on_trash=True)
+        _delete_test_record("Vehicle", vehicle.name)
+
+    def test_vehicle_registration_or_fleet_number_is_unique_within_company(self):
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = "DUPLICATE-FLEET-001"
+        vehicle.vehicle_category = "Truck"
+        vehicle.insert(ignore_permissions=True)
+
+        duplicate = frappe.new_doc("Vehicle")
+        duplicate.company = self.company
+        duplicate.license_plate = "DUPLICATE-FLEET-001"
+        duplicate.vehicle_category = "Truck"
+        with self.assertRaises(frappe.ValidationError):
+            duplicate.insert(ignore_permissions=True)
+
+        _delete_test_record("Vehicle", vehicle.name)
+
+    def test_vehicle_rejects_a_model_from_a_different_make(self):
+        other_make = frappe.new_doc("Vehicle Make")
+        other_make.make_name = f"Other Make {uuid.uuid4().hex[:6]}"
+        other_make.insert(ignore_permissions=True)
+
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = f"TEST-MODEL-{uuid.uuid4().hex[:6]}"
+        vehicle.vehicle_category = "Truck"
+        vehicle.vehicle_make = other_make.name
+        vehicle.model = self.model.name
+        with self.assertRaises(frappe.ValidationError):
+            vehicle.insert(ignore_permissions=True)
+
+        _delete_test_record("Vehicle Make", other_make.name)
+
+    def test_legacy_company_classification_reference_does_not_block_vehicle_edits(self):
+        classification = frappe.new_doc("Company Classification")
+        classification.company = self.company
+        classification.grade = 1
+        classification.category = "Public Works (TP)"
+        classification.registration_number = f"LEGACY-{uuid.uuid4().hex[:8]}"
+        classification.insert(ignore_permissions=True)
+
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = f"TEST-LEGACY-{uuid.uuid4().hex[:6]}"
+        vehicle.vehicle_category = "Truck"
+        vehicle.company_classification = classification.name
+        vehicle.insert(ignore_permissions=True)
+
+        self.assertEqual(vehicle.company_classification, classification.name)
+        classification.db_set("active", 0)
+        vehicle.license_plate = f"{vehicle.license_plate}-EDITED"
+        vehicle.save(ignore_permissions=True)
+        self.assertEqual(vehicle.company_classification, classification.name)
+        _delete_test_record("Vehicle", vehicle.name)
+        _delete_test_record("Company Classification", classification.name)
+
+    def test_vehicle_rejects_an_inactive_model(self):
+        self.model.db_set("active", 0)
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = f"TEST-INACTIVE-{uuid.uuid4().hex[:6]}"
+        vehicle.vehicle_category = "Truck"
+        vehicle.vehicle_make = self.make.name
+        vehicle.model = self.model.name
+        with self.assertRaises(frappe.ValidationError):
+            vehicle.insert(ignore_permissions=True)
+
+    def test_vehicle_model_cannot_use_an_inactive_make(self):
+        inactive_make = frappe.new_doc("Vehicle Make")
+        inactive_make.make_name = f"Inactive Make {uuid.uuid4().hex[:6]}"
+        inactive_make.active = 0
+        inactive_make.insert(ignore_permissions=True)
+        model = frappe.new_doc("Vehicle Model")
+        model.vehicle_make = inactive_make.name
+        model.model_name = f"Invalid Model {uuid.uuid4().hex[:6]}"
+        with self.assertRaises(frappe.ValidationError):
+            model.insert(ignore_permissions=True)
+
+        _delete_test_record("Vehicle Make", inactive_make.name)
+
+    def test_fleet_lookup_masters_do_not_require_submission(self):
+        for doctype in ("Vehicle Make", "Vehicle Model", "Maintenance Job Type"):
+            meta = frappe.get_meta(doctype, cached=False)
+            self.assertFalse(meta.is_submittable, doctype)
+            for permission in meta.permissions:
+                self.assertFalse(permission.submit, doctype)
+                self.assertFalse(permission.cancel, doctype)
+                self.assertFalse(permission.amend, doctype)
+        model_meta = frappe.get_meta("Vehicle Model", cached=False)
+        self.assertEqual(model_meta.title_field, "model_name")
+        self.assertFalse(model_meta.show_title_field_in_link)
+        self.assertTrue(model_meta.get_field("make").hidden)
+        make_meta = frappe.get_meta("Vehicle Make", cached=False)
+        self.assertEqual(make_meta.title_field, "make_name")
+        self.assertTrue(make_meta.show_title_field_in_link)
+        self.assertEqual(
+            frappe.get_meta("Vehicle", cached=False).title_field, "license_plate"
+        )
+        self.assertEqual(
+            frappe.get_meta("Driver", cached=False).title_field, "driver_name"
+        )
+        self.assertEqual(
+            frappe.get_meta("Maintenance Job Type", cached=False).title_field,
+            "job_type_name",
+        )
+
+    def test_vehicle_picker_queries_only_offer_submitted_vehicles(self):
+        for script_name in (
+            "operational_task.js",
+            "maintenance_schedule.js",
+            "job_card.js",
+            "inspection.js",
+            "breakdown.js",
+        ):
+            source = (
+                _sotrama_package_path() / "public" / "js" / script_name
+            ).read_text(encoding="utf-8")
+            self.assertRegex(
+                source,
+                r"(?s)frm\.set_query\('vehicle'.*?filters:\s*\{\s*docstatus:\s*1",
+                script_name,
+            )
+
+        inspection_js = (
+            _sotrama_package_path() / "public" / "js" / "inspection.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("const filters = { status: 'Active', docstatus: 1 }", inspection_js)
+
+        for script_name in ("maintenance_schedule.js", "job_card.js"):
+            source = (
+                _sotrama_package_path() / "public" / "js" / script_name
+            ).read_text(encoding="utf-8")
+            self.assertIn(
+                "frm.set_query('job_type', () => ({ filters: { active: 1 } }));",
+                source,
+            )
+
+    def test_same_vehicle_model_name_can_exist_under_different_makes(self):
+        duplicate_model = frappe.new_doc("Vehicle Model")
+        duplicate_model.vehicle_make = self.make.name
+        duplicate_model.model_name = self.model.model_name
+        with self.assertRaises(frappe.ValidationError):
+            duplicate_model.insert(ignore_permissions=True)
+
+        second_make = frappe.new_doc("Vehicle Make")
+        second_make.make_name = f"Second Make {uuid.uuid4().hex[:6]}"
+        second_make.insert(ignore_permissions=True)
+
+        second_model = frappe.new_doc("Vehicle Model")
+        second_model.vehicle_make = second_make.name
+        second_model.model_name = self.model.model_name
+        second_model.insert(ignore_permissions=True)
+
+        self.assertNotEqual(second_model.name, self.model.name)
+        self.assertEqual(second_model.model_name, self.model.model_name)
+        self.assertEqual(second_model.vehicle_make, second_make.name)
+
+        _delete_test_record("Vehicle Model", second_model.name)
+        _delete_test_record("Vehicle Make", second_make.name)
+
+    def test_legacy_vehicle_model_make_is_resolved_before_naming(self):
+        legacy_model = frappe.new_doc("Vehicle Model")
+        legacy_model.make = self.make.name
+        legacy_model.model_name = f"Legacy Model {uuid.uuid4().hex[:6]}"
+        legacy_model.insert(ignore_permissions=True)
+
+        self.assertEqual(legacy_model.vehicle_make, self.make.name)
+        self.assertTrue(legacy_model.name.startswith(f"{self.make.name}-"))
+        self.assertTrue(legacy_model.name.endswith(legacy_model.model_name))
+        _delete_test_record("Vehicle Model", legacy_model.name)
+
+    def test_inactive_make_does_not_block_unrelated_vehicle_edits(self):
+        alternate_model = frappe.new_doc("Vehicle Model")
+        alternate_model.vehicle_make = self.make.name
+        alternate_model.model_name = f"Alternate Model {uuid.uuid4().hex[:6]}"
+        alternate_model.insert(ignore_permissions=True)
+
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.license_plate = f"MAKE-TEST-{uuid.uuid4().hex[:6]}"
+        vehicle.company = self.company
+        vehicle.vehicle_category = "Truck"
+        vehicle.vehicle_make = self.make.name
+        vehicle.model = self.model.name
+        vehicle.insert(ignore_permissions=True)
+
+        self.make.db_set("active", 0)
+        vehicle.current_odometer = 100
+        vehicle.save(ignore_permissions=True)
+
+        vehicle.model = alternate_model.name
+        with self.assertRaises(frappe.ValidationError):
+            vehicle.save(ignore_permissions=True)
+
+        _delete_test_record("Vehicle", vehicle.name)
+        _delete_test_record("Vehicle Model", alternate_model.name)
+
+    def test_fleet_transactions_reject_draft_vehicle_links(self):
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.license_plate = f"DRAFT-TEST-{uuid.uuid4().hex[:6]}"
+        vehicle.company = self.company
+        vehicle.vehicle_category = "Truck"
+        vehicle.insert(ignore_permissions=True)
+
+        operations = (
+            (frappe.new_doc("Operational Task"), "_validate_vehicle"),
+            (frappe.new_doc("Maintenance Schedule"), "_set_company_from_vehicle"),
+            (frappe.new_doc("Maintenance Job Card"), "_set_company_and_cost_center"),
+            (frappe.new_doc("Vehicle Inspection"), "_set_company_from_vehicle"),
+            (frappe.new_doc("Breakdown Incident"), "_set_company_from_vehicle"),
+        )
+        for operation, method_name in operations:
+            operation.vehicle = vehicle.name
+            with self.subTest(doctype=operation.doctype), self.assertRaises(
+                frappe.ValidationError
+            ):
+                getattr(operation, method_name)()
+
+        vehicle.submit()
+        from sotrama.tp.validation import validate_submitted_vehicle
+
+        self.assertEqual(validate_submitted_vehicle(vehicle.name).docstatus, 1)
+        _delete_test_record("Vehicle", vehicle.name)
+
+    def test_fleet_reference_master_migration_normalizes_legacy_rows(self):
+        from sotrama.tp.patches.v1_3.simplify_fleet_reference_masters import (
+            execute,
+        )
+
+        legacy_make = frappe.new_doc("Vehicle Make")
+        legacy_make.make_name = f"Legacy Make {uuid.uuid4().hex[:6]}"
+        legacy_make.insert(ignore_permissions=True)
+        legacy_model = frappe.new_doc("Vehicle Model")
+        legacy_model.vehicle_make = legacy_make.name
+        legacy_model.model_name = f"Legacy Model {uuid.uuid4().hex[:6]}"
+        legacy_model.insert(ignore_permissions=True)
+        unresolved_model = frappe.new_doc("Vehicle Model")
+        unresolved_model.vehicle_make = legacy_make.name
+        unresolved_model.model_name = f"Unresolved Model {uuid.uuid4().hex[:6]}"
+        unresolved_model.insert(ignore_permissions=True)
+        broken_link_model = frappe.new_doc("Vehicle Model")
+        broken_link_model.vehicle_make = legacy_make.name
+        broken_link_model.model_name = f"Broken Link Model {uuid.uuid4().hex[:6]}"
+        broken_link_model.insert(ignore_permissions=True)
+
+        frappe.db.set_value(
+            "Vehicle Make", legacy_make.name, "docstatus", 1, update_modified=False
+        )
+        frappe.db.set_value(
+            "Vehicle Model",
+            legacy_model.name,
+            {"docstatus": 1, "vehicle_make": ""},
+            update_modified=False,
+        )
+        frappe.db.set_value(
+            "Vehicle Model",
+            unresolved_model.name,
+            {"docstatus": 1, "make": "Unknown Legacy Make", "vehicle_make": ""},
+            update_modified=False,
+        )
+        frappe.db.set_value(
+            "Vehicle Model",
+            broken_link_model.name,
+            {"docstatus": 1, "make": "Unknown Legacy Make", "vehicle_make": "Missing Make"},
+            update_modified=False,
+        )
+
+        cancelled_make = frappe.new_doc("Vehicle Make")
+        cancelled_make.make_name = f"Cancelled Make {uuid.uuid4().hex[:6]}"
+        cancelled_make.insert(ignore_permissions=True)
+        frappe.db.set_value(
+            "Vehicle Make", cancelled_make.name, "docstatus", 2, update_modified=False
+        )
+
+        legacy_job_type = frappe.new_doc("Maintenance Job Type")
+        legacy_job_type.job_category = "General"
+        legacy_job_type.job_type_name = f"Legacy Job Type {uuid.uuid4().hex[:6]}"
+        legacy_job_type.insert(ignore_permissions=True)
+        frappe.db.set_value(
+            "Maintenance Job Type",
+            legacy_job_type.name,
+            "docstatus",
+            1,
+            update_modified=False,
+        )
+
+        cancelled_job_type = frappe.new_doc("Maintenance Job Type")
+        cancelled_job_type.job_category = "General"
+        cancelled_job_type.job_type_name = f"Cancelled Job Type {uuid.uuid4().hex[:6]}"
+        cancelled_job_type.insert(ignore_permissions=True)
+        frappe.db.set_value(
+            "Maintenance Job Type",
+            cancelled_job_type.name,
+            "docstatus",
+            2,
+            update_modified=False,
+        )
+
+        with patch("frappe.log_error") as log_error:
+            execute()
+            execute()
+            self.assertEqual(log_error.call_count, 2)
+            self.assertIn(unresolved_model.name, log_error.call_args.args[0])
+            self.assertIn(broken_link_model.name, log_error.call_args.args[0])
+            self.assertEqual(
+                log_error.call_args.args[1],
+                "Unresolved Legacy Vehicle Model Makes",
+            )
+
+        self.assertEqual(frappe.db.get_value("Vehicle Make", legacy_make.name, "docstatus"), 0)
+        self.assertEqual(frappe.db.get_value("Vehicle Model", legacy_model.name, "docstatus"), 0)
+        self.assertEqual(
+            frappe.db.get_value("Vehicle Model", legacy_model.name, "vehicle_make"),
+            legacy_make.name,
+        )
+        self.assertEqual(
+            frappe.db.get_value("Vehicle Model", unresolved_model.name, "vehicle_make"),
+            "",
+        )
+        self.assertEqual(
+            frappe.db.get_value("Vehicle Model", unresolved_model.name, "docstatus"),
+            0,
+        )
+        self.assertEqual(
+            frappe.db.get_value("Vehicle Model", broken_link_model.name, "vehicle_make"),
+            "",
+        )
+        self.assertEqual(frappe.db.get_value("Vehicle Make", cancelled_make.name, "active"), 0)
+        self.assertEqual(
+            frappe.db.get_value("Maintenance Job Type", legacy_job_type.name, "docstatus"),
+            0,
+        )
+        self.assertEqual(
+            frappe.db.get_value("Maintenance Job Type", cancelled_job_type.name, "active"),
+            0,
+        )
+
+        _delete_test_record("Vehicle Model", legacy_model.name)
+        _delete_test_record("Vehicle Model", unresolved_model.name)
+        _delete_test_record("Vehicle Model", broken_link_model.name)
+        _delete_test_record("Vehicle Make", legacy_make.name)
+        _delete_test_record("Vehicle Make", cancelled_make.name)
+        _delete_test_record("Maintenance Job Type", legacy_job_type.name)
+        _delete_test_record("Maintenance Job Type", cancelled_job_type.name)
+
+    def test_vehicle_asset_link_requires_readable_submitted_same_company_asset(self):
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.asset = "ASSET-TEST-001"
+        asset = frappe._dict(
+            company=self.company,
+            status="Submitted",
+            docstatus=1,
+        )
+
+        with (
+            patch(
+                "sotrama.tp.validation.validate_linked_document_read_permission"
+            ) as check_read,
+            patch(
+                "sotrama.tp.settings.validate_company_access"
+            ) as check_company,
+            patch(
+                "sotrama.tp.doctype.vehicle.vehicle.frappe.db.get_value",
+                return_value=asset,
+            ),
+        ):
+            vehicle._validate_asset_link()
+
+        check_read.assert_called_once_with("Asset", "ASSET-TEST-001")
+        check_company.assert_called_once_with(self.company, "Asset")
+
+        asset.company = "OTHER-COMPANY"
+        with (
+            patch(
+                "sotrama.tp.validation.validate_linked_document_read_permission"
+            ),
+            patch("sotrama.tp.settings.validate_company_access"),
+            patch(
+                "sotrama.tp.doctype.vehicle.vehicle.frappe.db.get_value",
+                return_value=asset,
+            ),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            vehicle._validate_asset_link()
+
+        asset.company = self.company
+        asset.status = "Sold"
+        with (
+            patch(
+                "sotrama.tp.validation.validate_linked_document_read_permission"
+            ),
+            patch("sotrama.tp.doctype.vehicle.vehicle.frappe.db.get_value", return_value=asset),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            vehicle._validate_asset_link()
+
+    def test_vehicle_document_migration_consolidates_legacy_attachments_once(self):
+        from sotrama.tp.patches.v1_3.migrate_fleet_document_options import execute
+
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = f"TEST-DOC-{uuid.uuid4().hex[:8]}"
+        vehicle.registration_document = "/files/test-shared-document.pdf"
+        vehicle.insurance_document = "/files/test-shared-document.pdf"
+        vehicle.pollution_document = "/files/test-pollution.pdf"
+        vehicle.technical_document = "/files/test-technical.pdf"
+        vehicle.insert(ignore_permissions=True)
+        frappe.db.set_value(
+            "Vehicle", vehicle.name, "vehicle_category", "Grader", update_modified=False
+        )
+
+        legacy_row = frappe.get_doc(
+            {
+                "doctype": "Vehicle Document",
+                "parent": vehicle.name,
+                "parenttype": "Vehicle",
+                "parentfield": "vehicle_documents",
+                "idx": 1,
+                "document_type": "Carte d'immatriculation",
+                "attachment": "/files/test-existing-registration.pdf",
+                "status": "Pending",
+            }
+        )
+        legacy_row.db_insert()
+
+        legacy_task = frappe.new_doc("Operational Task")
+        legacy_task.task_type = "Transport"
+        legacy_task.transport_kind = "Transport de marchandises"
+        legacy_task.transport_basis = "Compte propre"
+        legacy_task.transport_regulatory_status = "À confirmer"
+        legacy_task.db_insert()
+
+        legacy_classification = frappe.new_doc("Company Classification")
+        legacy_classification.company = self.company
+        legacy_classification.grade = 1
+        legacy_classification.category = "TP (Travaux Publics)"
+        legacy_classification.registration_number = f"LEGACY-{uuid.uuid4().hex[:8]}"
+        legacy_classification.db_insert()
+
+        execute()
+        execute()
+
+        self.assertEqual(
+            frappe.db.get_value("Vehicle", vehicle.name, "vehicle_category"),
+            "Motor Grader",
+        )
+        self.assertEqual(
+            frappe.db.get_value("Operational Task", legacy_task.name, "transport_kind"),
+            "Goods Transport",
+        )
+        self.assertEqual(
+            frappe.db.get_value("Operational Task", legacy_task.name, "transport_basis"),
+            "Own-Account Transport",
+        )
+        self.assertEqual(
+            frappe.db.get_value(
+                "Operational Task", legacy_task.name, "transport_regulatory_status"
+            ),
+            "To Be Confirmed",
+        )
+        self.assertEqual(
+            frappe.db.get_value(
+                "Company Classification", legacy_classification.name, "category"
+            ),
+            "Public Works (TP)",
+        )
+
+        rows = frappe.get_all(
+            "Vehicle Document",
+            filters={"parent": vehicle.name, "parenttype": "Vehicle"},
+            fields=["document_type", "attachment"],
+            order_by="idx asc",
+        )
+        migrated = {(row.attachment, row.document_type) for row in rows}
+        self.assertEqual(len(rows), 5)
+        self.assertEqual(
+            migrated,
+            {
+                ("/files/test-existing-registration.pdf", "Registration Certificate"),
+                ("/files/test-shared-document.pdf", "Registration Certificate"),
+                ("/files/test-shared-document.pdf", "Insurance Certificate"),
+                ("/files/test-pollution.pdf", "Other Document"),
+                ("/files/test-technical.pdf", "Technical Inspection"),
+            },
+        )
+        _delete_test_record("Vehicle", vehicle.name)
+        _delete_test_record("Operational Task", legacy_task.name)
+        _delete_test_record("Company Classification", legacy_classification.name)
+
+    def test_vehicle_document_types_use_canonical_english_values(self):
+        options = frappe.get_meta("Vehicle Document", cached=False).get_field(
+            "document_type"
+        ).options.splitlines()
+        self.assertEqual(
+            [option for option in options if option],
+            [
+                "Registration Certificate",
+                "Insurance Certificate",
+                "Technical Inspection",
+                "Vehicle Tax Sticker",
+                "Transport Permit",
+                "Certificate of Conformity",
+                "Other Document",
+            ],
+        )
+        vehicle_meta = frappe.get_meta("Vehicle", cached=False)
+        for legacy_field in (
+            "registration_document",
+            "insurance_document",
+            "pollution_document",
+            "technical_document",
+        ):
+            self.assertTrue(vehicle_meta.get_field(legacy_field).hidden, legacy_field)
+
+    def test_vehicle_categories_cover_public_works_machinery(self):
+        meta = frappe.get_meta("Vehicle", cached=False)
+        category = meta.get_field("vehicle_category")
+        self.assertEqual(category.label, "Vehicle / Equipment Category")
+        options = set(category.options.splitlines())
+        self.assertTrue(
+            {
+                "Bulldozer",
+                "Dump Truck",
+                "Wheel Loader",
+                "Excavator",
+                "Backhoe Loader",
+                "Motor Grader",
+                "Road Roller",
+                "Asphalt Paver",
+                "Concrete Pump",
+                "Forklift",
+                "Other Equipment",
+            }.issubset(options)
+        )
+        self.assertEqual(meta.get_field("license_plate").label, "Registration / Fleet Number")
+        package_path = _sotrama_package_path()
+        vehicle_js = (package_path / "public" / "js" / "vehicle.js").read_text(
+            encoding="utf-8"
+        )
+        model_js = (
+            package_path / "public" / "js" / "vehicle_model.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("active: 1", vehicle_js)
+        self.assertIn("vehicle_make: frm.doc.vehicle_make", vehicle_js)
+        self.assertIn("active: 1", model_js)
+
+    def test_company_classification_is_optional_and_hidden_from_vehicle_workflow(self):
+        vehicle_field = frappe.get_meta("Vehicle", cached=False).get_field(
+            "company_classification"
+        )
+        settings_field = frappe.get_meta("TP Settings", cached=False).get_field(
+            "default_company_classification"
+        )
+        company_row_field = frappe.get_meta(
+            "TP Company Defaults", cached=False
+        ).get_field("company_classification")
+
+        self.assertTrue(vehicle_field.hidden)
+        self.assertFalse(vehicle_field.reqd)
+        self.assertTrue(settings_field.hidden)
+        self.assertTrue(company_row_field.hidden)
+        classification_options = set(
+            frappe.get_meta("Company Classification", cached=False)
+            .get_field("category")
+            .options.splitlines()
+        )
+        self.assertTrue(
+            {
+                "Public Works (TP)",
+                "Building and Public Works (BTP)",
+                "Hydraulics",
+                "Forestry",
+            }.issubset(classification_options)
+        )
 
     def test_vehicle_license_plate_required(self):
         """Test that License Plate is required."""
         vehicle = frappe.new_doc("Vehicle")
         vehicle.company = self.company
         vehicle.vehicle_category = "Truck"
-        vehicle.company_classification = self.classification.name
         with self.assertRaises(frappe.ValidationError):
             vehicle.insert()
 
@@ -3609,7 +4667,6 @@ class TestVehicle(unittest.TestCase):
         vehicle.company = self.company
         vehicle.license_plate = "TEST-002"
         vehicle.vehicle_category = "Truck"
-        vehicle.company_classification = self.classification.name
         vehicle.chassis_no = "SHORT"
         with self.assertRaises(frappe.ValidationError):
             vehicle.insert()
@@ -3646,20 +4703,12 @@ class TestMaintenanceJobCard(unittest.TestCase):
     def setUp(self):
         """Create test dependencies."""
         self.company = _get_test_company()
-        self.classification = frappe.new_doc("Company Classification")
-        self.classification.company = self.company
-        self.classification.grade = 8
-        self.classification.category = "TP (Travaux Publics)"
-        self.classification.registration_number = "TEST-CLAS-002"
-        self.classification.insert(ignore_permissions=True)
-        self.classification.submit()
-
         self.vehicle = frappe.new_doc("Vehicle")
         self.vehicle.company = self.company
         self.vehicle.license_plate = "TEST-MAIN-001"
         self.vehicle.vehicle_category = "Truck"
-        self.vehicle.company_classification = self.classification.name
         self.vehicle.insert()
+        self.vehicle.submit()
 
         item_group = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
         stock_uom = (
@@ -3675,6 +4724,7 @@ class TestMaintenanceJobCard(unittest.TestCase):
                 "item_group": item_group,
                 "stock_uom": stock_uom,
                 "is_stock_item": 1,
+                "uoms": [{"uom": stock_uom, "conversion_factor": 1}],
             }
         ).insert(ignore_permissions=True)
 
@@ -3741,14 +4791,7 @@ class TestMaintenanceJobCard(unittest.TestCase):
 
     def tearDown(self):
         if frappe.db.exists("Vehicle", self.vehicle.name):
-            frappe.delete_doc("Vehicle", self.vehicle.name, ignore_permissions=True)
-        if frappe.db.exists("Company Classification", self.classification.name):
-            frappe.get_doc("Company Classification", self.classification.name).cancel()
-            frappe.delete_doc(
-                "Company Classification",
-                self.classification.name,
-                ignore_permissions=True,
-            )
+            _delete_test_record("Vehicle", self.vehicle.name)
         if frappe.db.exists("Item", self.item.name):
             frappe.delete_doc("Item", self.item.name, ignore_permissions=True)
 
@@ -3900,7 +4943,7 @@ class TestCompanyClassification(unittest.TestCase):
         classification = frappe.new_doc("Company Classification")
         classification.company = _get_test_company()
         classification.grade = 8
-        classification.category = "TP (Travaux Publics)"
+        classification.category = "Public Works (TP)"
         classification.registration_number = "TEST-GRADE-8"
         # Set scores that should total in Grade 8 range
         classification.effectif_score = 8
@@ -3942,13 +4985,7 @@ class TestDriverStatusWorkflow(unittest.TestCase):
 
     def tearDown(self):
         if frappe.db.exists("Driver", self.driver.name):
-            frappe.delete_doc(
-                "Driver",
-                self.driver.name,
-                ignore_permissions=True,
-                force=True,
-                ignore_on_trash=True,
-            )
+            _delete_test_record("Driver", self.driver.name)
 
     def test_driver_status_uses_audited_transitions_and_revalidates_on_reactivation(
         self,
@@ -3983,19 +5020,10 @@ class TestDriverStatusWorkflow(unittest.TestCase):
 class TestMaintenanceScheduleWorkflow(unittest.TestCase):
     def setUp(self):
         self.company = _get_test_company()
-        self.classification = frappe.new_doc("Company Classification")
-        self.classification.company = self.company
-        self.classification.grade = 8
-        self.classification.category = "TP (Travaux Publics)"
-        self.classification.registration_number = f"TEST-SCH-{uuid.uuid4().hex[:6]}"
-        self.classification.insert(ignore_permissions=True)
-        self.classification.submit()
-
         self.vehicle = frappe.new_doc("Vehicle")
         self.vehicle.company = self.company
         self.vehicle.license_plate = f"TEST-SCH-{uuid.uuid4().hex[:6]}"
         self.vehicle.vehicle_category = "Truck"
-        self.vehicle.company_classification = self.classification.name
         self.vehicle.insert(ignore_permissions=True)
         self.vehicle.submit()
 
@@ -4003,7 +5031,6 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
         self.job_type.job_category = "General"
         self.job_type.job_type_name = f"Test Service {uuid.uuid4().hex[:8]}"
         self.job_type.insert(ignore_permissions=True)
-        self.job_type.submit()
         self.created_schedules = []
         self.created_job_cards = []
 
@@ -4020,44 +5047,23 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
     def tearDown(self):
         for name in self.created_job_cards:
             if frappe.db.exists("Maintenance Job Card", name):
-                frappe.delete_doc(
-                    "Maintenance Job Card",
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record("Maintenance Job Card", name)
         for name in self.created_schedules:
             if frappe.db.exists("Maintenance Schedule", name):
-                frappe.delete_doc(
-                    "Maintenance Schedule",
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record("Maintenance Schedule", name)
         for doctype, name in (
             ("Maintenance Job Type", self.job_type.name),
             ("Vehicle", self.vehicle.name),
-            ("Company Classification", self.classification.name),
         ):
             if frappe.db.exists(doctype, name):
-                doc = frappe.get_doc(doctype, name)
-                if doctype == "Company Classification" and doc.docstatus == 1:
-                    doc.cancel()
-                frappe.delete_doc(
-                    doctype,
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record(doctype, name)
 
     def test_completion_creates_one_linked_successor_and_is_idempotent(self):
         from sotrama.tp.doctype.maintenance_schedule.maintenance_schedule import (
             update_maintenance_schedule_status,
         )
 
+        self.job_type.db_set("active", 0)
         update_maintenance_schedule_status(self.schedule.name, "Paused")
         update_maintenance_schedule_status(self.schedule.name, "Active")
         result = update_maintenance_schedule_status(self.schedule.name, "Completed")
@@ -4074,6 +5080,35 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
 
         repeated = update_maintenance_schedule_status(self.schedule.name, "Completed")
         self.assertEqual(repeated["next_schedule"], successor.name)
+
+    def test_new_schedule_rejects_inactive_maintenance_job_type(self):
+        inactive_job_type = frappe.new_doc("Maintenance Job Type")
+        inactive_job_type.job_category = "General"
+        inactive_job_type.job_type_name = f"Inactive Service {uuid.uuid4().hex[:8]}"
+        inactive_job_type.active = 0
+        inactive_job_type.insert(ignore_permissions=True)
+
+        schedule = frappe.new_doc("Maintenance Schedule")
+        schedule.vehicle = self.vehicle.name
+        schedule.job_type = inactive_job_type.name
+        schedule.schedule_type = "Calendar"
+        schedule.interval_months = 6
+        schedule.last_service_date = today()
+        with self.assertRaises(frappe.ValidationError):
+            schedule.insert(ignore_permissions=True)
+
+        _delete_test_record("Maintenance Job Type", inactive_job_type.name)
+
+    def test_job_card_allows_inactive_job_type_only_for_its_active_schedule(self):
+        self.job_type.db_set("active", 0)
+
+        job_card = frappe.new_doc("Maintenance Job Card")
+        job_card.job_type = self.job_type.name
+        with self.assertRaises(frappe.ValidationError):
+            job_card._validate_job_type()
+
+        job_card.maintenance_schedule = self.schedule.name
+        job_card._validate_job_type()
 
     def test_completed_schedule_cannot_be_cancelled_while_successor_is_active(self):
         from sotrama.tp.doctype.maintenance_schedule.maintenance_schedule import (
@@ -4099,10 +5134,20 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
         )
 
         self.schedule.db_set(
-            {"schedule_type": "Mileage", "interval_months": None, "interval_km": 10000}
+            {"schedule_type": "Mileage", "interval_km": 10000}
         )
         with self.assertRaises(frappe.ValidationError):
             update_maintenance_schedule_status(self.schedule.name, "Completed")
+
+    def test_schedule_interval_fields_are_conditionally_required_and_positive(self):
+        meta = frappe.get_meta("Maintenance Schedule", cached=False)
+        months = meta.get_field("interval_months")
+        kilometres = meta.get_field("interval_km")
+
+        self.assertEqual(months.mandatory_depends_on, "eval:doc.schedule_type == 'Calendar'")
+        self.assertEqual(kilometres.mandatory_depends_on, "eval:doc.schedule_type == 'Mileage'")
+        self.assertEqual(months.min_value, 1)
+        self.assertEqual(kilometres.min_value, 1)
 
     def test_completed_scheduled_job_card_advances_same_plan_and_cancel_restores_it(
         self,
@@ -4139,6 +5184,7 @@ class TestMaintenanceScheduleWorkflow(unittest.TestCase):
         )
         self.assertEqual(updated_schedule.next_schedule, None)
 
+        job_card = frappe.get_doc("Maintenance Job Card", job_card.name)
         job_card.cancel()
         restored_schedule = frappe.get_doc("Maintenance Schedule", self.schedule.name)
         self.assertIsNone(restored_schedule.last_service_job_card)
@@ -4188,11 +5234,11 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
 
         with (
             patch(
-                "sotrama.overrides.file.is_driver_private_attachment",
+                "sotrama.permissions.is_driver_private_attachment",
                 return_value=True,
             ),
             patch(
-                "sotrama.overrides.file.can_access_driver_private_attachment",
+                "sotrama.permissions.can_access_driver_private_attachment",
                 return_value=False,
             ),
         ):
@@ -4231,7 +5277,6 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             doc="DRV-PRIVATE-001",
             user="hr@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
         with (
             patch("frappe.get_roles", return_value=["HR Manager"]),
@@ -4248,7 +5293,6 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             doc="DRV-PRIVATE-001",
             user="hr@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
         with patch("frappe.get_roles", return_value=["HR Manager"]):
             self.assertFalse(
@@ -4326,8 +5370,8 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
                 ],
             ),
             patch("pathlib.Path.exists", side_effect=[True, True]),
-            self.assertRaises(frappe.ValidationError),
-        ) as raised:
+            self.assertRaises(frappe.ValidationError) as raised,
+        ):
             _validate_driver_private_file_paths([file_doc])
         self.assertIn("FILE-COLLISION", str(raised.exception))
 
@@ -4382,13 +5426,13 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
             _check_driver_compliance_child_rpc_access("Driver Compliance Record")
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4396,7 +5440,7 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
                 "Driver Compliance Record", ["result"], filters={"name": "DCR-001"}
             )
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4407,7 +5451,7 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
         )
 
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4496,7 +5540,6 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             doc="DRV-001",
             user="hr@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
 
         with (
@@ -4528,7 +5571,6 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             doc="DRV-CHILD-001",
             user="hr@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
 
     def test_driver_form_and_docinfo_responses_hide_attachment_metadata_from_fleet(
@@ -4551,6 +5593,7 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
         with (
             patch("frappe.desk.form.load.getdoc", side_effect=fake_getdoc),
             patch("sotrama.permissions._has_hr_file_access", return_value=False),
+            patch("frappe.has_permission", return_value=True),
         ):
             self.assertEqual(
                 getdoc_with_driver_attachment_filter("Driver", "DRV-001"), "loaded"
@@ -4569,6 +5612,7 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
         with (
             patch("frappe.desk.form.load.get_docinfo", side_effect=fake_get_docinfo),
             patch("sotrama.permissions._has_hr_file_access", return_value=False),
+            patch("frappe.has_permission", return_value=True),
         ):
             get_docinfo_with_driver_attachment_filter(
                 doc=frappe._dict(doctype="Driver", name="DRV-001")
@@ -4587,20 +5631,20 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
         with (
             patch(
                 "frappe.desk.form.load.get_docinfo", side_effect=fake_child_get_docinfo
-            ),
+            ) as child_get_docinfo,
             patch("sotrama.permissions._has_hr_file_access", return_value=False),
+            self.assertRaises(frappe.PermissionError),
         ):
             get_docinfo_with_driver_attachment_filter(
                 doc=frappe._dict(doctype="Driver Compliance Record", name="DCR-001")
             )
-        self.assertEqual(child_docinfo.attachments, [])
-        self.assertEqual(child_docinfo.attachment_logs, [])
+        child_get_docinfo.assert_not_called()
 
     def test_separate_driver_docinfo_endpoint_checks_parent_read_permission(self):
         from sotrama.permissions import get_docinfo_with_driver_attachment_filter
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch(
                 "frappe.has_permission", side_effect=frappe.PermissionError
             ) as has_permission,
@@ -4616,7 +5660,6 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             doc="DRV-RESTRICTED",
             user="fleet@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
         get_docinfo.assert_not_called()
 
@@ -4631,6 +5674,7 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
                 return_value=[frappe._dict(file_name="private-certificate.pdf")],
             ),
             patch("sotrama.permissions._has_hr_file_access", return_value=False),
+            patch("frappe.has_permission", return_value=True),
         ):
             result = get_filtered_attachments_with_driver_attachment_filter(
                 "Driver", "DRV-001", "[]"
@@ -4641,13 +5685,14 @@ class TestDriverFileMetadataPrivacy(unittest.TestCase):
             patch(
                 "frappe.desk.form.load.get_filtered_attachments",
                 return_value=[frappe._dict(file_name="private-certificate.pdf")],
-            ),
+            ) as get_attachments,
             patch("sotrama.permissions._has_hr_file_access", return_value=False),
+            self.assertRaises(frappe.PermissionError),
         ):
-            result = get_filtered_attachments_with_driver_attachment_filter(
+            get_filtered_attachments_with_driver_attachment_filter(
                 "Driver Compliance Record", "DCR-001", "[]"
             )
-        self.assertEqual(result, [])
+        get_attachments.assert_not_called()
 
 
 class TestTpSettingsFieldPermissions(unittest.TestCase):
@@ -4667,7 +5712,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
         )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             patch("frappe.has_permission", return_value=True),
             self.assertRaises(frappe.PermissionError),
@@ -4677,7 +5722,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             patch("frappe.has_permission", return_value=True),
             self.assertRaises(frappe.PermissionError),
@@ -4687,7 +5732,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             patch("frappe.has_permission", return_value=True),
             self.assertRaises(frappe.PermissionError),
@@ -4699,7 +5744,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             patch("frappe.has_permission", return_value=True),
             self.assertRaises(frappe.PermissionError),
@@ -4715,7 +5760,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
                 )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4724,7 +5769,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4736,7 +5781,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4748,14 +5793,14 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
         ):
             self.assertEqual(tp_company_defaults_query_conditions(), "1=0")
             self.assertEqual(tp_settings_query_conditions(), "1=0")
 
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
         ):
             self.assertIsNone(tp_company_defaults_query_conditions())
@@ -4775,7 +5820,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             read=1,
         )
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -4783,7 +5828,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
 
         target = frappe._dict(doctype="Vehicle", name="VEH-001")
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
             patch("frappe.get_doc", return_value=target),
             patch("frappe.has_permission", return_value=True) as has_permission,
@@ -4795,11 +5840,10 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             doc=target,
             user="recipient@example.invalid",
             ignore_share_permissions=True,
-            print_logs=False,
         )
 
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
             patch(
                 "frappe.get_doc",
@@ -4818,14 +5862,14 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             read=1,
         )
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
             prevent_unsafe_fleet_docsharing(everyone_share)
 
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
         ):
             prevent_unsafe_fleet_docsharing(
@@ -5013,7 +6057,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
         self.assertNotIn("safe-share", deleted_names)
 
         with (
-            patch("frappe.session.user", "hr@example.invalid"),
+            patch.dict(frappe.session, {"user": "hr@example.invalid"}),
             patch("frappe.get_roles", return_value=["HR Manager"]),
             patch("frappe.has_permission", return_value=True),
             patch("frappe.client.get_single_value", return_value="1"),
@@ -5026,7 +6070,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             )
 
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             patch("frappe.has_permission", return_value=True),
             self.assertRaises(frappe.PermissionError),
@@ -5213,7 +6257,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
         current = frappe.new_doc("TP Settings")
         current.default_company = "COMPANY-B"
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             patch.object(current, "get_doc_before_save", return_value=previous),
         ):
@@ -5225,7 +6269,7 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
         new_settings = frappe.new_doc("TP Settings")
         new_settings.default_company = "COMPANY-B"
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
@@ -5242,14 +6286,14 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
             read=1,
         )
         with (
-            patch("frappe.session.user", "fleet@example.invalid"),
+            patch.dict(frappe.session, {"user": "fleet@example.invalid"}),
             patch("frappe.get_roles", return_value=["Fleet Manager"]),
             self.assertRaises(frappe.PermissionError),
         ):
             prevent_unsafe_fleet_docsharing(share)
 
         with (
-            patch("frappe.session.user", "system@example.invalid"),
+            patch.dict(frappe.session, {"user": "system@example.invalid"}),
             patch("frappe.get_roles", return_value=["System Manager"]),
             patch("frappe.get_doc", return_value=frappe._dict(name="VEH-001")),
             patch("frappe.has_permission", return_value=False),
@@ -5260,6 +6304,63 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
 
 class TestFleetSchedulerPrivacy(unittest.TestCase):
     """Scheduler alerts must respect document access and field privacy."""
+
+    def test_document_expiry_scheduler_batches_documents_for_submitted_vehicles(self):
+        from sotrama.tp.scheduler import check_document_expiries
+
+        vehicle = frappe._dict(
+            name="VEH-EXPIRY-001",
+            license_plate="EXPIRY-001",
+            vehicle_status="Active",
+        )
+        document = frappe._dict(
+            parent=vehicle.name,
+            document_type="Insurance Certificate",
+            expiry_date=add_days(today(), 5),
+            status="Valid",
+        )
+        todo = Mock(name="TODO-EXPIRY-001")
+        todo.name = "TODO-EXPIRY-001"
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=30),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[vehicle], [document], []],
+            ) as get_all,
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                return_value="fleet@example.invalid",
+            ),
+            patch(
+                "sotrama.tp.scheduler.frappe.db.get_value", return_value="en"
+            ),
+            patch("sotrama.tp.scheduler.frappe.new_doc", return_value=todo),
+        ):
+            check_document_expiries()
+
+        self.assertEqual(get_all.call_count, 3)
+        self.assertEqual(get_all.call_args_list[0].args[0], "Vehicle")
+        self.assertEqual(
+            get_all.call_args_list[0].kwargs["filters"]["docstatus"], 1
+        )
+        self.assertEqual(get_all.call_args_list[1].args[0], "Vehicle Document")
+        self.assertEqual(
+            get_all.call_args_list[1].kwargs["filters"]["parent"],
+            ["in", [vehicle.name]],
+        )
+        self.assertEqual(
+            get_all.call_args_list[1].kwargs["filters"]["parentfield"],
+            "vehicle_documents",
+        )
+        self.assertEqual(get_all.call_args_list[2].args[0], "ToDo")
+        self.assertEqual(
+            get_all.call_args_list[2].kwargs["filters"]["reference_name"],
+            ["in", [vehicle.name]],
+        )
+        self.assertIn("Vehicle Document Expiring", todo.description)
+        self.assertIn("Insurance Certificate", todo.description)
+        self.assertEqual(todo.priority, "Medium")
+        todo.insert.assert_called_once_with(ignore_permissions=True)
 
     def test_role_assignment_requires_read_permission_for_the_exact_document(self):
         from sotrama.tp.scheduler import _user_for_role
@@ -5335,7 +6436,8 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         license_update = set_value.call_args_list[0].args[2]
         safety_update = set_value.call_args_list[1].args[2]
         compliance_update = set_value.call_args_list[2].args[2]
-        self.assertEqual(license_update["allocated_to"], "fleet@example.invalid")
+        self.assertNotIn("allocated_to", license_update)
+        self.assertEqual(todos[0].allocated_to, "fleet@example.invalid")
         self.assertNotIn("SECRET-LICENSE-NUMBER", license_update["description"])
         self.assertEqual(safety_update["allocated_to"], "hr@example.invalid")
         self.assertIn("safety training", safety_update["description"])
@@ -5358,7 +6460,9 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         safety_todo = Mock()
         with (
             patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
-            patch("sotrama.tp.scheduler.frappe.get_all", side_effect=[[], [driver]]),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all", side_effect=[[], [driver]]
+            ) as get_all,
             patch("sotrama.tp.scheduler.frappe.db.exists", return_value=False),
             patch(
                 "sotrama.tp.scheduler.frappe.new_doc",
@@ -5374,6 +6478,10 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(license_todo.allocated_to, "fleet@example.invalid")
         self.assertNotIn("SECRET-LICENSE-NUMBER", license_todo.description)
         self.assertEqual(safety_todo.allocated_to, "hr@example.invalid")
+        self.assertEqual(
+            get_all.call_args_list[0].kwargs["filters"]["transport_regulatory_status"],
+            "Regulated",
+        )
 
 
 class TestFleetLinkedDocumentPermissions(unittest.TestCase):
@@ -5434,19 +6542,47 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
             vehicle="VEH-COMPANY-A",
             company="COMPANY-A",
             task_type="Earthmoving",
-            transport_kind="Transport de marchandises",
+            transport_kind="Goods Transport",
             project=None,
         )
         with (
             patch("frappe.has_permission", return_value=True),
             patch(
                 "frappe.db.get_value",
-                return_value=frappe._dict(vehicle_status="Active", company="COMPANY-A"),
+                return_value=frappe._dict(
+                    vehicle_status="Active", company="COMPANY-A", docstatus=1
+                ),
             ),
             patch("sotrama.tp.settings.validate_company_access"),
             self.assertRaises(frappe.ValidationError),
         ):
             OperationalTask._validate_vehicle(task)
+
+    def test_vehicle_availability_only_blocks_new_or_changed_operational_tasks(self):
+        task = frappe.new_doc("Operational Task")
+        task.vehicle = "VEHICLE-A"
+        task.company = "COMPANY-A"
+        task.task_type = "Earthmoving"
+        unavailable_vehicle = frappe._dict(
+            vehicle_status="Out of Service", company="COMPANY-A", docstatus=1
+        )
+        with (
+            patch("frappe.has_permission", return_value=True),
+            patch("frappe.db.get_value", return_value=unavailable_vehicle),
+            patch("sotrama.tp.settings.validate_company_access"),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            task._validate_vehicle()
+
+        with (
+            patch.object(
+                task, "get_doc_before_save", return_value=frappe._dict(vehicle=task.vehicle)
+            ),
+            patch("frappe.has_permission", return_value=True),
+            patch("frappe.db.get_value", return_value=unavailable_vehicle),
+            patch("sotrama.tp.settings.validate_company_access"),
+        ):
+            task._validate_vehicle()
 
     def test_transport_task_requires_an_explicit_activity(self):
         from sotrama.tp.doctype.operational_task.operational_task import OperationalTask
@@ -5462,7 +6598,9 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
             patch("frappe.has_permission", return_value=True),
             patch(
                 "frappe.db.get_value",
-                return_value=frappe._dict(vehicle_status="Active", company="COMPANY-A"),
+                return_value=frappe._dict(
+                    vehicle_status="Active", company="COMPANY-A", docstatus=1
+                ),
             ),
             patch("sotrama.tp.settings.validate_company_access"),
             self.assertRaises(frappe.ValidationError),
@@ -5475,9 +6613,9 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
         task = frappe._dict(
             name="OT-EVIDENCE-001",
             task_type="Transport",
-            transport_kind="Transport de marchandises",
-            transport_basis="Compte propre",
-            transport_regulatory_status="À confirmer",
+            transport_kind="Goods Transport",
+            transport_basis="Own-Account Transport",
+            transport_regulatory_status="To Be Confirmed",
         )
         with self.assertRaises(frappe.ValidationError):
             OperationalTask._validate_transport_regulatory_applicability(task)
@@ -5487,18 +6625,15 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
     ):
         from sotrama.tp.doctype.operational_task.operational_task import OperationalTask
 
-        task = frappe._dict(
-            name="OT-EVIDENCE-001",
-            doctype="Operational Task",
-            task_type="Transport",
-            transport_kind="Transport de marchandises",
-            transport_basis="Compte propre",
-            transport_regulatory_status="Réglementé",
-            driver="DRV-001",
-            transport_authority_reference="DECISION-001",
-            transport_authority_decision_date="2026-10-01",
-            transport_authority_evidence="/private/files/authority-decision.pdf",
-        )
+        task = frappe.new_doc("Operational Task")
+        task.task_type = "Transport"
+        task.transport_kind = "Goods Transport"
+        task.transport_basis = "Own-Account Transport"
+        task.transport_regulatory_status = "Regulated"
+        task.driver = "DRV-001"
+        task.transport_authority_reference = "DECISION-001"
+        task.transport_authority_decision_date = "2026-10-01"
+        task.transport_authority_evidence = "/private/files/authority-decision.pdf"
         with (
             patch(
                 "sotrama.tp.validation.validate_professional_transport_certificate"
@@ -5511,37 +6646,33 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
         ):
             OperationalTask._validate_transport_regulatory_applicability(task)
         validate_certificate.assert_called_once_with(
-            "DRV-001", "Transport de marchandises"
+            "DRV-001", "Goods Transport"
         )
 
     def test_nonregulated_transport_requires_official_authority_evidence(self):
         from sotrama.tp.doctype.operational_task.operational_task import OperationalTask
 
-        incomplete_task = frappe._dict(
-            task_type="Transport",
-            transport_kind="Transport de marchandises",
-            transport_basis="Compte propre",
-            transport_regulatory_status="Non soumis (confirmation officielle)",
-            transport_authority_reference="DECISION-002",
-            transport_authority_decision_date="2026-10-01",
-            transport_authority_evidence=None,
-        )
+        incomplete_task = frappe.new_doc("Operational Task")
+        incomplete_task.task_type = "Transport"
+        incomplete_task.transport_kind = "Goods Transport"
+        incomplete_task.transport_basis = "Own-Account Transport"
+        incomplete_task.transport_regulatory_status = "Officially Confirmed Not Subject"
+        incomplete_task.transport_authority_reference = "DECISION-002"
+        incomplete_task.transport_authority_decision_date = "2026-10-01"
+        incomplete_task.transport_authority_evidence = None
         with self.assertRaises(frappe.ValidationError):
             OperationalTask._validate_transport_regulatory_applicability(
                 incomplete_task
             )
 
-        task = frappe._dict(
-            name="OT-EVIDENCE-002",
-            doctype="Operational Task",
-            task_type="Transport",
-            transport_kind="Transport de marchandises",
-            transport_basis="Compte propre",
-            transport_regulatory_status="Non soumis (confirmation officielle)",
-            transport_authority_reference="DECISION-002",
-            transport_authority_decision_date="2026-10-01",
-            transport_authority_evidence="/private/files/authority-decision.pdf",
-        )
+        task = frappe.new_doc("Operational Task")
+        task.task_type = "Transport"
+        task.transport_kind = "Goods Transport"
+        task.transport_basis = "Own-Account Transport"
+        task.transport_regulatory_status = "Officially Confirmed Not Subject"
+        task.transport_authority_reference = "DECISION-002"
+        task.transport_authority_decision_date = "2026-10-01"
+        task.transport_authority_evidence = "/private/files/authority-decision.pdf"
         with (
             patch(
                 "sotrama.tp.validation.validate_professional_transport_certificate"
@@ -5562,17 +6693,14 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
     def test_authority_evidence_must_be_a_local_file_attached_to_the_task_field(self):
         from sotrama.tp.doctype.operational_task.operational_task import OperationalTask
 
-        task = frappe._dict(
-            name="OT-EVIDENCE-003",
-            doctype="Operational Task",
-            task_type="Transport",
-            transport_kind="Transport de marchandises",
-            transport_basis="Compte propre",
-            transport_regulatory_status="Non soumis (confirmation officielle)",
-            transport_authority_reference="DECISION-003",
-            transport_authority_decision_date="2026-10-01",
-            transport_authority_evidence="/private/files/authority-decision.pdf",
-        )
+        task = frappe.new_doc("Operational Task")
+        task.task_type = "Transport"
+        task.transport_kind = "Goods Transport"
+        task.transport_basis = "Own-Account Transport"
+        task.transport_regulatory_status = "Officially Confirmed Not Subject"
+        task.transport_authority_reference = "DECISION-003"
+        task.transport_authority_decision_date = "2026-10-01"
+        task.transport_authority_evidence = "/private/files/authority-decision.pdf"
         with (
             patch("frappe.db.get_value", return_value=None),
             self.assertRaises(frappe.ValidationError),
@@ -5587,6 +6715,21 @@ class TestFleetLinkedDocumentPermissions(unittest.TestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             OperationalTask._validate_transport_regulatory_applicability(task)
+
+    def test_operational_task_driver_is_conditional_for_regulated_transport(self):
+        driver_field = frappe.get_meta("Operational Task", cached=False).get_field(
+            "driver"
+        )
+        self.assertEqual(driver_field.label, "Driver / Operator")
+        self.assertFalse(driver_field.reqd)
+        self.assertEqual(
+            driver_field.mandatory_depends_on,
+            "eval:doc.task_type == 'Transport' && doc.transport_regulatory_status == 'Regulated'",
+        )
+        task_js = (
+            _sotrama_package_path() / "public" / "js" / "operational_task.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("docstatus: 1", task_js)
 
 
 class TestFleetSystemManagedFields(unittest.TestCase):
@@ -5804,7 +6947,9 @@ class TestFleetSystemManagedFields(unittest.TestCase):
             patch("frappe.has_permission", return_value=True),
             patch(
                 "frappe.db.get_value",
-                return_value=frappe._dict(vehicle_status="Active", company="COMPANY-A"),
+                return_value=frappe._dict(
+                    vehicle_status="Active", company="COMPANY-A", docstatus=1
+                ),
             ),
             patch("sotrama.tp.settings.validate_company_access"),
             patch("sotrama.tp.validation.validate_active_driver") as validate_driver,
@@ -5819,20 +6964,12 @@ class TestBreakdownIncident(unittest.TestCase):
 
     def setUp(self):
         self.company = _get_test_company()
-        self.classification = frappe.new_doc("Company Classification")
-        self.classification.company = self.company
-        self.classification.grade = 8
-        self.classification.category = "TP (Travaux Publics)"
-        self.classification.registration_number = "TEST-BRK-001"
-        self.classification.insert(ignore_permissions=True)
-        self.classification.submit()
-
         self.vehicle = frappe.new_doc("Vehicle")
         self.vehicle.company = self.company
         self.vehicle.license_plate = "TEST-BRK-VEH-001"
         self.vehicle.vehicle_category = "Truck"
-        self.vehicle.company_classification = self.classification.name
         self.vehicle.insert()
+        self.vehicle.submit()
         self.created_breakdowns = []
         self.created_inspections = []
         self.created_drivers = []
@@ -5840,45 +6977,18 @@ class TestBreakdownIncident(unittest.TestCase):
     def tearDown(self):
         for name in reversed(self.created_inspections):
             if frappe.db.exists("Vehicle Inspection", name):
-                frappe.delete_doc(
-                    "Vehicle Inspection",
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record("Vehicle Inspection", name)
         for name in self.created_breakdowns:
             if frappe.db.exists("Breakdown Incident", name):
-                frappe.delete_doc(
-                    "Breakdown Incident",
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record("Breakdown Incident", name)
         for name in self.created_drivers:
             if frappe.db.exists("Driver", name):
-                frappe.delete_doc(
-                    "Driver",
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record("Driver", name)
         for doctype, name in (
             ("Vehicle", self.vehicle.name),
-            ("Company Classification", self.classification.name),
         ):
             if frappe.db.exists(doctype, name):
-                if doctype == "Company Classification":
-                    frappe.get_doc(doctype, name).cancel()
-                frappe.delete_doc(
-                    doctype,
-                    name,
-                    ignore_permissions=True,
-                    force=True,
-                    ignore_on_trash=True,
-                )
+                _delete_test_record(doctype, name)
 
     def test_breakdown_date_validation(self):
         """Test that Resolution Date cannot be before Incident Date."""

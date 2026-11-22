@@ -13,6 +13,23 @@ def validate_linked_document_read_permission(doctype: str, docname: str | None):
         frappe.has_permission(doctype, "read", doc=docname, throw=True)
 
 
+def validate_submitted_vehicle(vehicle_name: str, fields: tuple[str, ...] = ()):
+    """Require a readable, submitted Vehicle before creating operational records."""
+    if not vehicle_name:
+        return None
+
+    validate_linked_document_read_permission("Vehicle", vehicle_name)
+    selected_fields = list(dict.fromkeys(("company", "docstatus", *fields)))
+    vehicle = frappe.db.get_value(
+        "Vehicle", vehicle_name, selected_fields, as_dict=True
+    )
+    if not vehicle:
+        frappe.throw(_("Selected Vehicle does not exist."))
+    if vehicle.docstatus != 1:
+        frappe.throw(_("Select a submitted Vehicle."))
+    return vehicle
+
+
 def validate_active_driver(driver_name: str, company: str | None = None):
     """Validate that a driver can be assigned to a vehicle or work task.
 
@@ -131,11 +148,11 @@ def validate_professional_transport_certificate(driver_name: str, transport_kind
     invented here.
     """
     regulated_activities = {
-        "Transport collectif de personnes",
-        "Transport scolaire",
-        "Transport de marchandises",
-        "Transport de matières dangereuses",
-        "Transport par taxi",
+        "Collective Passenger Transport",
+        "School Transport",
+        "Goods Transport",
+        "Dangerous Goods Transport",
+        "Taxi Transport",
     }
     if transport_kind not in regulated_activities:
         return

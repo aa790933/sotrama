@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_part_details",
-   "label": "Spare Part Details",
-   "collapsible": 1
+   "label": "Spare Part Details"
   },
   {
    "label": "Item",

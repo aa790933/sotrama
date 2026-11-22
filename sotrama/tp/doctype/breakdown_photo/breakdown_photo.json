@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_breakdown_photo",
-   "label": "Incident Photo",
-   "collapsible": 1
+   "label": "Incident Photo"
   },
   {
    "label": "Photo",

@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_job_photo",
-   "label": "Job Card Photo",
-   "collapsible": 1
+   "label": "Job Card Photo"
   },
   {
    "label": "Photo",

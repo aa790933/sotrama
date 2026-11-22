@@ -125,14 +125,19 @@ def _estimate_depreciation(vehicle, filters):
         getdate(filters.to_date) if filters.get("to_date") else getdate(today()),
         getdate(today()),
     )
-    days = max(date_diff(period_end, period_start), 0)
+    # Report date filters are inclusive (>= from_date and <= to_date), so a
+    # one-day reporting period must accrue one day rather than zero.
+    days = max(date_diff(period_end, period_start) + 1, 0)
     depreciable_value = max(flt(vehicle.acquisition_value) - flt(vehicle.salvage_value), 0)
     return min(depreciable_value, depreciable_value * rate / 100.0 * days / 365.0)
 
 
 def get_data(filters):
     """Aggregate all submitted maintenance and task records in two grouped queries."""
-    vehicle_filters = [["vehicle_status", "not in", ["Retired", "Scrapped"]]]
+    vehicle_filters = [
+        ["docstatus", "=", 1],
+        ["vehicle_status", "not in", ["Retired", "Scrapped"]],
+    ]
     if filters.get("company"):
         vehicle_filters.append(["company", "=", filters.company])
     if filters.get("vehicle"):
@@ -168,9 +173,9 @@ def get_data(filters):
         "Maintenance Job Card",
         fields=[
             "vehicle",
-            "sum(total_parts_cost) as parts_cost",
-            "sum(total_labour_cost) as labour_cost",
-            "sum(total_other_cost) as other_cost",
+            {"SUM": "total_parts_cost", "as": "parts_cost"},
+            {"SUM": "total_labour_cost", "as": "labour_cost"},
+            {"SUM": "total_other_cost", "as": "other_cost"},
         ],
         filters=maintenance_filters,
         group_by="vehicle",
@@ -181,7 +186,7 @@ def get_data(filters):
     task_filters.extend(_date_filters(filters, "task_date"))
     distance_rows = frappe.get_list(
         "Operational Task",
-        fields=["vehicle", "sum(distance_covered) as distance_km"],
+        fields=["vehicle", {"SUM": "distance_covered", "as": "distance_km"}],
         filters=task_filters,
         group_by="vehicle",
         limit_page_length=0,

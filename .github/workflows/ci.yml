@@ -59,6 +59,9 @@ jobs:
           node --check sotrama/public/js/job_card.js
           node --check sotrama/public/js/inspection.js
           node --check sotrama/public/js/driver.js
+          node --check sotrama/public/js/vehicle.js
+          node --check sotrama/public/js/vehicle_model.js
+          node --check sotrama/public/js/tp_settings.js
           node --check sotrama/public/js/operational_task.js
           node tests/js/test_fleet_form_permissions.js
 
@@ -632,8 +635,14 @@ jobs:
               assert "sotrama/public/js/job_card.js" in names
               assert "sotrama/public/js/inspection.js" in names
               assert "sotrama/public/js/driver.js" in names
+              assert "sotrama/public/js/vehicle.js" in names
+              assert "sotrama/public/js/vehicle_model.js" in names
+              assert "sotrama/public/js/tp_settings.js" in names
               assert "sotrama/public/js/operational_task.js" in names
+              assert "sotrama/tp/patches/v1_3/migrate_fleet_document_options.py" in names
+              assert "sotrama/tp/patches/v1_3/simplify_fleet_reference_masters.py" in names
               assert "sotrama/overrides/file.py" in names
+              assert "sotrama/locale/fr.po" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names
               assert "sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json" in names
               assert "sotrama/algerian_localization/workspace/algerian_localization/algerian_localization.json" in names
@@ -726,7 +735,14 @@ jobs:
           bench --site test_site install-app erpnext
           bench --site test_site install-app hrms
           bench --site test_site install-app sotrama
+          bench --site test_site migrate
           bench --site test_site set-config allow_tests true
+
+      - name: Compile Sotrama French translations
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site execute frappe.gettext.translate.compile_translations --kwargs '{"target_app":"sotrama","locale":"fr","force":true}'
+          test -s sites/assets/locale/fr/LC_MESSAGES/sotrama.mo
 
       - name: Create an ERPNext company for Fleet integration tests
         working-directory: /home/runner/frappe-bench

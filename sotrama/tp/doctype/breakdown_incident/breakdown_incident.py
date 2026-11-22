@@ -165,14 +165,14 @@ class BreakdownIncident(Document):
         if not self.vehicle:
             return
 
-        from sotrama.tp.validation import validate_linked_document_read_permission
-
-        validate_linked_document_read_permission("Vehicle", self.vehicle)
-        vehicle = frappe.db.get_value(
-            "Vehicle", self.vehicle, ["company", "primary_driver"], as_dict=True
+        from sotrama.tp.validation import (
+            validate_linked_document_read_permission,
+            validate_submitted_vehicle,
         )
-        if not vehicle:
-            frappe.throw(_("Selected Vehicle does not exist."))
+
+        vehicle = validate_submitted_vehicle(
+            self.vehicle, fields=("primary_driver",)
+        )
         if vehicle.company:
             from sotrama.tp.settings import validate_company_access
 

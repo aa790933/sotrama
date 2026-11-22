@@ -30,7 +30,8 @@
    "fieldname": "default_company_classification",
    "fieldtype": "Link",
    "options": "Company Classification",
-   "permlevel": 2
+   "permlevel": 2,
+   "hidden": 1
   },
   {
    "fieldtype": "Column Break",
@@ -67,7 +68,8 @@
    "fieldtype": "Section Break",
    "fieldname": "section_company_matrix",
    "label": "Per-Company Configuration",
-   "description": "Add one row for each legal entity. New Vehicles and Maintenance Job Cards resolve their classification, department, cost center and parts warehouse from the matching row; tasks inherit the Vehicle company."
+   "description": "Add one row for each legal entity. New Vehicles and Maintenance Job Cards resolve their department, cost center and parts warehouse from the matching row; tasks inherit the Vehicle company.",
+   "collapsible": 1
   },
   {
    "label": "Company Defaults",
@@ -84,7 +86,8 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_employee_policy",
-   "label": "Frappe HR Employee Integration"
+   "label": "Frappe HR Employee Integration",
+   "collapsible": 1
   },
   {
    "label": "Require Employee Link",
@@ -139,7 +142,8 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_alert_windows",
-   "label": "Compliance Reminder Windows"
+   "label": "Compliance Reminder Windows",
+   "collapsible": 1
   },
   {
    "label": "Driver Document Alert Days",

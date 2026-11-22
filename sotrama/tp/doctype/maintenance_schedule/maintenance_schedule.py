@@ -19,9 +19,31 @@ class MaintenanceSchedule(Document):
 
     def validate(self):
         self._set_company_from_vehicle()
+        self._validate_job_type()
         self._validate_interval()
         self._validate_status_transition()
         self._validate_system_managed_fields()
+
+    def _validate_job_type(self):
+        if not self.job_type:
+            return
+
+        previous = self.get_doc_before_save()
+        job_type_changed = (
+            not previous
+            or getattr(self, "_action", None) == "submit"
+            or previous.job_type != self.job_type
+        )
+        if not job_type_changed or frappe.flags.get(
+            "in_maintenance_schedule_generation"
+        ):
+            return
+
+        from sotrama.tp.validation import validate_linked_document_read_permission
+
+        validate_linked_document_read_permission("Maintenance Job Type", self.job_type)
+        if not frappe.db.get_value("Maintenance Job Type", self.job_type, "active"):
+            frappe.throw(_("Select an active Maintenance Job Type."))
 
     def _validate_status_transition(self):
         previous = self.get_doc_before_save()
@@ -90,10 +112,10 @@ class MaintenanceSchedule(Document):
         if not self.vehicle:
             return
 
-        from sotrama.tp.validation import validate_linked_document_read_permission
+        from sotrama.tp.validation import validate_submitted_vehicle
 
-        validate_linked_document_read_permission("Vehicle", self.vehicle)
-        vehicle_company = frappe.db.get_value("Vehicle", self.vehicle, "company")
+        vehicle = validate_submitted_vehicle(self.vehicle)
+        vehicle_company = vehicle.company
         if vehicle_company:
             from sotrama.tp.settings import validate_company_access
 

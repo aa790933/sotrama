@@ -32,7 +32,7 @@
 frappe.ui.form.on('Maintenance Job Card', {
     setup(frm) {
         frm.set_query('vehicle', () => ({
-            filters: { vehicle_status: ['not in', ['Retired', 'Scrapped']] },
+            filters: { docstatus: 1, vehicle_status: ['not in', ['Retired', 'Scrapped']] },
         }));
         frm.set_query('maintenance_schedule', () => ({
             filters: Object.assign(
@@ -41,6 +41,7 @@ frappe.ui.form.on('Maintenance Job Card', {
                 frm.doc.job_type ? { job_type: frm.doc.job_type } : {},
             ),
         }));
+        frm.set_query('job_type', () => ({ filters: { active: 1 } }));
         frm.set_query('item', 'parts_used', () => ({ filters: { is_stock_item: 1, disabled: 0 } }));
         frm.set_query('mechanic', 'labour_lines', () => ({
             query: 'sotrama.tp.doctype.maintenance_job_card.maintenance_job_card.search_workshop_employees',

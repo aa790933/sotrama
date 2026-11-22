@@ -133,7 +133,6 @@ def _can_read_driver_attachment_parent(doctype, name, user=None):
             doc=driver_name,
             user=user,
             ignore_share_permissions=True,
-            print_logs=False,
         )
     )
 
@@ -170,7 +169,6 @@ def can_access_driver_private_attachment(file_doc, user=None, ptype=None):
             doc=driver_name,
             user=user,
             ignore_share_permissions=True,
-            print_logs=False,
         )
     )
 
@@ -240,7 +238,6 @@ def _require_driver_private_file_write_access(file_doc, user=None):
         doc=driver_name,
         user=user,
         ignore_share_permissions=True,
-        print_logs=False,
     ):
         frappe.throw(
             frappe._(
@@ -492,7 +489,6 @@ def _require_driver_attachment_parent_read(doctype, name, user=None):
         doc=driver_name,
         user=user,
         ignore_share_permissions=True,
-        print_logs=False,
     ):
         frappe.throw(
             frappe._(
@@ -832,7 +828,7 @@ def _check_tp_settings_field_read_permission(
         )
 
     user = user or frappe.session.user
-    if not frappe.has_permission(doctype, "read", user=user, print_logs=False):
+    if not frappe.has_permission(doctype, "read", user=user):
         frappe.throw(
             frappe._("No permission to read TP Settings."), frappe.PermissionError
         )
@@ -1015,7 +1011,6 @@ def prevent_unsafe_fleet_docsharing(doc, method=None):
             doc=target,
             user=recipient,
             ignore_share_permissions=True,
-            print_logs=False,
         ):
             frappe.throw(
                 frappe._(
@@ -1106,7 +1101,6 @@ def remove_unsafe_fleet_docshares(user=None, owner=None, doctype=None, name=None
                     doc=target,
                     user=share.user,
                     ignore_share_permissions=True,
-                    print_logs=False,
                 )
             except (
                 frappe.DoesNotExistError,

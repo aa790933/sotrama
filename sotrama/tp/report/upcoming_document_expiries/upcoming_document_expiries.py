@@ -37,7 +37,10 @@ def get_data(filters):
         frappe.throw(_("Alert Within Days must be between 0 and 3650 days."))
     threshold = add_days(today(), alert_days)
 
-    vehicle_filters = [["vehicle_status", "not in", ["Retired", "Scrapped"]]]
+    vehicle_filters = [
+        ["docstatus", "=", 1],
+        ["vehicle_status", "not in", ["Retired", "Scrapped"]],
+    ]
     if filters.get("company"):
         vehicle_filters.append(["company", "=", filters.company])
     if filters.get("vehicle"):
@@ -55,6 +58,7 @@ def get_data(filters):
     vehicle_map = {row.name: row for row in vehicles}
     document_filters = {
         "parenttype": "Vehicle",
+        "parentfield": "vehicle_documents",
         "parent": ["in", list(vehicle_map)],
         "expiry_date": ["<=", threshold],
     }
@@ -81,7 +85,7 @@ def get_data(filters):
                 "vehicle": vehicle.name,
                 "license_plate": vehicle.license_plate,
                 "company": vehicle.company,
-                "document_type": document.document_type,
+                "document_type": _(document.document_type),
                 "expiry_date": document.expiry_date,
                 "days_remaining": days_remaining,
                 "status": status,

@@ -24,7 +24,44 @@ class MaintenanceJobCard(Document):
         self._validate_other_costs()
         self._calculate_totals()
         self._validate_maintenance_schedule()
+        self._validate_job_type()
         self._validate_system_managed_fields()
+
+    def _validate_job_type(self):
+        if not self.job_type:
+            return
+
+        previous = self.get_doc_before_save()
+        job_type_changed = (
+            not previous
+            or getattr(self, "_action", None) == "submit"
+            or previous.job_type != self.job_type
+        )
+        if not job_type_changed:
+            return
+
+        from sotrama.tp.validation import validate_linked_document_read_permission
+
+        validate_linked_document_read_permission("Maintenance Job Type", self.job_type)
+        if frappe.db.get_value("Maintenance Job Type", self.job_type, "active"):
+            return
+
+        if self.maintenance_schedule:
+            schedule = frappe.db.get_value(
+                "Maintenance Schedule",
+                self.maintenance_schedule,
+                ["job_type", "status", "docstatus"],
+                as_dict=True,
+            )
+            if (
+                schedule
+                and schedule.job_type == self.job_type
+                and schedule.status == "Active"
+                and schedule.docstatus == 1
+            ):
+                return
+
+        frappe.throw(_("Select an active Maintenance Job Type."))
 
     def on_submit(self):
         self._post_stock_entries()
@@ -134,16 +171,13 @@ class MaintenanceJobCard(Document):
         from sotrama.tp.settings import get_tp_company_setting, get_tp_setting
 
         if self.vehicle:
-            from sotrama.tp.validation import validate_linked_document_read_permission
+            from sotrama.tp.validation import validate_submitted_vehicle
 
-            validate_linked_document_read_permission("Vehicle", self.vehicle)
-        vehicle = (
-            frappe.db.get_value(
-                "Vehicle", self.vehicle, ["company", "cost_center"], as_dict=True
+            vehicle = validate_submitted_vehicle(
+                self.vehicle, fields=("cost_center",)
             )
-            if self.vehicle
-            else None
-        )
+        else:
+            vehicle = None
         vehicle_company = vehicle.company if vehicle else None
         if vehicle_company:
             from sotrama.tp.settings import validate_company_access

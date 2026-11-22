@@ -7,7 +7,7 @@
  "module": "TP",
  "name": "Driver",
  "owner": "Administrator",
- "role_profile_name": "Driver",
+ "role_profile": "Driver",
  "roles": [
   {
    "role": "Driver"

@@ -94,7 +94,7 @@ def get_tp_company_defaults(company: str):
     """Return a fixed, company-scoped projection for Vehicle form defaults.
 
     The underlying singleton/table fields are System Manager-only. This API is
-    the intentional exception for the four operational defaults needed by
+    the intentional exception for the three operational defaults needed by
     Vehicle creation; it never returns other Companies' rows or arbitrary fields.
     Company access follows the Vehicle User Permission scope; it does not grant
     or require general Company read permission.
@@ -104,7 +104,6 @@ def get_tp_company_defaults(company: str):
     validate_company_access(company, "Vehicle")
 
     linked_defaults = {
-        "default_company_classification": "Company Classification",
         "default_department": "Department",
         "default_cost_center": "Cost Center",
         "default_parts_warehouse": "Warehouse",

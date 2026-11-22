@@ -7,7 +7,7 @@
  "module": "TP",
  "name": "Fleet Manager",
  "owner": "Administrator",
- "role_profile_name": "Fleet Manager",
+ "role_profile": "Fleet Manager",
  "roles": [
   {
    "role": "Fleet Manager"

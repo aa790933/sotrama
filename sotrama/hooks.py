@@ -56,6 +56,22 @@ def ensure_roles():
             ).insert(ignore_permissions=True)
 
 
+def ensure_role_profiles():
+    """Create the shipped Role Profiles after their linked roles exist."""
+    import json
+    from pathlib import Path
+
+    profile_root = Path(__file__).resolve().parent / "tp" / "role_profile"
+    if not profile_root.is_dir() or not frappe.db.exists("DocType", "Role Profile"):
+        return
+
+    for profile_file in sorted(profile_root.glob("*/*.json")):
+        profile = json.loads(profile_file.read_text(encoding="utf-8-sig"))
+        profile_name = profile.get("name") or profile.get("role_profile")
+        if profile_name and not frappe.db.exists("Role Profile", profile_name):
+            frappe.get_doc(profile).insert(ignore_permissions=True)
+
+
 def prepare_before_install():
     """Prepare only Sotrama-owned records before Frappe syncs its modules."""
     ensure_roles()
@@ -574,6 +590,8 @@ def hide_managed_legacy_company_nif(migration_result):
 
 def run_after_migrate():
     """Run security migrations before optional legacy Company data cleanup."""
+    ensure_roles()
+    ensure_role_profiles()
     from sotrama.permissions import remove_unsafe_fleet_docshares
 
     remove_unsafe_fleet_docshares()
@@ -601,6 +619,7 @@ def run_after_migrate():
 def initialize_app():
     """Initialize app roles and idempotent fleet masters after DocTypes sync."""
     ensure_roles()
+    ensure_role_profiles()
     from sotrama.setup import ensure_default_masters
 
     ensure_default_masters()
@@ -698,6 +717,7 @@ app_include_js = "/assets/sotrama/js/sotrama.js"
 doctype_js = {
     "Sotrama Settings": "public/js/sotrama_settings.js",
     "Vehicle": "public/js/vehicle.js",
+    "Vehicle Model": "public/js/vehicle_model.js",
     "Breakdown Incident": "public/js/breakdown.js",
     "Maintenance Job Card": "public/js/job_card.js",
     "Vehicle Inspection": "public/js/inspection.js",

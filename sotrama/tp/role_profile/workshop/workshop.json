@@ -7,7 +7,7 @@
  "module": "TP",
  "name": "Workshop",
  "owner": "Administrator",
- "role_profile_name": "Workshop",
+ "role_profile": "Workshop",
  "roles": [
   {
    "role": "Workshop"

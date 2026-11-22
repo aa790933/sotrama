@@ -2,7 +2,7 @@
 frappe.ui.form.on('Breakdown Incident', {
     setup(frm) {
         frm.set_query('vehicle', () => ({
-            filters: { vehicle_status: ['not in', ['Retired', 'Scrapped']] },
+            filters: { docstatus: 1, vehicle_status: ['not in', ['Retired', 'Scrapped']] },
         }));
         frm.set_query('driver', () => {
             // Breakdowns are historical events, not new driver assignments.

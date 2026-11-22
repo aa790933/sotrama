@@ -33,8 +33,8 @@ class OperationalTask(Document):
             return
 
         if not self.transport_kind or self.transport_basis not in {
-            "Compte d'autrui",
-            "Compte propre",
+            "For-Hire Transport",
+            "Own-Account Transport",
         }:
             frappe.throw(
                 _(
@@ -42,7 +42,7 @@ class OperationalTask(Document):
                 )
             )
 
-        if self.transport_regulatory_status == "À confirmer":
+        if self.transport_regulatory_status == "To Be Confirmed":
             frappe.throw(
                 _(
                     "Confirm transport regulatory applicability with the competent authority before submitting this task."
@@ -50,15 +50,15 @@ class OperationalTask(Document):
             )
 
         if self.transport_regulatory_status not in {
-            "Réglementé",
-            "Non soumis (confirmation officielle)",
+            "Regulated",
+            "Officially Confirmed Not Subject",
         }:
             frappe.throw(_("Select a valid Regulatory Applicability decision."))
 
         authority_decision_required = (
-            self.transport_basis == "Compte propre"
+            self.transport_basis == "Own-Account Transport"
             or self.transport_regulatory_status
-            == "Non soumis (confirmation officielle)"
+            == "Officially Confirmed Not Subject"
         )
         if authority_decision_required and not all(
             (
@@ -81,7 +81,7 @@ class OperationalTask(Document):
         if authority_decision_required:
             self._validate_transport_authority_evidence()
 
-        if self.transport_regulatory_status == "Réglementé":
+        if self.transport_regulatory_status == "Regulated":
             if not self.driver:
                 frappe.throw(_("A Driver is required for regulated transport."))
             from sotrama.tp.validation import (
@@ -167,30 +167,36 @@ class OperationalTask(Document):
         if not self.vehicle:
             frappe.throw(_("Vehicle is required"))
         if self.vehicle:
-            from sotrama.tp.validation import validate_linked_document_read_permission
+            from sotrama.tp.validation import validate_submitted_vehicle
 
-            validate_linked_document_read_permission("Vehicle", self.vehicle)
-            vehicle = frappe.db.get_value(
-                "Vehicle", self.vehicle, ["vehicle_status", "company"], as_dict=True
+            vehicle = validate_submitted_vehicle(
+                self.vehicle, fields=("vehicle_status",)
             )
-            if vehicle and vehicle.company:
+            if vehicle.company:
                 from sotrama.tp.settings import validate_company_access
 
                 validate_company_access(vehicle.company, "Vehicle")
-            vehicle_status = vehicle.vehicle_status if vehicle else None
+            vehicle_status = vehicle.vehicle_status
+            previous_getter = getattr(self, "get_doc_before_save", None)
+            previous = previous_getter() if callable(previous_getter) else None
+            vehicle_changed = (
+                not previous
+                or getattr(self, "_action", None) == "submit"
+                or previous.vehicle != self.vehicle
+            )
             unavailable_statuses = {
                 "Out of Service",
                 "Under Repair",
                 "Retired",
                 "Scrapped",
             }
-            if vehicle_status in unavailable_statuses:
+            if vehicle_changed and vehicle_status in unavailable_statuses:
                 frappe.throw(
                     _("Vehicle {0} cannot be assigned while its status is {1}.").format(
                         self.vehicle, vehicle_status
                     )
                 )
-            vehicle_company = vehicle.company if vehicle else None
+            vehicle_company = vehicle.company
             if self.company and vehicle_company and self.company != vehicle_company:
                 frappe.throw(
                     _("Operational Task Company must match its Vehicle Company.")
@@ -217,7 +223,7 @@ class OperationalTask(Document):
             (
                 self.transport_kind,
                 self.transport_basis,
-                self.transport_regulatory_status not in (None, "", "À confirmer"),
+                self.transport_regulatory_status not in (None, "", "To Be Confirmed"),
                 self.transport_authority_reference,
                 self.transport_authority_decision_date,
                 self.transport_authority_evidence,

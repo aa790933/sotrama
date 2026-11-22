@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_incident",
-   "label": "Incident Details",
-   "collapsible": 1
+   "label": "Incident Details"
   },
   {
    "label": "Incident Date",
@@ -92,11 +91,6 @@
    "description": "Engine, Transmission, Electrical, etc."
   },
   {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_resolution",
-   "label": "Resolution"
-  },
-  {
    "fieldtype": "Section Break",
    "fieldname": "section_resolution",
    "label": "Repair & Resolution",
@@ -134,11 +128,6 @@
    "options": "Maintenance Job Card",
    "read_only": 1,
    "description": "Auto-created job card for this breakdown"
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_evidence",
-   "label": "Evidence & Notes"
   },
   {
    "fieldtype": "Section Break",

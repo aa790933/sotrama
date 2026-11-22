@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_other_cost",
-   "label": "Other Maintenance Cost",
-   "collapsible": 1
+   "label": "Other Maintenance Cost"
   },
   {
    "label": "Description",

@@ -13,14 +13,6 @@
  "links": [
   {
    "hidden": 0,
-   "label": "Company Classification",
-   "link_to": "Company Classification",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
    "label": "Fleet Cost Analysis",
    "link_to": "Fleet Cost Analysis",
    "link_type": "Report",

@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_plan",
-   "label": "Schedule Configuration",
-   "collapsible": 1
+   "label": "Schedule Configuration"
   },
   {
    "label": "Vehicle",
@@ -57,18 +56,17 @@
    "label": "Interval Months",
    "fieldname": "interval_months",
    "fieldtype": "Int",
-   "depends_on": "eval:doc.schedule_type == 'Calendar'"
+   "depends_on": "eval:doc.schedule_type == 'Calendar'",
+   "mandatory_depends_on": "eval:doc.schedule_type == 'Calendar'",
+   "min_value": 1
   },
   {
    "label": "Interval KM",
    "fieldname": "interval_km",
    "fieldtype": "Float",
-   "depends_on": "eval:doc.schedule_type == 'Mileage'"
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_service_history",
-   "label": "Service History"
+   "depends_on": "eval:doc.schedule_type == 'Mileage'",
+   "mandatory_depends_on": "eval:doc.schedule_type == 'Mileage'",
+   "min_value": 1
   },
   {
    "fieldtype": "Section Break",
@@ -133,9 +131,10 @@
    "description": "Next recurring schedule generated when this plan is completed."
   },
   {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_schedule_notes",
-   "label": "Notes"
+   "fieldtype": "Section Break",
+   "fieldname": "section_notes",
+   "label": "Notes",
+   "collapsible": 1
   },
   {
    "label": "Notes",

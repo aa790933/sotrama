@@ -31,67 +31,129 @@ def check_document_expiries():
     vehicles = frappe.get_all(
         "Vehicle",
         fields=["name", "license_plate", "vehicle_status"],
-        filters={"vehicle_status": ["not in", ["Retired", "Scrapped"]]},
+        filters={
+            "docstatus": 1,
+            "vehicle_status": ["not in", ["Retired", "Scrapped"]],
+        },
         limit_page_length=0,
     )
+    if not vehicles:
+        return
 
-    for v in vehicles:
-        # Get all documents for this vehicle that are expiring soon or expired
-        docs = frappe.get_all(
-            "Vehicle Document",
-            filters={
-                "parent": v["name"],
-                "parenttype": "Vehicle",
-                "expiry_date": ["<=", threshold],
-            },
-            fields=["document_type", "expiry_date", "status"],
-            limit_page_length=0,
+    vehicles_by_name = {vehicle.name: vehicle for vehicle in vehicles}
+    vehicle_names = list(vehicles_by_name)
+    docs = frappe.get_all(
+        "Vehicle Document",
+        filters={
+            "parent": ["in", vehicle_names],
+            "parenttype": "Vehicle",
+            "parentfield": "vehicle_documents",
+            "expiry_date": ["<=", threshold],
+        },
+        fields=["parent", "document_type", "expiry_date", "status"],
+        limit_page_length=0,
+    )
+    if not docs:
+        return
+
+    existing_todos = frappe.get_all(
+        "ToDo",
+        filters={
+            "reference_type": "Vehicle",
+            "reference_name": ["in", vehicle_names],
+            "status": "Open",
+        },
+        fields=["name", "reference_name", "description"],
+        limit_page_length=0,
+    )
+    todos_by_vehicle = {}
+    for todo in existing_todos:
+        todos_by_vehicle.setdefault(todo.reference_name, []).append(todo)
+
+    user_languages = {}
+    assignees_by_vehicle = {}
+    for doc in docs:
+        vehicle = vehicles_by_name.get(doc.parent)
+        if not vehicle:
+            continue
+
+        document_status = (
+            "Expired"
+            if doc.expiry_date and getdate(doc.expiry_date) < getdate(today())
+            else "Expiring Soon"
         )
+        if vehicle.name not in assignees_by_vehicle:
+            assignees_by_vehicle[vehicle.name] = _user_for_role(
+                "Fleet Manager", "Vehicle", vehicle.name
+            )
+        allocated_to = assignees_by_vehicle[vehicle.name]
+        if allocated_to not in user_languages:
+            user_languages[allocated_to] = (
+                frappe.db.get_value("User", allocated_to, "language")
+                if allocated_to
+                else None
+            )
+        language = user_languages[allocated_to]
 
-        for doc in docs:
-            document_status = (
-                "Expired"
-                if doc["expiry_date"] and getdate(doc["expiry_date"]) < getdate(today())
-                else "Expiring Soon"
-            )
-            title = _("Vehicle Document Expiring: {0} (Vehicle: {1})").format(
-                doc["document_type"], v["license_plate"] or v["name"]
-            )
-            description = _(
-                "Document '{0}' for vehicle {1} expires on {2}. Status: {3}"
-            ).format(
-                doc["document_type"],
-                v["license_plate"] or v["name"],
-                doc["expiry_date"],
-                document_status,
-            )
-            allocated_to = _user_for_role("Fleet Manager", "Vehicle", v["name"])
-            existing = frappe.db.get_value(
-                "ToDo",
-                {
-                    "reference_type": "Vehicle",
-                    "reference_name": v["name"],
-                    "description": ["like", f"%{doc['document_type']}%"],
-                    "status": "Open",
-                },
-                "name",
-            )
-            if existing:
-                frappe.db.set_value(
-                    "ToDo",
-                    existing,
-                    {"allocated_to": allocated_to, "description": description},
-                    update_modified=False,
+        vehicle_label = vehicle.license_plate or vehicle.name
+        document_type_label = _(doc.document_type, lang=language)
+        document_status_label = _(document_status, lang=language)
+        title = _(
+            "Vehicle Document Expiring: {0} (Vehicle: {1})", lang=language
+        ).format(document_type_label, vehicle_label)
+        description = _(
+            "Document '{0}' for vehicle {1} expires on {2}. Status: {3}",
+            lang=language,
+        ).format(
+            document_type_label, vehicle_label, doc.expiry_date, document_status_label
+        )
+        todo_description = f"{title}\n{description}"
+        priority = "High" if document_status == "Expired" else "Medium"
+        document_type_labels = {
+            doc.document_type,
+            _(doc.document_type, lang="en"),
+            _(doc.document_type, lang="fr"),
+        }
+        existing = next(
+            (
+                todo
+                for todo in todos_by_vehicle.get(vehicle.name, [])
+                if any(
+                    label and label in (todo.description or "")
+                    for label in document_type_labels
                 )
-            else:
-                todo = frappe.new_doc("ToDo")
-                todo.description = f"{title}\n{description}"
-                todo.reference_type = "Vehicle"
-                todo.reference_name = v["name"]
-                todo.priority = "High" if document_status == "Expired" else "Medium"
-                todo.allocated_to = allocated_to
-                todo.assigned_by = "Administrator"
-                todo.insert(ignore_permissions=True)
+            ),
+            None,
+        )
+        if existing:
+            frappe.db.set_value(
+                "ToDo",
+                existing.name,
+                {
+                    "allocated_to": allocated_to,
+                    "description": todo_description,
+                    "priority": priority,
+                },
+                update_modified=False,
+            )
+            existing.description = todo_description
+            existing.allocated_to = allocated_to
+        else:
+            todo = frappe.new_doc("ToDo")
+            todo.description = todo_description
+            todo.reference_type = "Vehicle"
+            todo.reference_name = vehicle.name
+            todo.priority = priority
+            todo.allocated_to = allocated_to
+            todo.assigned_by = "Administrator"
+            todo.insert(ignore_permissions=True)
+            todos_by_vehicle.setdefault(vehicle.name, []).append(
+                frappe._dict(
+                    name=todo.name,
+                    reference_name=vehicle.name,
+                    description=todo_description,
+                )
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -198,24 +260,27 @@ def check_driver_license_expiry():
     threshold = add_days(today(), alert_days)
 
     regulated_transport_kinds = [
-        "Transport collectif de personnes",
-        "Transport scolaire",
-        "Transport de marchandises",
-        "Transport de matières dangereuses",
-        "Transport par taxi",
+        "Collective Passenger Transport",
+        "School Transport",
+        "Goods Transport",
+        "Dangerous Goods Transport",
+        "Taxi Transport",
     ]
-    regulated_driver_names = set(
-        frappe.get_all(
+    regulated_driver_names = {
+        driver_name
+        for driver_name in frappe.get_all(
             "Operational Task",
             filters={
                 "docstatus": 1,
                 "task_type": "Transport",
+                "transport_regulatory_status": "Regulated",
                 "transport_kind": ["in", regulated_transport_kinds],
             },
             pluck="driver",
             limit_page_length=0,
         )
-    )
+        if driver_name
+    }
 
     drivers = frappe.get_all(
         "Driver",
@@ -223,6 +288,25 @@ def check_driver_license_expiry():
         fields=["name", "driver_name", "license_expiry", "safety_training_expiry"],
         limit_page_length=0,
     )
+    regulated_driver_names.intersection_update(driver.name for driver in drivers)
+
+    compliance_records_by_driver = {}
+    if regulated_driver_names and frappe.db.exists(
+        "DocType", "Driver Compliance Record"
+    ):
+        compliance_records = frappe.get_all(
+            "Driver Compliance Record",
+            filters={
+                "parent": ["in", list(regulated_driver_names)],
+                "parenttype": "Driver",
+                "parentfield": "compliance_records",
+            },
+            fields=["parent", "check_type", "test_date", "result", "valid_until"],
+            order_by="parent asc, test_date desc, idx desc",
+            limit_page_length=0,
+        )
+        for record in compliance_records:
+            compliance_records_by_driver.setdefault(record.parent, []).append(record)
 
     for d in drivers:
         if d.license_expiry and getdate(d.license_expiry) <= getdate(threshold):
@@ -259,22 +343,9 @@ def check_driver_license_expiry():
                 todo.insert(ignore_permissions=True)
 
         compliance_due = False
-        if d.name in regulated_driver_names and frappe.db.exists(
-            "DocType", "Driver Compliance Record"
-        ):
-            compliance_records = frappe.get_all(
-                "Driver Compliance Record",
-                filters={
-                    "parent": d.name,
-                    "parenttype": "Driver",
-                    "parentfield": "compliance_records",
-                },
-                fields=["check_type", "test_date", "result", "valid_until"],
-                order_by="test_date desc, idx desc",
-                limit_page_length=0,
-            )
+        if d.name in regulated_driver_names:
             latest_by_type = {}
-            for record in compliance_records:
+            for record in compliance_records_by_driver.get(d.name, []):
                 latest_by_type.setdefault(record.check_type, record)
 
             for check_type, expected in (
@@ -493,7 +564,7 @@ def _user_for_role(role_name, doctype, docname):
             user != "Guest"
             and frappe.db.get_value("User", user, "enabled")
             and frappe.has_permission(
-                doctype, "read", doc=docname, user=user, print_logs=False
+                doctype, "read", doc=docname, user=user
             )
         ):
             return user

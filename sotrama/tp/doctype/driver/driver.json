@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_driver_identity",
-   "label": "Driver Identity",
-   "collapsible": 1
+   "label": "Driver Identity"
   },
   {
    "label": "Driver Name",
@@ -55,8 +54,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_licence",
-   "label": "Driving Licence",
-   "collapsible": 1
+   "label": "Driving Licence"
   },
   {
    "label": "License Number",
@@ -173,8 +171,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_contact",
-   "label": "Contact Information",
-   "collapsible": 1
+   "label": "Contact Information"
   },
   {
    "label": "Address",
@@ -244,7 +241,8 @@
  "issingle": 0,
  "is_submittable": 1,
  "track_changes": 1,
- "name_field": "driver_name",
+ "title_field": "driver_name",
+ "show_title_field_in_link": 1,
  "naming_rule": "Expression",
  "naming_expression": "DRV-.####",
  "autoname": "format",

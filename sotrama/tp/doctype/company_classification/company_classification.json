@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_certificate",
-   "label": "Certificate & Grade",
-   "collapsible": 1
+   "label": "Certificate & Grade"
   },
   {
    "label": "Company",
@@ -37,7 +36,7 @@
    "label": "Category",
    "fieldname": "category",
    "fieldtype": "Select",
-   "options": "\nTP (Travaux Publics)\nBTP (Bâtiment et Travaux Publics)\nHydraulique\nForestier",
+   "options": "\nPublic Works (TP)\nBuilding and Public Works (BTP)\nHydraulics\nForestry",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "reqd": 1

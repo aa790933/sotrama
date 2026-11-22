@@ -27,7 +27,7 @@
    "fieldname": "company_classification",
    "fieldtype": "Link",
    "options": "Company Classification",
-   "in_list_view": 1
+   "hidden": 1
   },
   {
    "fieldtype": "Section Break",

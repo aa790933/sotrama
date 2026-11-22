@@ -1,7 +1,6 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
 
 
 class TPSettings(Document):
@@ -27,7 +26,6 @@ class TPSettings(Document):
         if not self.default_company:
             if any(
                 (
-                    self.default_company_classification,
                     self.default_parts_warehouse,
                     self.default_cost_center,
                     self.default_department,
@@ -39,33 +37,6 @@ class TPSettings(Document):
                     )
                 )
             return
-
-        if self.default_company_classification:
-            classification = frappe.db.get_value(
-                "Company Classification",
-                self.default_company_classification,
-                ["active", "company", "docstatus", "expiry_date"],
-                as_dict=True,
-            )
-            if not classification or not classification.active:
-                frappe.throw(_("Default Company Classification must be active."))
-            if classification.docstatus != 1:
-                frappe.throw(_("Default Company Classification must be submitted."))
-            if classification.expiry_date and getdate(
-                classification.expiry_date
-            ) < getdate(frappe.utils.today()):
-                frappe.throw(
-                    _("Default Company Classification certificate has expired.")
-                )
-            if (
-                classification.company
-                and classification.company != self.default_company
-            ):
-                frappe.throw(
-                    _(
-                        "Default Company Classification must belong to the Default Company."
-                    )
-                )
 
         if self.default_parts_warehouse:
             warehouse = frappe.db.get_value(
@@ -171,40 +142,6 @@ class TPSettings(Document):
 
             if not row.active:
                 continue
-
-            if row.company_classification:
-                classification = frappe.db.get_value(
-                    "Company Classification",
-                    row.company_classification,
-                    ["active", "company", "docstatus", "expiry_date"],
-                    as_dict=True,
-                )
-                if not classification or not classification.active:
-                    frappe.throw(
-                        _("Company Classification in row {0} must be active.").format(
-                            row.idx
-                        )
-                    )
-                if classification.docstatus != 1:
-                    frappe.throw(
-                        _(
-                            "Company Classification in row {0} must be submitted."
-                        ).format(row.idx)
-                    )
-                if classification.expiry_date and getdate(
-                    classification.expiry_date
-                ) < getdate(frappe.utils.today()):
-                    frappe.throw(
-                        _("Company Classification in row {0} has expired.").format(
-                            row.idx
-                        )
-                    )
-                if classification.company and classification.company != row.company:
-                    frappe.throw(
-                        _(
-                            "Company Classification in row {0} belongs to another Company."
-                        ).format(row.idx)
-                    )
 
             if row.default_department:
                 department_company = frappe.db.get_value(

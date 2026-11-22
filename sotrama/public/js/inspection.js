@@ -34,10 +34,10 @@ const updateInspectionSummary = (frm) => {
 frappe.ui.form.on('Vehicle Inspection', {
     setup(frm) {
         frm.set_query('vehicle', () => ({
-            filters: { vehicle_status: ['not in', ['Retired', 'Scrapped']] },
+            filters: { docstatus: 1, vehicle_status: ['not in', ['Retired', 'Scrapped']] },
         }));
         frm.set_query('driver', () => {
-            const filters = { status: 'Active' };
+            const filters = { status: 'Active', docstatus: 1 };
             if (frm.doc.company) filters.company = frm.doc.company;
             return { filters };
         });

@@ -11,8 +11,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_assignment",
-   "label": "Assignment Details",
-   "collapsible": 1
+   "label": "Assignment Details"
   },
   {
    "label": "Task Date",
@@ -43,7 +42,7 @@
    "label": "Transport Activity",
    "fieldname": "transport_kind",
    "fieldtype": "Select",
-   "options": "\nTransport collectif de personnes\nTransport scolaire\nTransport de marchandises\nTransport de matières dangereuses\nTransport par taxi",
+   "options": "\nCollective Passenger Transport\nSchool Transport\nGoods Transport\nDangerous Goods Transport\nTaxi Transport",
    "depends_on": "eval:doc.task_type == 'Transport'",
    "mandatory_depends_on": "eval:doc.task_type == 'Transport'"
   },
@@ -51,7 +50,7 @@
    "label": "Transport Basis",
    "fieldname": "transport_basis",
    "fieldtype": "Select",
-   "options": "\nCompte d'autrui\nCompte propre",
+   "options": "\nFor-Hire Transport\nOwn-Account Transport",
    "depends_on": "eval:doc.task_type == 'Transport'",
    "mandatory_depends_on": "eval:doc.task_type == 'Transport'",
    "description": "Specify whether this transport is performed for a third party or for the Company's own account."
@@ -60,8 +59,8 @@
    "label": "Regulatory Applicability",
    "fieldname": "transport_regulatory_status",
    "fieldtype": "Select",
-   "options": "\nÀ confirmer\nRéglementé\nNon soumis (confirmation officielle)",
-   "default": "À confirmer",
+   "options": "\nTo Be Confirmed\nRegulated\nOfficially Confirmed Not Subject",
+   "default": "To Be Confirmed",
    "depends_on": "eval:doc.task_type == 'Transport'",
    "mandatory_depends_on": "eval:doc.task_type == 'Transport'",
    "description": "Do not assume own-account hauling is exempt or regulated. Confirm applicability with the competent authority before submission."
@@ -70,19 +69,19 @@
    "label": "Authority Decision Reference",
    "fieldname": "transport_authority_reference",
    "fieldtype": "Data",
-   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Own-Account Transport' || doc.transport_regulatory_status == 'Officially Confirmed Not Subject')"
   },
   {
    "label": "Authority Decision Date",
    "fieldname": "transport_authority_decision_date",
    "fieldtype": "Date",
-   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Own-Account Transport' || doc.transport_regulatory_status == 'Officially Confirmed Not Subject')"
   },
   {
    "label": "Authority Decision Evidence",
    "fieldname": "transport_authority_evidence",
    "fieldtype": "Attach",
-   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Compte propre' || doc.transport_regulatory_status == 'Non soumis (confirmation officielle)')"
+   "depends_on": "eval:doc.task_type == 'Transport' && (doc.transport_basis == 'Own-Account Transport' || doc.transport_regulatory_status == 'Officially Confirmed Not Subject')"
   },
   {
    "fieldtype": "Column Break",
@@ -106,13 +105,14 @@
    "in_standard_filter": 1
   },
   {
-   "label": "Driver",
+   "label": "Driver / Operator",
    "fieldname": "driver",
    "fieldtype": "Link",
    "options": "Driver",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.task_type == 'Transport' && doc.transport_regulatory_status == 'Regulated'",
+   "description": "Assign a road driver for regulated transport, or an equipment operator when relevant."
   },
   {
    "label": "Supervisor",
@@ -120,11 +120,6 @@
    "fieldtype": "Link",
    "options": "Employee",
    "in_list_view": 1
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_task_execution",
-   "label": "Time & Equipment"
   },
   {
    "fieldtype": "Section Break",
@@ -172,11 +167,6 @@
    "fieldname": "distance_covered",
    "fieldtype": "Float",
    "read_only": 1
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_task_output",
-   "label": "Output & Notes"
   },
   {
    "fieldtype": "Section Break",

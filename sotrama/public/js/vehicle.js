@@ -8,7 +8,6 @@ function applyTpVehicleDefaults(frm) {
         if (!message) return;
         const values = {};
         const fields = {
-            default_company_classification: 'company_classification',
             default_department: 'department',
             default_cost_center: 'cost_center',
             default_parts_warehouse: 'parts_warehouse',
@@ -22,6 +21,14 @@ function applyTpVehicleDefaults(frm) {
 
 frappe.ui.form.on('Vehicle', {
     setup(frm) {
+        frm.set_query('vehicle_make', () => ({ filters: { active: 1 } }));
+        frm.set_query('model', () => ({
+            filters: {
+                vehicle_make: frm.doc.vehicle_make || '__no_match__',
+                active: 1,
+            },
+        }));
+
         frm.set_query('parts_warehouse', () => {
             const filters = { is_group: 0, disabled: 0 };
             if (frm.doc.company) filters.company = frm.doc.company;
@@ -43,13 +50,6 @@ frappe.ui.form.on('Vehicle', {
             return { filters };
         });
 
-        frm.set_query('company_classification', () => ({
-            filters: { active: 1, docstatus: 1 },
-            or_filters: frm.doc.company ? [
-                ['Company Classification', 'company', '=', frm.doc.company],
-                ['Company Classification', 'company', 'is', 'not set'],
-            ] : [],
-        }));
     },
 
     refresh: function(frm) {
@@ -114,6 +114,10 @@ frappe.ui.form.on('Vehicle', {
                 }
             });
         })).then(() => applyTpVehicleDefaults(frm));
+    },
+
+    vehicle_make(frm) {
+        if (frm.doc.model) return frm.set_value('model', '');
     },
 
     license_plate: function(frm) {

@@ -6,16 +6,16 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_vehicle_document",
-   "label": "Document Details",
-   "collapsible": 1
+   "label": "Document Details"
   },
   {
    "label": "Document Type",
    "fieldname": "document_type",
    "fieldtype": "Select",
-   "options": "\nCarte d'immatriculation\nCarte Grise (Registration)\nAssurance (Insurance)\nCertificat de Pollution\nVisite Technique\nCertificat de Conformité\nPermis de Circulation\nVignette\nAutre",
+   "options": "\nRegistration Certificate\nInsurance Certificate\nTechnical Inspection\nVehicle Tax Sticker\nTransport Permit\nCertificate of Conformity\nOther Document",
    "in_list_view": 1,
-   "reqd": 1
+   "reqd": 1,
+   "description": "Choose only documents applicable to this unit; some road-vehicle documents, such as the vignette, may not apply to public-works equipment or trailers."
   },
   {
    "fieldtype": "Column Break",

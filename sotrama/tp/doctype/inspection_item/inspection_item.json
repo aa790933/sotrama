@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_checklist_item",
-   "label": "Inspection Checklist Item",
-   "collapsible": 1
+   "label": "Inspection Checklist Item"
   },
   {
    "label": "Category",

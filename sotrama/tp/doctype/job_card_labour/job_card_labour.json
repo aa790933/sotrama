@@ -6,8 +6,7 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_labour_details",
-   "label": "Labour Entry",
-   "collapsible": 1
+   "label": "Labour Entry"
   },
   {
    "label": "Employee (Mechanic)",

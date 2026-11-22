@@ -11,30 +11,47 @@
   {
    "fieldtype": "Section Break",
    "fieldname": "section_vehicle_identity",
-   "label": "Identification",
-   "collapsible": 1
+   "label": "Identification"
   },
   {
-   "label": "License Plate",
+   "label": "Registration / Fleet Number",
    "fieldname": "license_plate",
    "fieldtype": "Data",
    "in_list_view": 1,
    "reqd": 1,
-   "description": "Vehicle registration number (immatriculation)"
+   "description": "Enter the road registration plate, or the internal fleet number for off-road machinery. Use one stable identifier for every unit."
   },
   {
    "label": "Vehicle Make",
    "fieldname": "vehicle_make",
    "fieldtype": "Link",
    "options": "Vehicle Make",
-   "description": "Manufacturer (e.g. Mercedes, Volvo, Scania)"
+   "description": "Select an active manufacturer; available models are filtered by this make."
   },
   {
    "label": "Model",
    "fieldname": "model",
    "fieldtype": "Link",
    "options": "Vehicle Model",
-   "description": "Specific model variant"
+   "description": "Select an active model belonging to the selected make."
+  },
+  {
+   "label": "Company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "description": "Owning company for this vehicle and its stock transactions."
+  },
+  {
+   "label": "Vehicle / Equipment Category",
+   "fieldname": "vehicle_category",
+   "fieldtype": "Select",
+   "options": "\nTruck\nDump Truck\nTractor Unit\nTrailer\nSemi-trailer\nTanker\nPickup\nUtility Vehicle\nBulldozer\nWheel Loader\nExcavator\nBackhoe Loader\nMotor Grader\nRoad Roller\nAsphalt Paver\nConcrete Mixer Truck\nConcrete Pump\nMobile Crane\nBridge Crane\nForklift\nWater Tanker\nFuel Tanker\nLow-bed Trailer\nCompressor\nGenerator\nSweeper\nOther Equipment",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Choose the road vehicle or public-works machine type."
   },
   {
    "fieldtype": "Column Break",
@@ -60,32 +77,18 @@
    "description": "Engine serial number"
   },
   {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_specifications",
-   "label": "Specifications & Operations"
-  },
-  {
    "fieldtype": "Section Break",
    "fieldname": "section_specs",
    "label": "Technical Specifications",
    "collapsible": 1
   },
   {
-   "label": "Vehicle Category",
-   "fieldname": "vehicle_category",
-   "fieldtype": "Select",
-   "options": "\nTruck\nTrailer\nSemi-trailer\nTanker\nGrader\nRoller\nPaver\nBridge Crane\nUtility Vehicle",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "description": "Category of public works vehicle"
-  },
-  {
-   "label": "Vehicle Class",
+   "label": "Weight Class (Optional)",
    "fieldname": "vehicle_class",
    "fieldtype": "Select",
    "options": "\nLight\nMedium\nHeavy",
    "in_standard_filter": 1,
-   "description": "Weight class (Light < 3.5T, Medium 3.5-12T, Heavy > 12T)"
+   "description": "Use for road vehicles where applicable; leave blank for equipment if this classification is not meaningful."
   },
   {
    "label": "Tonnage",
@@ -122,11 +125,6 @@
    "fieldname": "current_odometer",
    "fieldtype": "Float",
    "description": "Latest recorded odometer reading in km"
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_financials",
-   "label": "Ownership & Accounting"
   },
   {
    "fieldtype": "Section Break",
@@ -204,15 +202,6 @@
    "fieldname": "column_assignment"
   },
   {
-   "label": "Company",
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "options": "Company",
-   "reqd": 1,
-   "in_standard_filter": 1,
-   "description": "Owning company for this vehicle and its stock transactions."
-  },
-  {
    "label": "Parts Warehouse",
    "fieldname": "parts_warehouse",
    "fieldtype": "Link",
@@ -220,22 +209,20 @@
    "description": "Source warehouse used when maintenance parts are issued."
   },
   {
-   "label": "Primary Driver",
+   "label": "Primary Driver / Operator",
    "fieldname": "primary_driver",
    "fieldtype": "Link",
    "options": "Driver",
    "allow_on_submit": 1,
    "in_list_view": 1,
-   "description": "Assigned primary driver"
+   "description": "Regular road driver or equipment operator, where assigned."
   },
   {
    "label": "Company Classification",
    "fieldname": "company_classification",
    "fieldtype": "Link",
    "options": "Company Classification",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "reqd": 1,
+   "hidden": 1,
    "description": "Grade classification of the owning company (I-IX)"
   },
   {
@@ -260,13 +247,8 @@
    "fieldname": "asset",
    "fieldtype": "Link",
    "options": "Asset",
-   "description": "Linked fixed asset record",
+   "description": "Optional ERPNext fixed asset; it must belong to the same Company.",
    "permlevel": 1
-  },
-  {
-   "fieldtype": "Tab Break",
-   "fieldname": "tab_documents",
-   "label": "Documents & Notes"
   },
   {
    "fieldtype": "Section Break",
@@ -278,24 +260,28 @@
    "label": "Registration Document",
    "fieldname": "registration_document",
    "fieldtype": "Attach",
+   "hidden": 1,
    "description": "Carte grise / registration certificate"
   },
   {
    "label": "Insurance Document",
    "fieldname": "insurance_document",
    "fieldtype": "Attach",
+   "hidden": 1,
    "description": "Insurance certificate"
   },
   {
    "label": "Pollution Certificate",
    "fieldname": "pollution_document",
    "fieldtype": "Attach",
+   "hidden": 1,
    "description": "Pollution Under Control certificate"
   },
   {
    "label": "Technical Inspection Certificate",
    "fieldname": "technical_document",
    "fieldtype": "Attach",
+   "hidden": 1,
    "description": "Technical inspection (visite technique)"
   },
   {
@@ -309,7 +295,7 @@
    "fieldtype": "Table",
    "options": "Vehicle Document",
    "in_standard_filter": 1,
-   "description": "Vehicle documents with expiry tracking (registration, insurance, pollution, etc.)"
+   "description": "Add one row per vehicle document, with its issue date, expiry date and attachment."
   }
  ],
  "links": [],
@@ -317,7 +303,8 @@
  "issingle": 0,
  "is_submittable": 1,
  "track_changes": 1,
- "name_field": "license_plate",
+ "title_field": "license_plate",
+ "show_title_field_in_link": 1,
  "naming_rule": "Expression",
  "naming_expression": "VEH-.YYYY.-.####",
  "autoname": "format",

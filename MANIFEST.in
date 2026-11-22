@@ -1,4 +1,4 @@
-recursive-include sotrama *.py *.txt *.js *.json *.svg *.css
+recursive-include sotrama *.py *.txt *.js *.json *.svg *.css *.po *.pot
 include README.md
 include license.txt
 include pyproject.toml

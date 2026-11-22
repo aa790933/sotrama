@@ -1,0 +1,2861 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Sotrama 1.3.6\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Sotrama Fleet"
+msgstr "Parc Sotrama"
+
+msgid "Fleet Overview"
+msgstr "Vue d'ensemble du parc"
+
+msgid "Fleet Operations"
+msgstr "Exploitation du parc"
+
+msgid "Vehicles"
+msgstr "Véhicules"
+
+msgid "Vehicle"
+msgstr "Véhicule"
+
+msgid "Drivers"
+msgstr "Conducteurs"
+
+msgid "Driver"
+msgstr "Conducteur"
+
+msgid "Operational Tasks"
+msgstr "Fiches d'exploitation"
+
+msgid "Operational Task"
+msgstr "Fiche d'exploitation"
+
+msgid "Breakdown Incidents"
+msgstr "Pannes et incidents"
+
+msgid "Breakdown Incident"
+msgstr "Déclaration de panne"
+
+msgid "Maintenance & Safety"
+msgstr "Maintenance et sécurité"
+
+msgid "Maintenance Job Cards"
+msgstr "Fiches d'intervention"
+
+msgid "Maintenance Job Card"
+msgstr "Fiche d'intervention"
+
+msgid "Maintenance Schedules"
+msgstr "Plans de maintenance"
+
+msgid "Maintenance Schedule"
+msgstr "Plan de maintenance"
+
+msgid "Vehicle Inspections"
+msgstr "Contrôles des véhicules"
+
+msgid "Vehicle Inspection"
+msgstr "Contrôle du véhicule"
+
+msgid "Reports & Analysis"
+msgstr "Rapports et analyses"
+
+msgid "Setup & Masters"
+msgstr "Paramétrage et référentiels"
+
+msgid "Vehicle Makes"
+msgstr "Marques de véhicules"
+
+msgid "Vehicle Models"
+msgstr "Modèles de véhicules"
+
+msgid "Maintenance Job Types"
+msgstr "Types d'intervention"
+
+msgid "TP Settings"
+msgstr "Paramètres TP"
+
+msgid "Fleet Management Reports"
+msgstr "Rapports de gestion du parc"
+
+msgid "Fleet Cost Analysis"
+msgstr "Analyse des coûts du parc"
+
+msgid "Upcoming Document Expiries"
+msgstr "Échéances des documents"
+
+msgid "Active Vehicles"
+msgstr "Véhicules en activité"
+
+msgid "Vehicles Out of Service"
+msgstr "Véhicules hors service"
+
+msgid "Active Maintenance Plans"
+msgstr "Plans de maintenance actifs"
+
+msgid "Vehicle Identity"
+msgstr "Identification du véhicule"
+
+msgid "Identification"
+msgstr "Identification"
+
+msgid "License Plate"
+msgstr "Immatriculation / N° de parc"
+
+msgid "Registration / Fleet Number"
+msgstr "Immatriculation / N° de parc"
+
+msgid "Registration / Fleet Number is required."
+msgstr "L'immatriculation ou le numéro de parc est obligatoire."
+
+msgid "Registration / Fleet Number must be unique within the Company."
+msgstr "Le numéro d'immatriculation ou de parc doit être unique au sein de la société."
+
+msgid "Vehicle Make"
+msgstr "Marque"
+
+msgid "Vehicle Model"
+msgstr "Modèle du véhicule"
+
+msgid "Manufacturer Details"
+msgstr "Détails du constructeur"
+
+msgid "Model Details"
+msgstr "Détails du modèle"
+
+msgid "Make Name"
+msgstr "Nom de la marque"
+
+msgid "Model Name"
+msgstr "Nom du modèle"
+
+msgid "Model"
+msgstr "Modèle"
+
+msgid "Company"
+msgstr "Société"
+
+msgid "Year of Manufacture"
+msgstr "Année de fabrication"
+
+msgid "Chassis Number"
+msgstr "Numéro de châssis"
+
+msgid "Engine Number"
+msgstr "Numéro de moteur"
+
+msgid "Technical Specifications"
+msgstr "Caractéristiques techniques"
+
+msgid "Vehicle Category"
+msgstr "Catégorie du véhicule ou engin"
+
+msgid "Vehicle / Equipment Category"
+msgstr "Catégorie du véhicule / engin"
+
+msgid "Select an active manufacturer; available models are filtered by this make."
+msgstr "Sélectionnez un constructeur actif ; les modèles proposés seront filtrés selon cette marque."
+
+msgid "Select an active, submitted manufacturer; available models are filtered by this make."
+msgstr "Sélectionnez un constructeur actif et validé ; les modèles proposés seront filtrés selon cette marque."
+
+msgid "Select an active model belonging to the selected make."
+msgstr "Sélectionnez un modèle actif correspondant à la marque choisie."
+
+msgid "Select an active, submitted model belonging to the selected make."
+msgstr "Sélectionnez un modèle actif et validé correspondant à la marque choisie."
+
+msgid "Select an active, submitted Vehicle Make."
+msgstr "Sélectionnez une marque de véhicule active et validée."
+
+msgid "Select an active Vehicle Make."
+msgstr "Sélectionnez une marque de véhicule active."
+
+msgid "Select a Vehicle Make before selecting a Model."
+msgstr "Sélectionnez une marque avant de choisir un modèle."
+
+msgid "Select an active, submitted Vehicle Model."
+msgstr "Sélectionnez un modèle actif et validé."
+
+msgid "Select an active Vehicle Model."
+msgstr "Sélectionnez un modèle de véhicule actif."
+
+msgid "Select an active Maintenance Job Type."
+msgstr "Sélectionnez un type d'intervention de maintenance actif."
+
+msgid "Vehicle Model must belong to the selected Vehicle Make."
+msgstr "Le modèle doit correspondre à la marque sélectionnée."
+
+msgid "Select a Vehicle Make for this Model."
+msgstr "Sélectionnez une marque pour ce modèle."
+
+msgid "A model with this name already exists for the selected Vehicle Make."
+msgstr "Un modèle portant ce nom existe déjà pour la marque sélectionnée."
+
+msgid "MAINTENANCE JOB CARD"
+msgstr "FICHE D'INTERVENTION DE MAINTENANCE"
+
+msgid "Work Order Details"
+msgstr "Détails de l'intervention"
+
+msgid "Supplier / Workshop"
+msgstr "Fournisseur / atelier"
+
+msgid "Reported Issue & Work Performed"
+msgstr "Panne signalée et travaux réalisés"
+
+msgid "Vehicle Readings"
+msgstr "Relevés du véhicule"
+
+msgid "Downtime (hours)"
+msgstr "Temps d'immobilisation (heures)"
+
+msgid "Spare Parts"
+msgstr "Pièces de rechange"
+
+msgid "Qty"
+msgstr "Qté"
+
+msgid "Work"
+msgstr "Travaux"
+
+msgid "Photos & Evidence"
+msgstr "Photos et justificatifs"
+
+msgid "Job Card Photos"
+msgstr "Photos de la fiche d'intervention"
+
+msgid "Cost Summary"
+msgstr "Récapitulatif des coûts"
+
+msgid "Spare Parts Cost"
+msgstr "Coût des pièces de rechange"
+
+msgid "Labour Cost"
+msgstr "Coût de la main-d'œuvre"
+
+msgid "Sotrama | Algerian Public Works Fleet Management"
+msgstr "Sotrama | Gestion du parc de travaux publics"
+
+msgid "VEHICLE INSPECTION"
+msgstr "CONTRÔLE DU VÉHICULE"
+
+msgid "System / Category"
+msgstr "Système / catégorie"
+
+msgid "Inspection Point"
+msgstr "Point de contrôle"
+
+msgid "Remarks / Defect"
+msgstr "Observations / défaut"
+
+msgid "Findings & Follow-up"
+msgstr "Constatations et suivi"
+
+msgid "Inspector Comments"
+msgstr "Observations de l'inspecteur"
+
+msgid "Sotrama | Vehicle Safety & Inspection Record"
+msgstr "Sotrama | Fiche de contrôle et de sécurité du véhicule"
+
+msgid "Breakdown Incident records for Sotrama public-works fleet operations."
+msgstr "Fiches d'incident de panne concernant les véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Where the breakdown occurred"
+msgstr "Lieu où la panne s'est produite."
+
+msgid "What happened — symptoms, error codes, observations"
+msgstr "Description de l'incident : symptômes, codes d'erreur et observations."
+
+msgid "Engine, Transmission, Electrical, etc."
+msgstr "Moteur, transmission, circuit électrique, etc."
+
+msgid "Hours the vehicle was out of service"
+msgstr "Nombre d'heures pendant lesquelles le véhicule a été indisponible."
+
+msgid "Auto-created job card for this breakdown"
+msgstr "Fiche d'intervention créée automatiquement pour cette panne."
+
+msgid "Vehicle status saved before the breakdown marked it Out of Service."
+msgstr "État du véhicule enregistré avant que la panne ne le fasse passer au statut Hors service."
+
+msgid "Breakdown Photo records for Sotrama public-works fleet operations."
+msgstr "Photographies justificatives des incidents de panne du parc de travaux publics Sotrama."
+
+msgid "Company Classification records for Sotrama public-works fleet operations."
+msgstr "Dossiers de qualification des entreprises intervenant dans les travaux publics pour Sotrama."
+
+msgid "Legal entity to which this public-works classification certificate belongs."
+msgstr "Personne morale titulaire de ce certificat de qualification dans les travaux publics."
+
+msgid "Classification grade I–IX per Arrêté Interministeriel"
+msgstr "Classe de qualification de I à IX, conformément à l'arrêté interministériel."
+
+msgid "Certificate number from MTPIB"
+msgstr "Numéro du certificat délivré par le MTPIB."
+
+msgid "Validity period in years (5 years per MTPIB)"
+msgstr "Durée de validité en années (5 ans selon le MTPIB)."
+
+msgid "Staff size score (1–9)"
+msgstr "Score relatif à l'effectif (de 1 à 9)."
+
+msgid "Management staff score (0 or 1)"
+msgstr "Score du personnel d'encadrement (0 ou 1)."
+
+msgid "Training/perfectionnement/recyclage score (1–9)"
+msgstr "Score relatif à la formation, au perfectionnement et au recyclage (de 1 à 9)."
+
+msgid "Equipment value score (1–9)"
+msgstr "Score relatif à la valeur du matériel (de 1 à 9)."
+
+msgid "Turnover score over 3 years (1–9)"
+msgstr "Score du chiffre d'affaires cumulé sur trois ans (de 1 à 9)."
+
+msgid "Attestations de Bonne Exécution score (1–1.8)"
+msgstr "Score des attestations de bonne exécution (de 1 à 1,8)."
+
+msgid "NT = [(CB1×EF)×(CB2×E) + CB3×RA + CB4×FR] + CB5×VM + (CB6×CS + CB7×CA) + CB8×ABE"
+msgstr "Formule de calcul de la note totale : NT = [(CB1×EF)×(CB2×E) + CB3×RA + CB4×FR] + CB5×VM + (CB6×CS + CB7×CA) + CB8×ABE."
+
+msgid "Driver records for Sotrama public-works fleet operations."
+msgstr "Fiches des conducteurs et conducteurs d'engins du parc de travaux publics Sotrama."
+
+msgid "Optional link to the authoritative ERPNext/Frappe HR Employee record. Only HR Manager and System Manager can change this link; fleet roles do not receive broad Employee read access."
+msgstr "Lien facultatif vers la fiche Salarié (Employee) de référence dans ERPNext/Frappe HR. Seuls les rôles HR Manager et System Manager peuvent modifier ce lien ; les rôles du parc ne disposent pas d'un accès général aux fiches des salariés."
+
+msgid "Company employing or assigning this driver. Defaults from the linked Employee."
+msgstr "Société qui emploie ou affecte ce conducteur. Préremplie à partir de la fiche du salarié lié."
+
+msgid "Driving licence number. HR-only; Fleet Manager sees the licence category and expiry instead."
+msgstr "Numéro du permis de conduire. Réservé aux RH ; le gestionnaire du parc voit uniquement la catégorie et la date d'expiration du permis."
+
+msgid "Categories listed in Article 180 of Executive Decree 04-381 as amended by Executive Decree 25-169 of 22 June 2025. Visible to Fleet Manager and HR."
+msgstr "Catégories prévues à l'article 180 du décret exécutif 04-381, modifié par le décret exécutif 25-169 du 22 juin 2025. Visibles par le gestionnaire du parc et les RH."
+
+msgid "Date the driver's licence expires. Visible to Fleet Manager and HR; hidden from Workshop."
+msgstr "Date d'expiration du permis de conduire. Visible par le gestionnaire du parc et les RH ; masquée au personnel de l'atelier."
+
+msgid "Date the licence was issued. HR-only."
+msgstr "Date de délivrance du permis de conduire. Réservée aux RH."
+
+msgid "Date the medical certificate expires"
+msgstr "Date d'expiration du certificat d'aptitude médicale."
+
+msgid "Date the safety training certification expires"
+msgstr "Date d'expiration de l'attestation de formation à la sécurité."
+
+msgid "Professional transport certificate number, where required by the transport activity."
+msgstr "Numéro de l'attestation professionnelle de transport, lorsque l'activité exercée l'exige."
+
+msgid "Scanned professional certificate required for the road-transport activities listed in Articles 79–80 of Law 26-09."
+msgstr "Copie numérisée de l'attestation professionnelle requise pour les activités de transport routier visées aux articles 79 et 80 de la loi 26-09."
+
+msgid "Restricted HR/medical records. Keep the latest medical fitness and drug-screening results and their review/expiry dates."
+msgstr "Données RH et médicales à accès restreint. Conserver les derniers résultats d'aptitude médicale et de dépistage de drogues, ainsi que leurs dates de contrôle et d'expiration."
+
+msgid "Carte d'identité nationale number"
+msgstr "Numéro de la carte nationale d'identité."
+
+msgid "Residential address. HR-only; use the operational phone/email fields for Fleet contact."
+msgstr "Adresse de résidence. Réservée aux RH ; utiliser les champs de téléphone et d'e-mail professionnels pour les contacts liés au parc."
+
+msgid "Company-approved operational contact number. Do not copy a private personal number without HR authorization."
+msgstr "Numéro de téléphone professionnel approuvé par la société. Ne pas enregistrer de numéro personnel sans autorisation des RH."
+
+msgid "Use a company email address for Fleet operations; do not store a personal email address."
+msgstr "Utiliser une adresse e-mail professionnelle pour les opérations du parc ; ne pas enregistrer d'adresse e-mail personnelle."
+
+msgid "Count of breakdown incidents attributed to this driver. Visible to Fleet Manager and HR; hidden from Workshop."
+msgstr "Nombre d'incidents de panne attribués à ce conducteur. Visible par le gestionnaire du parc et les RH ; masqué au personnel de l'atelier."
+
+msgid "Fleet operational notes only. Do not record medical, disciplinary or personal HR information."
+msgstr "Notes relatives uniquement à l'activité du parc. Ne pas y consigner d'informations médicales, disciplinaires ou personnelles relevant des RH."
+
+msgid "Restricted HR/medical evidence for professional transport driver compliance under Algerian Road Code Articles 71 and 80."
+msgstr "Justificatifs RH et médicaux à accès restreint pour le suivi de la conformité des conducteurs affectés au transport professionnel, conformément aux articles 71 et 80 du code de la route algérien."
+
+msgid "Enter the date stated by the competent provider, or the next internal review date. This field does not impose or assume a statutory testing interval."
+msgstr "Saisir la date indiquée par l'organisme compétent ou la prochaine date de contrôle interne. Ce champ n'impose ni ne présume d'une périodicité réglementaire des examens."
+
+msgid "Inspection Item records for Sotrama public-works fleet operations."
+msgstr "Points de contrôle utilisés lors des inspections des véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Keep Not Checked until the inspector has physically verified this item. Every item must be marked Okay or Defective before submission."
+msgstr "Conserver le statut « Non vérifié » tant que l'inspecteur n'a pas vérifié physiquement ce point. Chaque point doit être marqué « Conforme » ou « Défectueux » avant la soumission."
+
+msgid "When enabled, a defective result automatically marks the vehicle Out of Service."
+msgstr "Lorsque cette option est activée, un résultat défectueux fait automatiquement passer le véhicule au statut Hors service."
+
+msgid "Job Card Labour records for Sotrama public-works fleet operations."
+msgstr "Lignes de main-d'œuvre enregistrées dans les fiches d'intervention de maintenance du parc Sotrama."
+
+msgid "Job Card Other Cost records for Sotrama public-works fleet operations."
+msgstr "Autres frais enregistrés dans les fiches d'intervention de maintenance du parc Sotrama."
+
+msgid "Job Card Part records for Sotrama public-works fleet operations."
+msgstr "Pièces de rechange utilisées dans les fiches d'intervention de maintenance du parc Sotrama."
+
+msgid "Serial or batch number if tracked"
+msgstr "Numéro de série ou de lot, si cet article fait l'objet d'un suivi."
+
+msgid "Job Card Photo records for Sotrama public-works fleet operations."
+msgstr "Photographies justificatives associées aux fiches d'intervention de maintenance du parc Sotrama."
+
+msgid "Maintenance Job Card records for Sotrama public-works fleet operations."
+msgstr "Fiches d'intervention de maintenance des véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Active maintenance plan this scheduled service completes."
+msgstr "Plan de maintenance actif auquel cette intervention planifiée correspond."
+
+msgid "Workshop or vendor performing the repair"
+msgstr "Atelier ou prestataire chargé de réaliser la réparation."
+
+msgid "Customer complaint or observed problem"
+msgstr "Réclamation de l'utilisateur ou problème constaté sur le véhicule."
+
+msgid "Technician findings and root cause"
+msgstr "Constats du technicien et cause à l'origine du dysfonctionnement."
+
+msgid "Odometer reading when vehicle arrived"
+msgstr "Relevé du compteur kilométrique à l'arrivée du véhicule."
+
+msgid "Odometer reading when vehicle left"
+msgstr "Relevé du compteur kilométrique au départ du véhicule."
+
+msgid "If this job was triggered by a breakdown"
+msgstr "À renseigner si cette intervention fait suite à un incident de panne."
+
+msgid "Breakdown that triggered this job card"
+msgstr "Incident de panne à l'origine de cette fiche d'intervention."
+
+msgid "Material Issue generated for consumed maintenance parts."
+msgstr "Sortie de stock générée pour les pièces consommées lors de l'intervention de maintenance."
+
+msgid "Add inventory items from ERPNext Item. On submission, the quantities are issued from the vehicle's configured parts warehouse and included in the parts cost."
+msgstr "Ajouter les articles depuis le référentiel de stock ERPNext. À la soumission, les quantités sont sorties du magasin de pièces configuré pour le véhicule et intégrées au coût des pièces."
+
+msgid "Add mechanics from Frappe HR Employee. Enter hours and hourly rate; each line contributes to the labour cost."
+msgstr "Ajouter les mécaniciens depuis le référentiel des salariés de Frappe HR. Saisir le nombre d'heures et le taux horaire ; chaque ligne contribue au coût de la main-d'œuvre."
+
+msgid "Record additional maintenance expenses such as towing, fuel, rental, tolls or permits."
+msgstr "Enregistrer les autres frais de maintenance, tels que le remorquage, le carburant, la location, les péages ou les autorisations."
+
+msgid "Maintenance Job Type records for Sotrama public-works fleet operations."
+msgstr "Types d'intervention de maintenance configurés pour le parc de travaux publics Sotrama."
+
+msgid "Maintenance Schedule records for Sotrama public-works fleet operations."
+msgstr "Plans de maintenance préventive des véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Last submitted job card applied to this maintenance plan."
+msgstr "Dernière fiche d'intervention soumise et prise en compte dans ce plan de maintenance."
+
+msgid "Next recurring schedule generated when this plan is completed."
+msgstr "Plan récurrent suivant, généré lorsque le plan actuel est clôturé."
+
+msgid "Operational Task records for Sotrama public-works fleet operations."
+msgstr "Tâches d'exploitation et de transport réalisées avec les véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Specify whether this transport is performed for a third party or for the Company's own account."
+msgstr "Préciser si le transport est réalisé pour le compte d'un tiers ou pour le propre compte de la société."
+
+msgid "Do not assume own-account hauling is exempt or regulated. Confirm applicability with the competent authority before submission."
+msgstr "Ne pas présumer que le transport pour compte propre est exempté ou soumis à réglementation. Confirmer l'applicabilité auprès de l'autorité compétente avant la soumission."
+
+msgid "Assign a road driver for regulated transport, or an equipment operator when relevant."
+msgstr "Affecter un conducteur routier pour un transport réglementé ou un conducteur d'engin, selon le cas."
+
+msgid "e.g. m² of asphalt paved, m³ of earth moved"
+msgstr "Ex. : m² d'enrobé mis en œuvre, m³ de terrassement réalisé."
+
+msgid "Company-specific operational defaults maintained in TP Settings."
+msgstr "Paramètres opérationnels propres à chaque société, gérés dans TP Settings."
+
+msgid "Central application settings and optional feature activation for all Sotrama modules."
+msgstr "Paramètres centraux de l'application et activation facultative des fonctionnalités de tous les modules Sotrama."
+
+msgid "Optional Algerian registration fields for Company. ERPNext's standard Tax ID remains the NIF field."
+msgstr "Champs facultatifs d'immatriculation des sociétés algériennes. Le champ Tax ID standard d'ERPNext reste utilisé pour le NIF."
+
+msgid "When enabled, Sotrama adds Article d'imposition, NIS, RC and Capital Social to Algerian Company records. NIF continues to use ERPNext's standard Tax ID field. Disabling this option hides Sotrama-managed fields but preserves their metadata and values."
+msgstr "Lorsque cette option est activée, Sotrama ajoute les champs Article d'imposition, NIS, RC et Capital social aux fiches des sociétés algériennes. Le NIF continue d'utiliser le champ Tax ID standard d'ERPNext. La désactivation masque les champs gérés par Sotrama sans supprimer leurs métadonnées ni leurs valeurs."
+
+msgid "Optional one-time creation of the company's French job-title catalogue in the standard Frappe HR Designation master. No separate Sotrama employee or job-title register is created."
+msgstr "Création facultative, en une seule fois, du référentiel français des intitulés de poste de la société dans le référentiel standard Désignation de Frappe HR. Aucun registre distinct de salariés ou d'intitulés de poste Sotrama n'est créé."
+
+msgid "When checked and saved, Sotrama creates only missing entries from the curated 202-title French BTPH list in Frappe HR > Human Resources > Employee > Designation. This creates job-title master records only; it does not create Employees, Drivers or employee assignments. Existing designations are never renamed, overwritten or deleted."
+msgstr "Lorsque cette option est cochée puis enregistrée, Sotrama crée uniquement les entrées manquantes de la liste française BTPH validée (202 intitulés) dans Frappe HR > Ressources humaines > Employé > Désignation. Seules des fiches de référence d'intitulés de poste sont créées ; aucun salarié, conducteur ni affectation de salarié n'est créé. Les désignations existantes ne sont jamais renommées, écrasées ni supprimées."
+
+msgid "Central settings for Sotrama public-works fleet operations."
+msgstr "Paramètres centraux de gestion du parc de travaux publics Sotrama."
+
+msgid "Fallback defaults for the primary company. For multiple legal entities, define one row per company in the Company Defaults table below. ERPNext Company, Warehouse and Cost Center records remain the source of truth."
+msgstr "Paramètres de repli pour la société principale. Pour plusieurs entités juridiques, définir une ligne par société dans le tableau des paramètres par société ci-dessous. Les fiches Société, Entrepôt et Centre de coûts d'ERPNext restent les références."
+
+msgid "Source Warehouse for maintenance issues when a vehicle has no dedicated Parts Warehouse."
+msgstr "Magasin source utilisé pour les sorties de pièces de maintenance lorsqu'aucun magasin dédié n'est défini sur le véhicule."
+
+msgid "Add one row for each legal entity. New Vehicles and Maintenance Job Cards resolve their department, cost center and parts warehouse from the matching row; tasks inherit the Vehicle company."
+msgstr "Ajouter une ligne pour chaque entité juridique. Les nouveaux véhicules et les fiches d'intervention récupèrent le département, le centre de coûts et le magasin de pièces de la ligne correspondante ; les tâches héritent de la société du véhicule."
+
+msgid "Require every Driver record to reference an Employee from ERPNext/Frappe HR."
+msgstr "Exiger que chaque fiche Conducteur soit liée à une fiche Salarié (Employee) d'ERPNext/Frappe HR."
+
+msgid "Optional company-wide rule for all Driver assignments. Regulated transport tasks still require a current licence regardless of this setting."
+msgstr "Règle facultative à l'échelle de la société pour toutes les affectations de conducteurs. Les tâches de transport réglementé exigent toujours un permis valide, quel que soit ce paramètre."
+
+msgid "Optional company policy for roles/activities requiring a current medical fitness certificate."
+msgstr "Politique facultative de la société pour les fonctions ou activités nécessitant un certificat d'aptitude médicale valide."
+
+msgid "Optional company policy for roles/activities requiring current safety training."
+msgstr "Politique facultative de la société pour les fonctions ou activités nécessitant une attestation de formation à la sécurité valide."
+
+msgid "Controls the additional professional certificate, medical fitness and negative drug-screening evidence for the five road-transport activities in Algerian Law 26-09, Articles 79–80. Disable only after the competent authority confirms the selected activity is outside scope. A current driving licence number, category and expiry remain mandatory for regulated transport even when this option is disabled."
+msgstr "Détermine l'exigence complémentaire d'attestation professionnelle, d'aptitude médicale et de résultat négatif au dépistage de drogues pour les cinq activités de transport routier visées aux articles 79 et 80 de la loi 26-09. Ne désactiver qu'après confirmation de l'autorité compétente que l'activité concernée est hors champ. Pour tout transport réglementé, le numéro, la catégorie et la date d'expiration d'un permis valide restent obligatoires même si cette option est désactivée."
+
+msgid "Vehicle records for Sotrama public-works fleet operations."
+msgstr "Fiches des véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Enter the road registration plate, or the internal fleet number for off-road machinery. Use one stable identifier for every unit."
+msgstr "Saisir le numéro d'immatriculation routière ou le numéro interne du parc pour les engins non immatriculés. Utiliser un identifiant stable et unique pour chaque unité."
+
+msgid "Owning company for this vehicle and its stock transactions."
+msgstr "Société propriétaire du véhicule et responsable des mouvements de stock qui lui sont associés."
+
+msgid "Choose the road vehicle or public-works machine type."
+msgstr "Choisir le type de véhicule routier ou d'engin de travaux publics."
+
+msgid "Year the vehicle was manufactured"
+msgstr "Année de fabrication du véhicule."
+
+msgid "VIN / Chassis Number — unique vehicle identifier"
+msgstr "Numéro d'identification du véhicule (VIN / châssis), propre à chaque unité."
+
+msgid "Engine serial number"
+msgstr "Numéro de série du moteur."
+
+msgid "Use for road vehicles where applicable; leave blank for equipment if this classification is not meaningful."
+msgstr "À renseigner pour les véhicules routiers lorsque cette classification s'applique ; laisser vide pour les engins lorsqu'elle n'est pas pertinente."
+
+msgid "Payload capacity in tonnes"
+msgstr "Capacité de charge utile en tonnes."
+
+msgid "Total number of axles"
+msgstr "Nombre total d'essieux."
+
+msgid "Fuel tank capacity in litres"
+msgstr "Capacité du réservoir de carburant en litres."
+
+msgid "Latest recorded odometer reading in km"
+msgstr "Dernier relevé du compteur kilométrique, en km."
+
+msgid "Date the vehicle was acquired"
+msgstr "Date d'acquisition du véhicule."
+
+msgid "Purchase value in Algerian Dinars"
+msgstr "Valeur d'achat en dinars algériens."
+
+msgid "Current book value (after depreciation)"
+msgstr "Valeur comptable actuelle après amortissement."
+
+msgid "Annual depreciation rate as percentage"
+msgstr "Taux annuel d'amortissement, en pourcentage."
+
+msgid "Estimated residual value at end of useful life"
+msgstr "Valeur résiduelle estimée à la fin de la durée d'utilisation."
+
+msgid "Insured value of the vehicle"
+msgstr "Valeur assurée du véhicule."
+
+msgid "Base depot or current worksite"
+msgstr "Dépôt de rattachement ou chantier où se trouve actuellement le véhicule."
+
+msgid "Source warehouse used when maintenance parts are issued."
+msgstr "Magasin source utilisé lors de la sortie des pièces de maintenance."
+
+msgid "Regular road driver or equipment operator, where assigned."
+msgstr "Conducteur routier ou conducteur d'engin habituel, le cas échéant."
+
+msgid "Grade classification of the owning company (I-IX)"
+msgstr "Classe de qualification de la société propriétaire (de I à IX)."
+
+msgid "Carte grise / registration certificate"
+msgstr "Certificat d'immatriculation (carte grise)."
+
+msgid "Insurance certificate"
+msgstr "Attestation d'assurance."
+
+msgid "Pollution Under Control certificate"
+msgstr "Certificat de conformité aux exigences de contrôle de la pollution."
+
+msgid "Technical inspection (visite technique)"
+msgstr "Contrôle technique périodique (visite technique)."
+
+msgid "Add one row per vehicle document, with its issue date, expiry date and attachment."
+msgstr "Ajouter une ligne par document du véhicule, avec sa date de délivrance, sa date d'expiration et la pièce jointe."
+
+msgid "Vehicle Document records for Sotrama public-works fleet operations."
+msgstr "Documents associés aux véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Vehicle Inspection records for Sotrama public-works fleet operations."
+msgstr "Contrôles périodiques et inspections des véhicules et engins du parc de travaux publics Sotrama."
+
+msgid "Use only when this successful reinspection clears a previously submitted safety-critical inspection."
+msgstr "À utiliser uniquement lorsqu'un contrôle de suivi réussi lève une défectuosité critique relevée lors d'une inspection précédemment soumise."
+
+msgid "Calculated automatically: Pass when all checks are Okay, Conditional Pass for non-critical defects, and Fail for safety-critical defects."
+msgstr "Calculé automatiquement : Conforme lorsque tous les points sont conformes, Conforme sous réserve en présence de défauts non critiques et Non conforme en présence de défauts critiques pour la sécurité."
+
+msgid "The standard checklist is added automatically to new inspections. Use Add Inspection Check for an additional vehicle-specific check."
+msgstr "La liste de contrôle standard est ajoutée automatiquement aux nouvelles inspections. Utiliser Add Inspection Check pour ajouter un point de contrôle propre au véhicule."
+
+msgid "Successful follow-up inspection that cleared this critical defect."
+msgstr "Inspection de suivi réussie ayant permis de lever cette défectuosité critique."
+
+msgid "Vehicle Make records for Sotrama public-works fleet operations."
+msgstr "Référentiel des marques de véhicules et d'engins utilisés par le parc de travaux publics Sotrama."
+
+msgid "Vehicle Model records for Sotrama public-works fleet operations."
+msgstr "Référentiel des modèles de véhicules et d'engins utilisés par le parc de travaux publics Sotrama."
+
+msgid "Weight Class (Optional)"
+msgstr "Classe de poids (facultative)"
+
+msgid "Vehicle Class"
+msgstr "Classe du véhicule"
+
+msgid "Tonnage"
+msgstr "Tonnage"
+
+msgid "Number of Axles"
+msgstr "Nombre d'essieux"
+
+msgid "Fuel Type"
+msgstr "Type de carburant"
+
+msgid "Fuel Capacity (L)"
+msgstr "Capacité du réservoir (L)"
+
+msgid "Current Odometer (km)"
+msgstr "Kilométrage actuel (km)"
+
+msgid "Acquisition & Valuation"
+msgstr "Acquisition et valorisation"
+
+msgid "Acquisition Date"
+msgstr "Date d'acquisition"
+
+msgid "Acquisition Value (DZD)"
+msgstr "Valeur d'acquisition (DZD)"
+
+msgid "Current Value (DZD)"
+msgstr "Valeur actuelle (DZD)"
+
+msgid "Depreciation Rate (%)"
+msgstr "Taux d'amortissement (%)"
+
+msgid "Salvage Value (DZD)"
+msgstr "Valeur résiduelle (DZD)"
+
+msgid "Insurance Value (DZD)"
+msgstr "Valeur assurée (DZD)"
+
+msgid "Fleet Assignment"
+msgstr "Affectation au parc"
+
+msgid "Current Location"
+msgstr "Localisation actuelle"
+
+msgid "Parts Warehouse"
+msgstr "Magasin de pièces de rechange"
+
+msgid "Primary Driver"
+msgstr "Conducteur principal"
+
+msgid "Primary Driver / Operator"
+msgstr "Conducteur / opérateur principal"
+
+msgid "Company Classification"
+msgstr "Classement de l'entreprise"
+
+msgid "Department"
+msgstr "Département"
+
+msgid "Cost Center"
+msgstr "Centre de coûts"
+
+msgid "Asset"
+msgstr "Immobilisation"
+
+msgid "Optional ERPNext fixed asset; it must belong to the same Company."
+msgstr "Immobilisation ERPNext facultative ; elle doit appartenir à la même société."
+
+msgid "Select a submitted Asset."
+msgstr "Sélectionnez une immobilisation validée."
+
+msgid "A sold or scrapped Asset cannot be linked to a Vehicle."
+msgstr "Une immobilisation cédée ou mise au rebut ne peut pas être liée à un véhicule."
+
+msgid "The linked Asset must have a Company."
+msgstr "L'immobilisation liée doit être rattachée à une société."
+
+msgid "Asset must belong to the Vehicle Company."
+msgstr "L'immobilisation doit appartenir à la société du véhicule."
+
+msgid "Documents & Notes"
+msgstr "Documents et observations"
+
+msgid "Vehicle Documents"
+msgstr "Documents du véhicule"
+
+msgid "Vehicle Document"
+msgstr "Document du véhicule"
+
+msgid "Registration Document"
+msgstr "Carte grise"
+
+msgid "Insurance Document"
+msgstr "Attestation d'assurance"
+
+msgid "Pollution Certificate"
+msgstr "Autre justificatif"
+
+msgid "Technical Inspection Certificate"
+msgstr "Attestation de visite technique"
+
+msgid "Document Details"
+msgstr "Détails du document"
+
+msgid "Document Type"
+msgstr "Type de document"
+
+msgid "Choose only documents applicable to this unit; some road-vehicle documents, such as the vignette, may not apply to public-works equipment or trailers."
+msgstr "Ajoutez uniquement les documents applicables à cet engin ; certains documents routiers, comme la vignette, ne concernent pas nécessairement les engins de travaux publics ou les remorques."
+
+msgid "Expiry Date"
+msgstr "Date d'expiration"
+
+msgid "Issue Date"
+msgstr "Date de délivrance"
+
+msgid "Attachment"
+msgstr "Pièce jointe"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Valid"
+msgstr "Valide"
+
+msgid "Expiring Soon"
+msgstr "Expire prochainement"
+
+msgid "Expired"
+msgstr "Expiré"
+
+msgid "Pending"
+msgstr "En attente"
+
+msgid "Task Assignment"
+msgstr "Affectation de la tâche"
+
+msgid "Assignment Details"
+msgstr "Détails de l'affectation"
+
+msgid "Task Date"
+msgstr "Date de la tâche"
+
+msgid "Task Type"
+msgstr "Type de tâche"
+
+msgid "Transport Activity"
+msgstr "Activité de transport"
+
+msgid "Transport Basis"
+msgstr "Cadre du transport"
+
+msgid "Regulatory Applicability"
+msgstr "Applicabilité réglementaire"
+
+msgid "Authority Decision Reference"
+msgstr "Référence de la décision de l'autorité"
+
+msgid "Authority Decision Date"
+msgstr "Date de la décision de l'autorité"
+
+msgid "Authority Decision Evidence"
+msgstr "Justificatif de la décision de l'autorité"
+
+msgid "Driver / Operator"
+msgstr "Conducteur / opérateur"
+
+msgid "Supervisor"
+msgstr "Responsable de chantier"
+
+msgid "Time & Equipment"
+msgstr "Temps et matériel"
+
+msgid "Execution Time"
+msgstr "Temps d'exécution"
+
+msgid "Start Date"
+msgstr "Date de début"
+
+msgid "End Date"
+msgstr "Date de fin"
+
+msgid "Planned Hours"
+msgstr "Heures prévues"
+
+msgid "Actual Hours"
+msgstr "Heures réelles"
+
+msgid "Start Odometer"
+msgstr "Kilométrage au départ"
+
+msgid "End Odometer"
+msgstr "Kilométrage à l'arrivée"
+
+msgid "Distance Covered (km)"
+msgstr "Distance parcourue (km)"
+
+msgid "Output & Notes"
+msgstr "Production et observations"
+
+msgid "Production Output"
+msgstr "Production réalisée"
+
+msgid "Task Description"
+msgstr "Description de la tâche"
+
+msgid "Output Quantity"
+msgstr "Quantité réalisée"
+
+msgid "Output Unit"
+msgstr "Unité de mesure"
+
+msgid "Maintenance Job Details"
+msgstr "Détails de l'intervention"
+
+msgid "Job Details"
+msgstr "Détails de l'intervention"
+
+msgid "Incident Details"
+msgstr "Détails de l'incident"
+
+msgid "Repair & Resolution"
+msgstr "Réparation et résolution"
+
+msgid "Photos and Supporting Notes"
+msgstr "Photos et justificatifs"
+
+msgid "Schedule Configuration"
+msgstr "Configuration du plan"
+
+msgid "Last and Next Service"
+msgstr "Dernier et prochain entretien"
+
+msgid "Cost Summary & Stock"
+msgstr "Récapitulatif des coûts et du stock"
+
+msgid "Parts, Labour & Other Costs"
+msgstr "Pièces, main-d'œuvre et autres frais"
+
+msgid "Attachments & Notes"
+msgstr "Pièces jointes et observations"
+
+msgid "Job Date"
+msgstr "Date de l'intervention"
+
+msgid "Job Nature"
+msgstr "Nature de l'intervention"
+
+msgid "Job Type"
+msgstr "Type d'intervention"
+
+msgid "Reported Issue & Diagnosis"
+msgstr "Problème signalé et diagnostic"
+
+msgid "Reported Issue"
+msgstr "Problème signalé"
+
+msgid "Diagnosis"
+msgstr "Diagnostic"
+
+msgid "Work Performed"
+msgstr "Travaux effectués"
+
+msgid "Spare Parts (Stock Items)"
+msgstr "Pièces de rechange (articles en stock)"
+
+msgid "Labour (Employees / Mechanics)"
+msgstr "Main-d'œuvre (salariés et mécaniciens)"
+
+msgid "Other Costs"
+msgstr "Autres coûts"
+
+msgid "Parts Used"
+msgstr "Pièces utilisées"
+
+msgid "Quantity"
+msgstr "Quantité"
+
+msgid "Rate"
+msgstr "Tarif unitaire"
+
+msgid "Amount"
+msgstr "Montant"
+
+msgid "Hours"
+msgstr "Heures"
+
+msgid "Mechanic"
+msgstr "Mécanicien"
+
+msgid "Employee"
+msgstr "Salarié"
+
+msgid "Inspection Details"
+msgstr "Détails du contrôle"
+
+msgid "Inspection Date"
+msgstr "Date du contrôle"
+
+msgid "Inspection Type"
+msgstr "Type de contrôle"
+
+msgid "Inspection Checklist"
+msgstr "Liste des points de contrôle"
+
+msgid "Inspection Result"
+msgstr "Résultat du contrôle"
+
+msgid "Overall Result"
+msgstr "Résultat global"
+
+msgid "Total Defects"
+msgstr "Nombre de défauts"
+
+msgid "Overall Comments"
+msgstr "Observations générales"
+
+msgid "Not Checked"
+msgstr "Non vérifié"
+
+msgid "Okay"
+msgstr "Conforme"
+
+msgid "Defective"
+msgstr "Défectueux"
+
+msgid "Pass"
+msgstr "Conforme"
+
+msgid "Fail"
+msgstr "Non conforme"
+
+msgid "Conditional Pass"
+msgstr "Conforme sous réserve"
+
+msgid "Remarks"
+msgstr "Remarques"
+
+msgid "Photo Proof"
+msgstr "Photo justificative"
+
+msgid "Safety Critical"
+msgstr "Critique pour la sécurité"
+
+msgid "Reported"
+msgstr "Signalé"
+
+msgid "Acknowledged"
+msgstr "Pris en charge"
+
+msgid "In Progress"
+msgstr "En cours"
+
+msgid "Resolved"
+msgstr "Résolu"
+
+msgid "Closed"
+msgstr "Clôturé"
+
+msgid "Minor"
+msgstr "Mineur"
+
+msgid "Major"
+msgstr "Majeur"
+
+msgid "Critical"
+msgstr "Critique"
+
+msgid "Accident"
+msgstr "Accident"
+
+msgid "Accidental"
+msgstr "Accidentel"
+
+msgid "Active"
+msgstr "Actif"
+
+msgid "Annual"
+msgstr "Annuel"
+
+msgid "Body"
+msgstr "Carrosserie"
+
+msgid "Braking"
+msgstr "Freinage"
+
+msgid "Breakdown"
+msgstr "Panne"
+
+msgid "Bridge Construction"
+msgstr "Construction d'ouvrages d'art"
+
+msgid "Draft"
+msgstr "Brouillon"
+
+msgid "Drainage"
+msgstr "Assainissement"
+
+msgid "Drive Line"
+msgstr "Transmission"
+
+msgid "Drug Screening"
+msgstr "Dépistage de drogues"
+
+msgid "Earthmoving"
+msgstr "Terrassement"
+
+msgid "Electrical"
+msgstr "Électricité"
+
+msgid "Engine"
+msgstr "Moteur"
+
+msgid "Fit"
+msgstr "Apte"
+
+msgid "Fuel"
+msgstr "Carburant"
+
+msgid "General"
+msgstr "Général"
+
+msgid "Grading"
+msgstr "Nivellement"
+
+msgid "In Service"
+msgstr "En service"
+
+msgid "Initial"
+msgstr "Initial"
+
+msgid "Inspection"
+msgstr "Contrôle"
+
+msgid "Medical Fitness Examination"
+msgstr "Examen d'aptitude médicale"
+
+msgid "Negative"
+msgstr "Négatif"
+
+msgid "New"
+msgstr "Neuf"
+
+msgid "On Hold"
+msgstr "En attente"
+
+msgid "On Leave"
+msgstr "En congé"
+
+msgid "Other"
+msgstr "Autre"
+
+msgid "Out of Service"
+msgstr "Hors service"
+
+msgid "Paused"
+msgstr "En pause"
+
+msgid "Periodic"
+msgstr "Périodique"
+
+msgid "Permit"
+msgstr "Permis"
+
+msgid "Positive"
+msgstr "Positif"
+
+msgid "Post-Incident"
+msgstr "Après incident"
+
+msgid "Pre-Use"
+msgstr "Avant utilisation"
+
+msgid "Refurbished"
+msgstr "Remis à neuf"
+
+msgid "Rental"
+msgstr "Location"
+
+msgid "Repair"
+msgstr "Réparation"
+
+msgid "Retired"
+msgstr "Réformé"
+
+msgid "Road Paving"
+msgstr "Réalisation de chaussée"
+
+msgid "Safety"
+msgstr "Sécurité"
+
+msgid "Scheduled Service"
+msgstr "Entretien programmé"
+
+msgid "Scrapped"
+msgstr "Mis au rebut"
+
+msgid "Signaling"
+msgstr "Signalisation"
+
+msgid "Steering"
+msgstr "Direction"
+
+msgid "Survey"
+msgstr "Topographie"
+
+msgid "Suspended"
+msgstr "Suspendu"
+
+msgid "Suspension"
+msgstr "Suspension"
+
+msgid "Terminated"
+msgstr "Sorti des effectifs"
+
+msgid "Toll"
+msgstr "Péage"
+
+msgid "Towing"
+msgstr "Remorquage"
+
+msgid "Transport"
+msgstr "Transport"
+
+msgid "Tyres"
+msgstr "Pneumatiques"
+
+msgid "Under Repair"
+msgstr "En réparation"
+
+msgid "Unfit"
+msgstr "Inapte"
+
+msgid "Used"
+msgstr "Occasion"
+
+msgid "Light"
+msgstr "Léger"
+
+msgid "Medium"
+msgstr "Moyen"
+
+msgid "Heavy"
+msgstr "Lourd"
+
+msgid "Truck"
+msgstr "Camion"
+
+msgid "Dump Truck"
+msgstr "Camion-benne"
+
+msgid "Trailer"
+msgstr "Remorque"
+
+msgid "Semi-trailer"
+msgstr "Semi-remorque"
+
+msgid "Tanker"
+msgstr "Camion-citerne"
+
+msgid "Grader"
+msgstr "Niveleuse"
+
+msgid "Roller"
+msgstr "Compacteur"
+
+msgid "Paver"
+msgstr "Finisseur"
+
+msgid "Bridge Crane"
+msgstr "Grue de pont"
+
+msgid "Utility Vehicle"
+msgstr "Véhicule utilitaire"
+
+msgid "Tractor Unit"
+msgstr "Tracteur routier"
+
+msgid "Pickup"
+msgstr "Pick-up"
+
+msgid "Bulldozer"
+msgstr "Bulldozer"
+
+msgid "Wheel Loader"
+msgstr "Chargeuse sur pneus"
+
+msgid "Excavator"
+msgstr "Pelle hydraulique"
+
+msgid "Backhoe Loader"
+msgstr "Tractopelle"
+
+msgid "Motor Grader"
+msgstr "Niveleuse"
+
+msgid "Road Roller"
+msgstr "Compacteur"
+
+msgid "Asphalt Paver"
+msgstr "Finisseur"
+
+msgid "Concrete Mixer Truck"
+msgstr "Camion malaxeur"
+
+msgid "Concrete Pump"
+msgstr "Pompe à béton"
+
+msgid "Mobile Crane"
+msgstr "Grue mobile"
+
+msgid "Forklift"
+msgstr "Chariot élévateur"
+
+msgid "Water Tanker"
+msgstr "Camion-citerne à eau"
+
+msgid "Fuel Tanker"
+msgstr "Camion-citerne à carburant"
+
+msgid "Low-bed Trailer"
+msgstr "Semi-remorque porte-engins"
+
+msgid "Compressor"
+msgstr "Compresseur"
+
+msgid "Generator"
+msgstr "Groupe électrogène"
+
+msgid "Sweeper"
+msgstr "Balayeuse"
+
+msgid "Other Equipment"
+msgstr "Autre engin"
+
+msgid "Diesel"
+msgstr "Gazole"
+
+msgid "Gasoline"
+msgstr "Essence"
+
+msgid "Hybrid"
+msgstr "Hybride"
+
+msgid "Electric"
+msgstr "Électrique"
+
+msgid "LPG"
+msgstr "GPL"
+
+msgid "Registration Certificate"
+msgstr "Certificat d'immatriculation (carte grise)"
+
+msgid "Insurance Certificate"
+msgstr "Attestation d'assurance"
+
+msgid "Technical Inspection"
+msgstr "Contrôle technique périodique"
+
+msgid "Vehicle Tax Sticker"
+msgstr "Vignette automobile"
+
+msgid "Transport Permit"
+msgstr "Autorisation de transport"
+
+msgid "Certificate of Conformity"
+msgstr "Certificat de conformité"
+
+msgid "Other Document"
+msgstr "Autre document"
+
+msgid "Collective Passenger Transport"
+msgstr "Transport collectif de personnes"
+
+msgid "School Transport"
+msgstr "Transport scolaire"
+
+msgid "Goods Transport"
+msgstr "Transport de marchandises"
+
+msgid "Dangerous Goods Transport"
+msgstr "Transport de matières dangereuses"
+
+msgid "Taxi Transport"
+msgstr "Transport par taxi"
+
+msgid "For-Hire Transport"
+msgstr "Transport pour compte d'autrui"
+
+msgid "Own-Account Transport"
+msgstr "Transport pour compte propre"
+
+msgid "To Be Confirmed"
+msgstr "À confirmer"
+
+msgid "Regulated"
+msgstr "Réglementé"
+
+msgid "Officially Confirmed Not Subject"
+msgstr "Non soumis (confirmation officielle)"
+
+msgid "Interval Months"
+msgstr "Périodicité (mois)"
+
+msgid "Interval KM"
+msgstr "Périodicité (km)"
+
+msgid "Schedule Type"
+msgstr "Type de périodicité"
+
+msgid "Calendar"
+msgstr "Calendrier"
+
+msgid "Mileage"
+msgstr "Kilométrage"
+
+msgid "Last Service Date"
+msgstr "Date du dernier entretien"
+
+msgid "Last Service Odometer"
+msgstr "Kilométrage au dernier entretien"
+
+msgid "Next Due Date"
+msgstr "Prochaine échéance"
+
+msgid "Next Due Odometer"
+msgstr "Prochain kilométrage d'entretien"
+
+msgid "Company Registration Details"
+msgstr "Informations d'immatriculation de l'entreprise"
+
+msgid "Enable Algerian Company Registration Fields"
+msgstr "Activer les champs d'immatriculation des sociétés algériennes"
+
+msgid "HR & Designations"
+msgstr "RH et désignations"
+
+msgid "Import BTPH Job Titles into Frappe HR"
+msgstr "Importer les intitulés de postes BTPH dans Frappe RH"
+
+msgid "Create Missing BTPH Designation Records"
+msgstr "Créer les désignations BTPH manquantes"
+
+msgid "Classification"
+msgstr "Classement"
+
+msgid "Certificate & Grade"
+msgstr "Certificat et catégorie"
+
+msgid "Grade"
+msgstr "Catégorie"
+
+msgid "Category"
+msgstr "Domaine d'activité"
+
+msgid "Public Works (TP)"
+msgstr "Travaux publics (TP)"
+
+msgid "Building and Public Works (BTP)"
+msgstr "Bâtiment et travaux publics (BTP)"
+
+msgid "Hydraulics"
+msgstr "Hydraulique"
+
+msgid "Forestry"
+msgstr "Foresterie"
+
+msgid "Registration Number"
+msgstr "Numéro d'agrément"
+
+msgid "Validity Period"
+msgstr "Durée de validité"
+
+msgid "Workforce & Training"
+msgstr "Effectif et formation"
+
+msgid "Equipment & Finance"
+msgstr "Matériel et finances"
+
+msgid "Notes"
+msgstr "Observations"
+
+msgid "Planned"
+msgstr "Planifié"
+
+msgid "Completed"
+msgstr "Terminé"
+
+msgid "Cancelled"
+msgstr "Annulé"
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Algerian Licence Category"
+msgstr "Catégorie du permis algérien"
+
+msgid "Amount (DZD)"
+msgstr "Montant (DZD)"
+
+msgid "Applied Schedule Service Odometer"
+msgstr "Kilométrage du dernier entretien planifié"
+
+msgid "Apprentice (RA) Score"
+msgstr "Score des apprentis (RA)"
+
+msgid "Apprentice Coefficient (CB3)"
+msgstr "Coefficient des apprentis (CB3)"
+
+msgid "Assessment Results"
+msgstr "Résultats de l'évaluation"
+
+msgid "Block Assignment with Expired Licence"
+msgstr "Bloquer l'affectation en cas de permis expiré"
+
+msgid "Block Assignment with Expired Medical Certificate"
+msgstr "Bloquer l'affectation en cas de certificat médical expiré"
+
+msgid "Block Assignment with Expired Safety Training"
+msgstr "Bloquer l'affectation en cas de formation sécurité expirée"
+
+msgid "Brevet Professionnel"
+msgstr "Brevet professionnel"
+
+msgid "Brevet Professionnel Number"
+msgstr "Numéro du brevet professionnel"
+
+msgid "Capital (CS) Score"
+msgstr "Score du capital social (CS)"
+
+msgid "Capital Coefficient (CB6)"
+msgstr "Coefficient du capital social (CB6)"
+
+msgid "Caption"
+msgstr "Légende"
+
+msgid "Certificate / Reference Number"
+msgstr "Numéro du certificat / référence"
+
+msgid "Check Type"
+msgstr "Type de contrôle"
+
+msgid "Checklist & Findings"
+msgstr "Liste de contrôle et constats"
+
+msgid "Company & Defaults"
+msgstr "Société et paramètres par défaut"
+
+msgid "Company Defaults"
+msgstr "Paramètres par société"
+
+msgid "Completion Date"
+msgstr "Date d'achèvement"
+
+msgid "Compliance Reminder Windows"
+msgstr "Délais de rappel de conformité"
+
+msgid "Condition"
+msgstr "État"
+
+msgid "Contact & Notes"
+msgstr "Coordonnées et observations"
+
+msgid "Contact Information"
+msgstr "Coordonnées"
+
+msgid "Critical Defect Cleared By"
+msgstr "Défaut critique levé par"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Date of Birth"
+msgstr "Date de naissance"
+
+msgid "Default Company"
+msgstr "Société par défaut"
+
+msgid "Default Company Classification"
+msgstr "Classification par défaut de l'entreprise"
+
+msgid "Default Cost Center"
+msgstr "Centre de coûts par défaut"
+
+msgid "Default Department"
+msgstr "Département par défaut"
+
+msgid "Default Mechanic Rate (DZD/hr)"
+msgstr "Tarif horaire mécanicien par défaut (DZD/h)"
+
+msgid "Default Parts Warehouse"
+msgstr "Magasin de pièces de rechange par défaut"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Downtime (Hours)"
+msgstr "Durée d'immobilisation (heures)"
+
+msgid "Driver Document Alert Days"
+msgstr "Délai d'alerte des documents du conducteur (jours)"
+
+msgid "Driver Identity"
+msgstr "Identité du conducteur"
+
+msgid "Driver Name"
+msgstr "Nom du conducteur"
+
+msgid "Driver at Time of Issue"
+msgstr "Conducteur au moment de l'incident"
+
+msgid "Drivers & Compliance"
+msgstr "Conducteurs et conformité"
+
+msgid "Driving Licence"
+msgstr "Permis de conduire"
+
+msgid "Effectif (EF) Score"
+msgstr "Score de l'effectif (EF)"
+
+msgid "Effectif Coefficient (CB1)"
+msgstr "Coefficient de l'effectif (CB1)"
+
+msgid "Employee (Mechanic)"
+msgstr "Salarié (mécanicien)"
+
+msgid "Employee Name"
+msgstr "Nom du salarié"
+
+msgid "Encadrement (E) Score"
+msgstr "Score de l'encadrement (E)"
+
+msgid "Encadrement Coefficient (CB2)"
+msgstr "Coefficient de l'encadrement (CB2)"
+
+msgid "Equipment and Financial Capacity"
+msgstr "Capacité matérielle et financière"
+
+msgid "Evidence"
+msgstr "Justificatif"
+
+msgid "Examination Date"
+msgstr "Date de l'examen"
+
+msgid "Examining Facility / Laboratory"
+msgstr "Établissement / laboratoire d'examen"
+
+msgid "Execution References & Final Score"
+msgstr "Références d'exécution et score final"
+
+msgid "Follow-up of Critical Inspection"
+msgstr "Suivi du contrôle critique"
+
+msgid "Frappe HR Employee Integration"
+msgstr "Intégration des salariés Frappe RH"
+
+msgid "Good Execution (ABE) Score"
+msgstr "Score de la bonne exécution (ABE)"
+
+msgid "Good Execution Coefficient (CB8)"
+msgstr "Coefficient de la bonne exécution (CB8)"
+
+msgid "Has Safety-Critical Defect"
+msgstr "Présence d'un défaut critique pour la sécurité"
+
+msgid "Hire Date"
+msgstr "Date d'embauche"
+
+msgid "Human Resources"
+msgstr "Ressources humaines"
+
+msgid "Identity & Employment"
+msgstr "Identité et emploi"
+
+msgid "Incident"
+msgstr "Incident"
+
+msgid "Incident Date"
+msgstr "Date de l'incident"
+
+msgid "Incident Photo"
+msgstr "Photo de l'incident"
+
+msgid "Inspection Assignment"
+msgstr "Affectation du contrôle"
+
+msgid "Inspection Checklist Item"
+msgstr "Point de contrôle"
+
+msgid "Inspection Checklist Items"
+msgstr "Points de contrôle"
+
+msgid "Item"
+msgstr "Article"
+
+msgid "Item Details"
+msgstr "Détails de l'article"
+
+msgid "Item Name"
+msgstr "Désignation de l'article"
+
+msgid "Job Card Photo"
+msgstr "Photo de la fiche d'intervention"
+
+msgid "Job Category"
+msgstr "Catégorie d'intervention"
+
+msgid "Job Type Name"
+msgstr "Nom du type d'intervention"
+
+msgid "Labour Entry"
+msgstr "Ligne de main-d'œuvre"
+
+msgid "Last Service Job Card"
+msgstr "Dernière fiche d'intervention"
+
+msgid "Legal Entity"
+msgstr "Personne morale"
+
+msgid "Licences & Safety"
+msgstr "Permis et sécurité"
+
+msgid "License Expiry"
+msgstr "Date d'expiration du permis"
+
+msgid "License Issue Date"
+msgstr "Date de délivrance du permis"
+
+msgid "License Number"
+msgstr "Numéro du permis"
+
+msgid "Linked Breakdown"
+msgstr "Panne liée"
+
+msgid "Linked Breakdown Incident"
+msgstr "Déclaration de panne liée"
+
+msgid "Linked Issue"
+msgstr "Incident lié"
+
+msgid "Linked Job Card"
+msgstr "Fiche d'intervention liée"
+
+msgid "Linked Maintenance Schedule"
+msgstr "Plan de maintenance lié"
+
+msgid "Location"
+msgstr "Emplacement"
+
+msgid "Maintenance Due Alert Days"
+msgstr "Délai d'alerte d'échéance de maintenance (jours)"
+
+msgid "Maintenance Plan"
+msgstr "Plan de maintenance"
+
+msgid "Maintenance Service Definition"
+msgstr "Définition du service de maintenance"
+
+msgid "Make"
+msgstr "Marque"
+
+msgid "Material Value (VM) Score"
+msgstr "Score de la valeur matérielle (VM)"
+
+msgid "Material Value Coefficient (CB5)"
+msgstr "Coefficient de la valeur matérielle (CB5)"
+
+msgid "Medical & Screening History"
+msgstr "Historique médical et dépistage"
+
+msgid "Medical Certificate Expiry"
+msgstr "Date d'expiration du certificat médical"
+
+msgid "National ID Number"
+msgstr "Numéro de la carte nationale d'identité"
+
+msgid "Next Schedule"
+msgstr "Plan suivant"
+
+msgid "Odometer (km)"
+msgstr "Kilométrage (km)"
+
+msgid "Odometer After (km)"
+msgstr "Kilométrage après intervention (km)"
+
+msgid "Odometer Before (km)"
+msgstr "Kilométrage avant intervention (km)"
+
+msgid "Operational Defaults"
+msgstr "Paramètres opérationnels par défaut"
+
+msgid "Operational Email"
+msgstr "E-mail professionnel"
+
+msgid "Operational Notes"
+msgstr "Observations opérationnelles"
+
+msgid "Operational Phone"
+msgstr "Téléphone professionnel"
+
+msgid "Organization Defaults"
+msgstr "Paramètres par défaut de l'organisation"
+
+msgid "Other Maintenance Cost"
+msgstr "Autres frais de maintenance"
+
+msgid "Overall Status"
+msgstr "Statut général"
+
+msgid "Per-Company Configuration"
+msgstr "Configuration par société"
+
+msgid "Photo"
+msgstr "Photo"
+
+msgid "Photos"
+msgstr "Photos"
+
+msgid "Preventive Maintenance Schedule"
+msgstr "Plan de maintenance préventive"
+
+msgid "Previous Schedule Last Service Date"
+msgstr "Date du dernier entretien du plan précédent"
+
+msgid "Previous Schedule Last Service Job Card"
+msgstr "Fiche d'intervention du plan précédent"
+
+msgid "Previous Schedule Last Service Odometer"
+msgstr "Kilométrage du dernier entretien du plan précédent"
+
+msgid "Previous Schedule Next Due Date"
+msgstr "Prochaine échéance du plan précédent"
+
+msgid "Previous Schedule Next Due Odometer"
+msgstr "Prochain kilométrage du plan précédent"
+
+msgid "Previous Vehicle Status"
+msgstr "Statut précédent du véhicule"
+
+msgid "Project"
+msgstr "Projet"
+
+msgid "Rate (DZD)"
+msgstr "Tarif (DZD)"
+
+msgid "Rate (DZD/hr)"
+msgstr "Tarif (DZD/h)"
+
+msgid "Receipt"
+msgstr "Réception"
+
+msgid "Require Active Employee for Active Driver"
+msgstr "Exiger un salarié actif pour un conducteur actif"
+
+msgid "Require Brevet Professionnel for Regulated Transport"
+msgstr "Exiger le brevet professionnel pour le transport réglementé"
+
+msgid "Require Employee Link"
+msgstr "Exiger le rattachement à un salarié"
+
+msgid "Resolution Date"
+msgstr "Date de résolution"
+
+msgid "Resolution Notes"
+msgstr "Notes de résolution"
+
+msgid "Restricted Medical & Screening Records"
+msgstr "Dossiers médicaux et de dépistage restreints"
+
+msgid "Restricted Notes"
+msgstr "Observations confidentielles"
+
+msgid "Result"
+msgstr "Résultat"
+
+msgid "Revenue (CA) Score"
+msgstr "Score du chiffre d'affaires (CA)"
+
+msgid "Revenue Coefficient (CB7)"
+msgstr "Coefficient du chiffre d'affaires (CB7)"
+
+msgid "Review / Valid Until"
+msgstr "Révision / valable jusqu'au"
+
+msgid "Safety Training Expiry"
+msgstr "Date d'expiration de la formation sécurité"
+
+msgid "Serial/Batch"
+msgstr "N° de série / lot"
+
+msgid "Severity"
+msgstr "Gravité"
+
+msgid "Spare Part Details"
+msgstr "Détails de la pièce de rechange"
+
+msgid "Standard Labour Hours"
+msgstr "Heures de main-d'œuvre standard"
+
+msgid "Stock Entry"
+msgstr "Écriture de stock"
+
+msgid "Supplier"
+msgstr "Fournisseur"
+
+msgid "System/Component Affected"
+msgstr "Système / composant concerné"
+
+msgid "Total Cost (DZD)"
+msgstr "Coût total (DZD)"
+
+msgid "Total Incidents"
+msgstr "Nombre total d'incidents"
+
+msgid "Total Labour Cost (DZD)"
+msgstr "Coût total de la main-d'œuvre (DZD)"
+
+msgid "Total Other Cost (DZD)"
+msgstr "Coût total des autres frais (DZD)"
+
+msgid "Total Parts Cost (DZD)"
+msgstr "Coût total des pièces (DZD)"
+
+msgid "Total Score (NT)"
+msgstr "Score total (NT)"
+
+msgid "Traceability & Condition"
+msgstr "Traçabilité et état"
+
+msgid "Training (FR) Score"
+msgstr "Score de la formation (FR)"
+
+msgid "Training Coefficient (CB4)"
+msgstr "Coefficient de la formation (CB4)"
+
+msgid "UOM"
+msgstr "Unité de mesure"
+
+msgid "Vehicle Document Alert Days"
+msgstr "Délai d'alerte des documents du véhicule (jours)"
+
+msgid "Work Execution & Vehicle Readings"
+msgstr "Exécution des travaux et relevés du véhicule"
+
+msgid "Work Order"
+msgstr "Ordre de travail"
+
+msgid "Algerian Localization"
+msgstr "Localisation algérienne"
+
+msgid "Business Modules"
+msgstr "Modules métier"
+
+msgid "Companies"
+msgstr "Sociétés"
+
+msgid "Company & HR Configuration"
+msgstr "Configuration de la société et des RH"
+
+msgid "Company Registration"
+msgstr "Immatriculation de l'entreprise"
+
+msgid "Algerian Company"
+msgstr "Société algérienne"
+
+msgid "Company Registration & HR Job Titles Settings"
+msgstr "Paramètres d'immatriculation des sociétés et des intitulés de postes RH"
+
+msgid "Sotrama"
+msgstr "Sotrama"
+
+msgid "From Date"
+msgstr "Date de début"
+
+msgid "To Date"
+msgstr "Date de fin"
+
+msgid "Alert Within Days"
+msgstr "Alerte sous (jours)"
+
+msgid "Enter the exact ERPNext Company name."
+msgstr "Saisissez le nom exact de la société ERPNext."
+
+msgid "Leave blank to use the alert window configured in TP Settings."
+msgstr "Laissez vide pour utiliser le délai d'alerte configuré dans les paramètres TP."
+
+msgid "Create Breakdown Incident"
+msgstr "Créer une déclaration de panne"
+
+msgid "Create Inspection"
+msgstr "Créer un contrôle"
+
+msgid "Create Job Card"
+msgstr "Créer une fiche d'intervention"
+
+msgid "Create Missing BTPH Job Titles"
+msgstr "Créer les intitulés de postes BTPH manquants"
+
+msgid "Checking the Frappe HR Designation catalogue..."
+msgstr "Vérification du catalogue des fonctions de Frappe RH..."
+
+msgid "HR Job Titles"
+msgstr "Intitulés de postes RH"
+
+msgid "Warning"
+msgstr "Avertissement"
+
+msgid "Vehicle {0} is {1}."
+msgstr "Le véhicule {0} est {1}."
+
+msgid "Vehicle is {0}."
+msgstr "Le véhicule est {0}."
+
+msgid "Pause Schedule"
+msgstr "Suspendre le plan"
+
+msgid "Complete Schedule"
+msgstr "Terminer le plan"
+
+msgid "Resume Schedule"
+msgstr "Reprendre le plan"
+
+msgid "Open Next Schedule"
+msgstr "Ouvrir le plan suivant"
+
+msgid "A new row was added. {0}"
+msgstr "Une nouvelle ligne a été ajoutée. {0}"
+
+msgid "Add Spare Part (Item)"
+msgstr "Ajouter une pièce de rechange (article)"
+
+msgid "Select a stock Item and enter its quantity and rate."
+msgstr "Sélectionnez un article en stock et indiquez sa quantité et son tarif."
+
+msgid "Add Entry"
+msgstr "Ajouter une ligne"
+
+msgid "Add Mechanic (Employee)"
+msgstr "Ajouter un mécanicien (salarié)"
+
+msgid "Select an active Employee, then enter hours and hourly rate."
+msgstr "Sélectionnez un salarié actif, puis indiquez le nombre d'heures et le taux horaire."
+
+msgid "Add Other Cost"
+msgstr "Ajouter un autre frais"
+
+msgid "Enter a cost description, category and amount."
+msgstr "Saisissez la description, la catégorie et le montant du frais."
+
+msgid "Odometer After cannot be less than Odometer Before"
+msgstr "Le kilométrage après intervention ne peut pas être inférieur au kilométrage avant intervention."
+
+msgid "Safety-critical defect detected — submitting this inspection will mark the vehicle Out of Service."
+msgstr "Défaut critique pour la sécurité détecté — la validation de ce contrôle mettra le véhicule hors service."
+
+msgid "Add Inspection Check"
+msgstr "Ajouter un point de contrôle"
+
+msgid "Checklist"
+msgstr "Liste de contrôle"
+
+msgid "Open Follow-up Inspection"
+msgstr "Ouvrir le contrôle de suivi"
+
+msgid "Create Follow-up Inspection"
+msgstr "Créer un contrôle de suivi"
+
+msgid "Suspend"
+msgstr "Suspendre"
+
+msgid "Set On Leave"
+msgstr "Mettre en congé"
+
+msgid "Reactivate"
+msgstr "Réactiver"
+
+msgid "Terminate"
+msgstr "Mettre fin à la fiche"
+
+msgid "Terminate this Driver record? This action cannot be reversed."
+msgstr "Mettre fin à cette fiche conducteur ? Cette action est irréversible."
+
+msgid "You do not have permission to read this Employee record. Ask an HR Manager to grant the appropriate access."
+msgstr "Vous n'avez pas l'autorisation de consulter ce dossier salarié. Demandez à un responsable RH de vous accorder l'accès approprié."
+
+msgid "Open Job Card"
+msgstr "Ouvrir la fiche d'intervention"
+
+msgid "Acknowledge"
+msgstr "Prendre en charge"
+
+msgid "Start Work"
+msgstr "Commencer l'intervention"
+
+msgid "Resolve"
+msgstr "Résoudre"
+
+msgid "Resolve Breakdown"
+msgstr "Résoudre la panne"
+
+msgid "Close"
+msgstr "Clôturer"
+
+msgid "Reopen"
+msgstr "Rouvrir"
+
+msgid "Resolution Date cannot be before Incident Date"
+msgstr "La date de résolution ne peut pas être antérieure à la date de l'incident."
+
+msgid "Resolution Date cannot be before Incident Date."
+msgstr "La date de résolution ne peut pas être antérieure à la date de l'incident."
+
+msgid "Critical breakdown — mark vehicle Out of Service"
+msgstr "Panne critique — mettre le véhicule hors service"
+
+msgid "A specific TP Settings field must be requested."
+msgstr "Un champ précis des paramètres TP doit être demandé."
+
+msgid "BTPH Job Titles Created"
+msgstr "Intitulés de postes BTPH créés"
+
+msgid "Company is required to access this Fleet record."
+msgstr "Une société est obligatoire pour accéder à cette fiche du parc."
+
+msgid "Created {0} missing BTPH job-title records in Frappe HR."
+msgstr "{0} intitulés de postes BTPH manquants ont été créés dans Frappe RH."
+
+msgid "Customizations"
+msgstr "Personnalisations"
+
+msgid "Designations added"
+msgstr "Fonctions ajoutées"
+
+msgid "Driver compliance attachments cannot be shared directly."
+msgstr "Les pièces jointes de conformité des conducteurs ne peuvent pas être partagées directement."
+
+msgid "Driver compliance records are restricted to HR."
+msgstr "Les dossiers de conformité des conducteurs sont réservés aux RH."
+
+msgid "Existing field is owned elsewhere"
+msgstr "Le champ existant appartient à un autre module."
+
+msgid "Existing field needs review"
+msgstr "Le champ existant nécessite une vérification."
+
+msgid "Filtered TP Settings value queries are not permitted."
+msgstr "Les requêtes filtrées de valeurs des paramètres TP ne sont pas autorisées."
+
+msgid "Fleet records cannot be shared with everyone."
+msgstr "Les fiches du parc ne peuvent pas être partagées avec tout le monde."
+
+msgid "Legacy Company field needs review"
+msgstr "Le champ Société historique nécessite une vérification."
+
+msgid "Module ownership conflict"
+msgstr "Conflit de propriété du module."
+
+msgid "No Missing Job Titles"
+msgstr "Aucun intitulé de poste manquant"
+
+msgid "No permission to read TP Settings."
+msgstr "Vous n'avez pas l'autorisation de consulter les paramètres TP."
+
+msgid "Only HR may create or modify Driver compliance attachments."
+msgstr "Seuls les RH peuvent créer ou modifier les pièces jointes de conformité des conducteurs."
+
+msgid "Only System Manager can share company-scoped Fleet records."
+msgstr "Seul le System Manager peut partager les fiches du parc limitées à une société."
+
+msgid "Overview & Settings"
+msgstr "Vue d'ensemble et paramètres"
+
+msgid "Public Works Fleet"
+msgstr "Parc de travaux publics"
+
+msgid "Sotrama application overview and configuration"
+msgstr "Vue d'ensemble et configuration de l'application Sotrama"
+
+msgid "TP Settings configuration records are not valid Link targets."
+msgstr "Les enregistrements de configuration des paramètres TP ne sont pas des cibles de lien valides."
+
+msgid "TP Settings configuration records cannot be shared."
+msgstr "Les enregistrements de configuration des paramètres TP ne peuvent pas être partagés."
+
+msgid "TP Settings is not available through generic list queries."
+msgstr "Les paramètres TP ne sont pas accessibles via les requêtes génériques de liste."
+
+msgid "Unknown TP Settings field."
+msgstr "Champ inconnu dans les paramètres TP."
+
+msgid "Vehicles, drivers, maintenance and inspections"
+msgstr "Véhicules, conducteurs, maintenance et contrôles"
+
+msgid "You do not have User Permission access to this Fleet record."
+msgstr "Vous n'avez pas d'autorisation utilisateur pour accéder à cette fiche du parc."
+
+msgid "You do not have permission to read the {0} field."
+msgstr "Vous n'avez pas l'autorisation de consulter le champ {0}."
+
+msgid "A Company is required for this Fleet operation."
+msgstr "Une société est obligatoire pour cette opération de parc."
+
+msgid "A Driver is required for regulated transport."
+msgstr "Un conducteur est obligatoire pour un transport réglementé."
+
+msgid "A new Breakdown Incident must start in Reported status."
+msgstr "Une nouvelle déclaration de panne doit commencer au statut Signalé."
+
+msgid "A new Maintenance Schedule must start in Active status."
+msgstr "Un nouveau plan de maintenance doit commencer au statut Actif."
+
+msgid "A valid Company is required to search workshop Employees."
+msgstr "Une société valide est nécessaire pour rechercher les salariés de l'atelier."
+
+msgid "Add at least one inspection checklist item before submitting."
+msgstr "Ajoutez au moins un point de contrôle avant de valider."
+
+msgid "Alert Within Days must be a whole number."
+msgstr "Le délai d'alerte doit être un nombre entier de jours."
+
+msgid "Alert Within Days must be between 0 and 3650 days."
+msgstr "Le délai d'alerte doit être compris entre 0 et 3 650 jours."
+
+msgid "Amount is required"
+msgstr "Le montant est obligatoire."
+
+msgid "An inspection cannot be a follow-up of itself."
+msgstr "Un contrôle ne peut pas être son propre contrôle de suivi."
+
+msgid "Breakdown Company must match the Vehicle Company."
+msgstr "La société de la panne doit correspondre à celle du véhicule."
+
+msgid "Breakdown Driver must belong to the Vehicle Company."
+msgstr "Le conducteur associé à la panne doit appartenir à la société du véhicule."
+
+msgid "Category is required"
+msgstr "La catégorie est obligatoire."
+
+msgid "Chassis Number seems too short — please verify"
+msgstr "Le numéro de châssis semble trop court — veuillez le vérifier."
+
+msgid "Company Classification in row {0} has expired."
+msgstr "La classification de l'entreprise à la ligne {0} a expiré."
+
+msgid "Company Classification in row {0} must be active."
+msgstr "La classification de l'entreprise à la ligne {0} doit être active."
+
+msgid "Company is required for a Company Classification."
+msgstr "La société est obligatoire pour une classification d'entreprise."
+
+msgid "Company is required in each Company Defaults row."
+msgstr "La société est obligatoire dans chaque ligne de paramètres par société."
+
+msgid "Company is unavailable or you do not have permission to use it."
+msgstr "La société est indisponible ou vous n'avez pas l'autorisation de l'utiliser."
+
+msgid "Company {0} has more than one TP defaults row."
+msgstr "La société {0} possède plusieurs lignes de paramètres TP."
+
+msgid "Complete the inspection result for: {0}."
+msgstr "Complétez le résultat du contrôle pour : {0}."
+
+msgid "Completion Date cannot be before Job Date"
+msgstr "La date d'achèvement ne peut pas être antérieure à la date de l'intervention."
+
+msgid "Cost Center does not exist."
+msgstr "Le centre de coûts n'existe pas."
+
+msgid "Cost Center must be an enabled leaf Cost Center."
+msgstr "Le centre de coûts doit être un centre actif de niveau terminal."
+
+msgid "Cost Center must belong to the Vehicle Company."
+msgstr "Le centre de coûts doit appartenir à la société du véhicule."
+
+msgid "Cost Center {0} does not belong to Company {1}."
+msgstr "Le centre de coûts {0} n'appartient pas à la société {1}."
+
+msgid "Cost per km"
+msgstr "Coût par km"
+
+msgid "Currency"
+msgstr "Devise"
+
+msgid "Days Remaining"
+msgstr "Jours restants"
+
+msgid "Default Company Classification certificate has expired."
+msgstr "Le certificat de classification de l'entreprise par défaut a expiré."
+
+msgid "Default Company Classification must be active."
+msgstr "La classification de l'entreprise par défaut doit être active."
+
+msgid "Default Company Classification must be submitted."
+msgstr "La classification de l'entreprise par défaut doit être validée."
+
+msgid "Default Cost Center does not exist."
+msgstr "Le centre de coûts par défaut n'existe pas."
+
+msgid "Default Cost Center must be an enabled leaf Cost Center."
+msgstr "Le centre de coûts par défaut doit être un centre actif de niveau terminal."
+
+msgid "Default Cost Center must belong to the Default Company."
+msgstr "Le centre de coûts par défaut doit appartenir à la société par défaut."
+
+msgid "Default Department must belong to the Default Company."
+msgstr "Le département par défaut doit appartenir à la société par défaut."
+
+msgid "Default Parts Warehouse does not exist."
+msgstr "Le magasin de pièces de rechange par défaut n'existe pas."
+
+msgid "Default Parts Warehouse must be an enabled leaf Warehouse."
+msgstr "Le magasin de pièces de rechange par défaut doit être un magasin actif de niveau terminal."
+
+msgid "Default Parts Warehouse must belong to the Default Company."
+msgstr "Le magasin de pièces de rechange par défaut doit appartenir à la société par défaut."
+
+msgid "Department must belong to the Vehicle Company."
+msgstr "Le département doit appartenir à la société du véhicule."
+
+msgid "Disabled Item {0} cannot be used as a maintenance part."
+msgstr "L'article désactivé {0} ne peut pas être utilisé comme pièce de maintenance."
+
+msgid "Distance (km)"
+msgstr "Distance (km)"
+
+msgid "Document Type is required"
+msgstr "Le type de document est obligatoire."
+
+msgid "Driver Company must match the linked Employee"
+msgstr "La société du conducteur doit correspondre à celle du salarié lié."
+
+msgid "Driver License Expiring: {0}"
+msgstr "Expiration du permis du conducteur : {0}"
+
+msgid "Driver Name is required"
+msgstr "Le nom du conducteur est obligatoire."
+
+msgid "Driver at Time of Issue must belong to the Job Card Company."
+msgstr "Le conducteur au moment de l'incident doit appartenir à la société de la fiche d'intervention."
+
+msgid "Driver status cannot change from {0} to {1}."
+msgstr "Le statut du conducteur ne peut pas passer de {0} à {1}."
+
+msgid "Driver status changed from {0} to {1}."
+msgstr "Le statut du conducteur est passé de {0} à {1}."
+
+msgid "Driver {0} belongs to a different Company."
+msgstr "Le conducteur {0} appartient à une autre société."
+
+msgid "Driver {0} does not exist."
+msgstr "Le conducteur {0} n'existe pas."
+
+msgid "Driver {0} has an expired {1} ({2})."
+msgstr "Le conducteur {0} possède un document expiré : {1} ({2})."
+
+msgid "Driver {0} license expires on {1}."
+msgstr "Le permis du conducteur {0} expire le {1}."
+
+msgid "Driver {0} requires a Brevet Professionnel for {1}."
+msgstr "Le conducteur {0} doit détenir un brevet professionnel pour {1}."
+
+msgid "Driver {0} safety training expires on {1}."
+msgstr "La formation sécurité du conducteur {0} expire le {1}."
+
+msgid "Driver {0}: License has expired on {1}"
+msgstr "Conducteur {0} : le permis a expiré le {1}."
+
+msgid "Employee lookup is not available for this DocType."
+msgstr "La recherche de salariés n'est pas disponible pour ce type de document."
+
+msgid "Employee {0} is already linked to Driver {1}."
+msgstr "Le salarié {0} est déjà lié au conducteur {1}."
+
+msgid "End Date cannot be before Start Date"
+msgstr "La date de fin ne peut pas être antérieure à la date de début."
+
+msgid "End Odometer cannot be less than Start Odometer"
+msgstr "Le kilométrage final ne peut pas être inférieur au kilométrage initial."
+
+msgid "Estimated Depreciation"
+msgstr "Amortissement estimé"
+
+msgid "Examination Date cannot be in the future."
+msgstr "La date de l'examen ne peut pas être dans le futur."
+
+msgid "From Date cannot be after To Date."
+msgstr "La date de début ne peut pas être postérieure à la date de fin."
+
+msgid "Grade is required"
+msgstr "La catégorie est obligatoire."
+
+msgid "Grade must be between 1 and 9, got {0}"
+msgstr "La catégorie doit être comprise entre 1 et 9 ; valeur reçue : {0}."
+
+msgid "Inspection Company must match the Vehicle Company."
+msgstr "La société du contrôle doit correspondre à celle du véhicule."
+
+msgid "Inspection Driver must belong to the Vehicle Company."
+msgstr "Le conducteur du contrôle doit appartenir à la société du véhicule."
+
+msgid "Interval KM must be greater than zero for a Mileage schedule."
+msgstr "La périodicité en kilomètres doit être supérieure à zéro pour un plan basé sur le kilométrage."
+
+msgid "Interval Months must be greater than zero for a Calendar schedule."
+msgstr "La périodicité en mois doit être supérieure à zéro pour un plan calendaire."
+
+msgid "Invalid Breakdown Incident status."
+msgstr "Statut de déclaration de panne non valide."
+
+msgid "Invalid Employee search filters."
+msgstr "Filtres de recherche des salariés non valides."
+
+msgid "Item Details is required"
+msgstr "Les détails de l'article sont obligatoires."
+
+msgid "Item is required when quantity is specified"
+msgstr "L'article est obligatoire lorsqu'une quantité est renseignée."
+
+msgid "Item {0} is not a stock item."
+msgstr "L'article {0} n'est pas un article géré en stock."
+
+msgid "Item {0} not found in ERPNext Item master"
+msgstr "L'article {0} est introuvable dans le référentiel Articles d'ERPNext."
+
+msgid "Job Category is required"
+msgstr "La catégorie d'intervention est obligatoire."
+
+msgid "Labour hours must be greater than zero on row {0}."
+msgstr "Le nombre d'heures de main-d'œuvre doit être supérieur à zéro à la ligne {0}."
+
+msgid "Labour rate cannot be negative on row {0}."
+msgstr "Le taux horaire ne peut pas être négatif à la ligne {0}."
+
+msgid "Linked Breakdown Incident must be submitted."
+msgstr "La déclaration de panne liée doit être validée."
+
+msgid "Linked Breakdown Incident {0} does not exist."
+msgstr "La déclaration de panne liée {0} n'existe pas."
+
+msgid "Maintenance Due: {0} (Vehicle: {1})"
+msgstr "Maintenance à effectuer : {0} (véhicule : {1})"
+
+msgid "Maintenance Due: {0} (Vehicle: {1})\n{2}"
+msgstr "Maintenance à effectuer : {0} (véhicule : {1})\n{2}"
+
+msgid "Maintenance Job Card Company must match its Vehicle Company."
+msgstr "La société de la fiche d'intervention doit correspondre à celle du véhicule."
+
+msgid "Maintenance Schedule Company must match the Vehicle Company."
+msgstr "La société du plan de maintenance doit correspondre à celle du véhicule."
+
+msgid "Maintenance Schedule cannot change from {0} to {1}."
+msgstr "Le statut du plan de maintenance ne peut pas passer de {0} à {1}."
+
+msgid "Maintenance Schedule status changed from {0} to {1}."
+msgstr "Le statut du plan de maintenance est passé de {0} à {1}."
+
+msgid "Make Name is required"
+msgstr "Le nom de la marque est obligatoire."
+
+msgid "Mechanic is required when hours are specified"
+msgstr "Le mécanicien est obligatoire lorsque des heures sont renseignées."
+
+msgid "Model Name is required"
+msgstr "Le nom du modèle est obligatoire."
+
+msgid "Only an Active Driver can be assigned to this inspection type."
+msgstr "Seul un conducteur actif peut être affecté à ce type de contrôle."
+
+msgid "Only submitted Breakdown Incidents can change operational status."
+msgstr "Seules les déclarations de panne validées peuvent changer de statut opérationnel."
+
+msgid "Only submitted Driver records can change operational status."
+msgstr "Seuls les dossiers conducteurs validés peuvent changer de statut opérationnel."
+
+msgid "Only submitted Maintenance Schedules can change operational status."
+msgstr "Seuls les plans de maintenance validés peuvent changer de statut opérationnel."
+
+msgid "Operational Task Company must match its Vehicle Company."
+msgstr "La société de la fiche d'exploitation doit correspondre à celle du véhicule."
+
+msgid "Operational status changed from {0} to {1}."
+msgstr "Le statut opérationnel est passé de {0} à {1}."
+
+msgid "Other cost amount cannot be negative on row {0}."
+msgstr "Le montant des autres frais ne peut pas être négatif à la ligne {0}."
+
+msgid "Part quantity must be greater than zero."
+msgstr "La quantité de pièces doit être supérieure à zéro."
+
+msgid "Part rate cannot be negative."
+msgstr "Le tarif unitaire de la pièce ne peut pas être négatif."
+
+msgid "Parts & Labour"
+msgstr "Pièces et main-d'œuvre"
+
+msgid "Parts Warehouse does not exist."
+msgstr "Le magasin de pièces de rechange n'existe pas."
+
+msgid "Parts Warehouse must be an enabled leaf Warehouse."
+msgstr "Le magasin de pièces de rechange doit être un magasin actif de niveau terminal."
+
+msgid "Parts Warehouse must belong to the Vehicle Company."
+msgstr "Le magasin de pièces de rechange doit appartenir à la société du véhicule."
+
+msgid "Photo is required"
+msgstr "La photo est obligatoire."
+
+msgid "Primary Driver must belong to the Vehicle Company."
+msgstr "Le conducteur principal doit appartenir à la société du véhicule."
+
+msgid "Project {0} belongs to Company {1}, not {2}."
+msgstr "Le projet {0} appartient à la société {1}, et non à {2}."
+
+msgid "Provide a certificate/reference number or attach the supporting evidence."
+msgstr "Indiquez un numéro de certificat ou de référence, ou joignez le justificatif correspondant."
+
+msgid "Remarks are required when status is Defective"
+msgstr "Des remarques sont obligatoires lorsque le résultat est Défectueux."
+
+msgid "Remarks required for defective item: {0}"
+msgstr "Des remarques sont obligatoires pour le point défectueux : {0}."
+
+msgid "Resolution Date is required to resolve a Breakdown Incident."
+msgstr "La date de résolution est obligatoire pour résoudre une déclaration de panne."
+
+msgid "Resolution Notes are required to resolve a Breakdown Incident."
+msgstr "Les notes de résolution sont obligatoires pour résoudre une déclaration de panne."
+
+msgid "Resolution details cannot be edited after resolution."
+msgstr "Les détails de résolution ne peuvent plus être modifiés après la résolution."
+
+msgid "Restricted Driver Compliance Review"
+msgstr "Contrôle restreint de conformité du conducteur"
+
+msgid "Review / Valid Until cannot be before the Examination Date."
+msgstr "La date de validité ne peut pas être antérieure à la date de l'examen."
+
+msgid "Safety Training Expiring: {0}"
+msgstr "Expiration de la formation sécurité : {0}"
+
+msgid "Schedule Type is required"
+msgstr "Le type de périodicité est obligatoire."
+
+msgid "Scheduled maintenance for vehicle {0} is due: {1}."
+msgstr "La maintenance planifiée du véhicule {0} arrive à échéance : {1}."
+
+msgid "Score Mismatch"
+msgstr "Écart de score"
+
+msgid "Select a result that matches the compliance check type."
+msgstr "Sélectionnez un résultat correspondant au type de contrôle de conformité."
+
+msgid "Select a valid Item for maintenance part row {0}."
+msgstr "Sélectionnez un article valide pour la pièce de maintenance à la ligne {0}."
+
+msgid "Select a valid Regulatory Applicability decision."
+msgstr "Sélectionnez une décision valide concernant l'applicabilité réglementaire."
+
+msgid "Select a valid stock Item in the Parts Used table."
+msgstr "Sélectionnez un article géré en stock dans le tableau des pièces utilisées."
+
+msgid "Select an Employee and Company."
+msgstr "Sélectionnez un salarié et une société."
+
+msgid "Select an Employee from ERPNext / Frappe HR."
+msgstr "Sélectionnez un salarié depuis ERPNext / Frappe RH."
+
+msgid "Select an active Employee belonging to Company {0}."
+msgstr "Sélectionnez un salarié actif appartenant à la société {0}."
+
+msgid "Select the Transport Activity and Transport Basis for this task."
+msgstr "Sélectionnez l'activité et le cadre du transport pour cette tâche."
+
+msgid "Selected Driver does not exist."
+msgstr "Le conducteur sélectionné n'existe pas."
+
+msgid "Selected Primary Driver does not exist."
+msgstr "Le conducteur principal sélectionné n'existe pas."
+
+msgid "Selected Vehicle does not exist."
+msgstr "Le véhicule sélectionné n'existe pas."
+
+msgid "Select a submitted Vehicle."
+msgstr "Sélectionnez un véhicule soumis."
+
+msgid "Set the Driver Company before validating its Employee link."
+msgstr "Définissez la société du conducteur avant de vérifier son rattachement au salarié."
+
+msgid "Set the Maintenance Job Card status to Completed before submitting."
+msgstr "Définissez le statut de la fiche d'intervention sur Terminé avant de la valider."
+
+msgid "Status cannot change from {0} to {1}."
+msgstr "Le statut ne peut pas passer de {0} à {1}."
+
+msgid "The Driver at Time of Issue does not exist."
+msgstr "Le conducteur au moment de l'incident n'existe pas."
+
+msgid "The Inspection Driver does not exist."
+msgstr "Le conducteur du contrôle n'existe pas."
+
+msgid "The Inspection Supervisor must be an Active Employee."
+msgstr "Le responsable du contrôle doit être un salarié actif."
+
+msgid "The Maintenance Schedule must belong to the Job Card Company."
+msgstr "Le plan de maintenance doit appartenir à la société de la fiche d'intervention."
+
+msgid "The Task Supervisor must be an Active Employee."
+msgstr "Le responsable de la tâche doit être un salarié actif."
+
+msgid "The Task Supervisor must be an Employee of the Vehicle Company."
+msgstr "Le responsable de la tâche doit être un salarié de la société du véhicule."
+
+msgid "The authority decision date cannot be in the future."
+msgstr "La date de la décision de l'autorité ne peut pas être dans le futur."
+
+msgid "The referenced Driver record is unavailable; contact HR."
+msgstr "Le dossier conducteur référencé est indisponible ; contactez les RH."
+
+msgid "The selected Employee is not part of the Job Card Company."
+msgstr "Le salarié sélectionné n'appartient pas à la société de la fiche d'intervention."
+
+msgid "This search is only for Frappe HR Employee records."
+msgstr "Cette recherche concerne uniquement les dossiers salariés de Frappe RH."
+
+msgid "Total Cost"
+msgstr "Coût total"
+
+msgid "Total Incidents is calculated from submitted Breakdown Incidents."
+msgstr "Le nombre total d'incidents est calculé à partir des déclarations de panne validées."
+
+msgid "Transport regulatory fields can only be set for a Transport task."
+msgstr "Les champs réglementaires de transport ne peuvent être renseignés que pour une tâche de transport."
+
+msgid "Unsupported Company default context."
+msgstr "Contexte de paramètres par société non pris en charge."
+
+msgid "Vehicle Document Expiring: {0} (Vehicle: {1})"
+msgstr "Expiration d'un document du véhicule : {0} (véhicule : {1})"
+
+msgid "Vehicle is required"
+msgstr "Le véhicule est obligatoire."
+
+msgid "Vehicle {0} cannot be assigned while its status is {1}."
+msgstr "Le véhicule {0} ne peut pas être affecté tant que son statut est {1}."
+
+msgid "Warehouse {0} does not belong to company {1}."
+msgstr "Le magasin {0} n'appartient pas à la société {1}."
+
+msgid "You do not have permission to look up Employees for this Fleet record."
+msgstr "Vous n'avez pas l'autorisation de rechercher des salariés pour cette fiche du parc."
+
+msgid "[Vehicle Inspection] {0} — {1}"
+msgstr "[Contrôle du véhicule] {0} — {1}"
+
+msgid "an unresolved Breakdown Incident"
+msgstr "une déclaration de panne non résolue"
+
+msgid "an unresolved safety-critical Inspection"
+msgstr "un contrôle non résolu présentant un défaut critique pour la sécurité"
+
+msgid "driving licence"
+msgstr "permis de conduire"
+
+msgid "due date {0}"
+msgstr "échéance au {0}"
+
+msgid "medical fitness certificate"
+msgstr "certificat d'aptitude médicale"
+
+msgid "odometer {0} km (target {1} km)"
+msgstr "kilométrage {0} km (objectif {1} km)"
+
+msgid "safety training certificate"
+msgstr "attestation de formation à la sécurité"
+
+msgid "{0} is managed by the breakdown workflow."
+msgstr "{0} est géré par le processus de déclaration de panne."
+
+msgid "{0} is managed by the maintenance workflow."
+msgstr "{0} est géré par le processus de maintenance."
+
+msgid "{0} must be between 0 and 3650 days."
+msgstr "{0} doit être compris entre 0 et 3 650 jours."
+
+msgid "The module {0} already belongs to app {1}. Sotrama will not change another app's module ownership. "
+msgstr "Le module {0} appartient déjà à l'application {1}. Sotrama ne modifiera pas l'appartenance d'un module à une autre application. "
+
+msgid "The field {0} already exists on {1} and is owned by module {2}. "
+msgstr "Le champ {0} existe déjà sur {1} et appartient au module {2}. "
+
+msgid "The existing {0} field on {1} is {2}, but Sotrama requires {3}. "
+msgstr "Le champ {0} existant sur {1} est de type {2}, alors que Sotrama exige le type {3}. "
+
+msgid "The legacy Company field {0} exists but is not owned by Sotrama. "
+msgstr "L'ancien champ Société {0} existe, mais n'appartient pas à Sotrama. "
+
+msgid "File field {0} already exists but is not owned by Sotrama. "
+msgstr "Le champ de fichier {0} existe déjà, mais n'appartient pas à Sotrama. "
+
+msgid "Driver compliance attachments cannot be attached to unrelated records."
+msgstr "Les pièces justificatives de conformité des conducteurs ne peuvent pas être jointes à des fiches sans lien."
+
+msgid "You need write access to an owning Driver record to modify this file."
+msgstr "Vous devez disposer d'un accès en écriture à la fiche Conducteur propriétaire pour modifier ce fichier."
+
+msgid "You need Company-scoped write access to the owning Driver record."
+msgstr "Vous devez disposer d'un accès en écriture à la fiche Conducteur propriétaire dans le périmètre de sa société."
+
+msgid "You do not have Company-scoped read access to this Driver record."
+msgstr "Vous ne disposez pas d'un accès en lecture à cette fiche Conducteur dans le périmètre de sa société."
+
+msgid "A readable Driver record is required to load its document details."
+msgstr "Une fiche Conducteur accessible en lecture est nécessaire pour charger les détails de ses documents."
+
+msgid "Driver private-file migration stopped because file paths need manual resolution:\n{0}"
+msgstr "La migration des fichiers privés des conducteurs a été interrompue : certains chemins doivent être vérifiés manuellement :\n{0}"
+
+msgid "Remote links are not allowed for Driver HR/compliance attachments. Upload a private file instead."
+msgstr "Les liens externes ne sont pas autorisés pour les pièces RH ou de conformité des conducteurs. Téléversez plutôt un fichier privé."
+
+msgid "Only System Manager can read the complete Company Defaults table."
+msgstr "Seul le Gestionnaire système peut consulter l'intégralité du tableau des paramètres par société."
+
+msgid "Driver compliance records can only be accessed through the permitted Driver form."
+msgstr "Les dossiers de conformité des conducteurs ne sont accessibles que depuis la fiche Conducteur autorisée."
+
+msgid "The recipient must already have Company-scoped read access to this Fleet record."
+msgstr "Le destinataire doit déjà disposer d'un accès en lecture à cette fiche du parc dans le périmètre de sa société."
+
+msgid "Frappe HR's Designation DocType is unavailable. Install or enable Frappe HR first."
+msgstr "Le type de document Désignation de Frappe RH est indisponible. Installez ou activez d'abord Frappe RH."
+
+msgid "The installed Designation DocType does not expose the expected designation_name field."
+msgstr "Le type de document Désignation installé ne contient pas le champ designation_name attendu."
+
+msgid "You need permission to create Designation records before adding the BTPH list."
+msgstr "Vous devez disposer de l'autorisation de créer des désignations avant d'ajouter la liste BTPH."
+
+msgid "Company registration identifiers and Algerian organization settings"
+msgstr "Identifiants d'immatriculation des sociétés et paramètres des organisations algériennes"
+
+msgid "Driver {0} must be a submitted, Active Driver before assignment."
+msgstr "Le conducteur {0} doit être validé et actif avant toute affectation."
+
+msgid "Driver {0} cannot be assigned under the current employment policy. Ask an HR Manager to review the linked Employee record."
+msgstr "Le conducteur {0} ne peut pas être affecté selon la politique d'emploi actuelle. Demandez à un responsable RH de vérifier la fiche Salarié liée."
+
+msgid "Driver {0} cannot be assigned under the current HR compliance policy. Ask an HR Manager to review the restricted records."
+msgstr "Le conducteur {0} ne peut pas être affecté selon la politique de conformité RH actuelle. Demandez à un responsable RH de vérifier les dossiers à accès restreint."
+
+msgid "Driver {0} must have a current driving licence number, category and expiry recorded by HR before regulated transport."
+msgstr "Avant un transport réglementé, les RH doivent avoir renseigné pour le conducteur {0} un numéro de permis, sa catégorie et une date de validité en cours."
+
+msgid "Driver {0} does not have a current driving licence for regulated transport."
+msgstr "Le conducteur {0} ne dispose pas d'un permis de conduire en cours de validité pour le transport réglementé."
+
+msgid "Driver {0} does not have current professional-transport compliance clearance. Ask an HR Manager to review the restricted records."
+msgstr "Le conducteur {0} ne dispose pas d'une conformité professionnelle à jour pour le transport. Demandez à un responsable RH de vérifier les dossiers à accès restreint."
+
+msgid "Submitted or cancelled Fleet records cannot be deleted. Keep the audit history and use the document's controlled status or cancellation workflow."
+msgstr "Les fiches du parc validées ou annulées ne peuvent pas être supprimées. Conservez l'historique d'audit et utilisez le statut contrôlé ou le processus d'annulation du document."
+
+msgid "Document '{0}' for vehicle {1} expires on {2}. Status: {3}"
+msgstr "Le document « {0} » du véhicule {1} expire le {2}. Statut : {3}"
+
+msgid "Review the restricted professional-driver compliance records for {0}. "
+msgstr "Consultez les dossiers de conformité professionnelle à accès restreint du conducteur {0}. "
+
+msgid "Review the restricted professional-driver compliance records. "
+msgstr "Consultez les dossiers de conformité professionnelle à accès restreint des conducteurs. "
+
+msgid "Previous Vehicle Status and Linked Job Card are managed by the breakdown workflow."
+msgstr "Le statut précédent du véhicule et la fiche d'intervention liée sont gérés par le processus de déclaration de panne."
+
+msgid "Resolution details can only be recorded when the incident is Resolved or Closed."
+msgstr "Les détails de résolution ne peuvent être renseignés que lorsque l'incident est résolu ou clôturé."
+
+msgid "Resolve or close this Breakdown Incident before cancelling it. An unresolved incident must keep the Vehicle out of service."
+msgstr "Résolvez ou clôturez cette déclaration de panne avant de l'annuler. Un incident non résolu doit maintenir le véhicule hors service."
+
+msgid "Add the resolution date and notes before cancelling this Breakdown Incident."
+msgstr "Ajoutez la date et les notes de résolution avant d'annuler cette déclaration de panne."
+
+msgid "Set a Resolution Date before marking the breakdown Resolved or Closed."
+msgstr "Renseignez une date de résolution avant de marquer la panne comme résolue ou clôturée."
+
+msgid "Resolution Notes are required before resolving or closing a breakdown."
+msgstr "Les notes de résolution sont obligatoires avant de résoudre ou de clôturer une panne."
+
+msgid "Total score {0} falls outside Grade {1} range ({2}–{3}). "
+msgstr "Le score total {0} se situe en dehors de la plage du classement {1} ({2}–{3}). "
+
+msgid "Driver Company cannot be changed after submission. Create a new Driver record for a new employing company to preserve HR and Fleet history."
+msgstr "La société du conducteur ne peut pas être modifiée après validation. Créez une nouvelle fiche Conducteur pour la nouvelle société employeuse afin de préserver l'historique RH et du parc."
+
+msgid "The Employee linked to this Driver no longer exists in the Driver Company."
+msgstr "Le salarié lié à ce conducteur n'existe plus dans la société du conducteur."
+
+msgid "This Driver cannot remain Active under the current employment policy. Ask an HR Manager to review the linked Employee record."
+msgstr "Ce conducteur ne peut pas rester actif selon la politique d'emploi actuelle. Demandez à un responsable RH de vérifier la fiche Salarié liée."
+
+msgid "Driver Company must match the linked Employee's Company."
+msgstr "La société du conducteur doit correspondre à celle du salarié lié."
+
+msgid "Stock Entry and schedule history fields are managed by the maintenance workflow."
+msgstr "Les champs de l'entrée de stock et de l'historique du planning sont gérés par le processus de maintenance."
+
+msgid "Linked Breakdown Incident must belong to the same Company and Vehicle as this Job Card."
+msgstr "La déclaration de panne liée doit concerner la même société et le même véhicule que cette fiche d'intervention."
+
+msgid "Select an active Maintenance Schedule matching this Vehicle and Job Type."
+msgstr "Sélectionnez un plan de maintenance actif correspondant à ce véhicule et à ce type d'intervention."
+
+msgid "More than one active schedule exists for this Vehicle and Job Type. Select the schedule to complete."
+msgstr "Plusieurs plans actifs existent pour ce véhicule et ce type d'intervention. Sélectionnez le plan à exécuter."
+
+msgid "Odometer After ({0}) cannot be less than Odometer Before ({1})"
+msgstr "Le kilométrage après intervention ({0}) ne peut pas être inférieur au kilométrage avant intervention ({1})."
+
+msgid "Odometer After ({0}) cannot be lower than the vehicle's current reading ({1})."
+msgstr "Le kilométrage après intervention ({0}) ne peut pas être inférieur au relevé actuel du véhicule ({1})."
+
+msgid "Employee {0} on labour row {1} does not exist in the Job Card Company."
+msgstr "Le salarié {0} de la ligne de main-d'œuvre {1} n'appartient pas à la société de la fiche d'intervention."
+
+msgid "Set a Company on Vehicle {0} or in TP Settings before issuing stock."
+msgstr "Renseignez une société sur le véhicule {0} ou dans les paramètres TP avant de sortir du stock."
+
+msgid "Set a Parts Warehouse on Vehicle {0} or in TP Settings before issuing stock."
+msgstr "Renseignez un magasin de pièces de rechange sur le véhicule {0} ou dans les paramètres TP avant de sortir du stock."
+
+msgid "Record the last service odometer before completing a mileage-based schedule."
+msgstr "Renseignez le kilométrage du dernier entretien avant de terminer un plan basé sur le kilométrage."
+
+msgid "Next Schedule and Last Service Job Card are managed by the maintenance workflow."
+msgstr "Le planning suivant et la dernière fiche d'intervention sont gérés par le processus de maintenance."
+
+msgid "Cancel the active successor Maintenance Schedule before cancelling this completed schedule."
+msgstr "Annulez le plan de maintenance successeur actif avant d'annuler ce plan terminé."
+
+msgid "Select the Transport Activity and Transport Basis before submission."
+msgstr "Sélectionnez l'activité et le cadre du transport avant la validation."
+
+msgid "Confirm transport regulatory applicability with the competent authority before submitting this task."
+msgstr "Confirmez auprès de l'autorité compétente l'applicabilité de la réglementation du transport avant de valider cette tâche."
+
+msgid "A written authority reference, decision date and evidence attachment are required for this transport applicability decision."
+msgstr "Une référence écrite de l'autorité, la date de décision et une pièce justificative sont obligatoires pour cette décision d'applicabilité du transport."
+
+msgid "Authority evidence must be an uploaded file attached to this Operational Task, not a remote link or an arbitrary URL."
+msgstr "Le justificatif de l'autorité doit être un fichier téléversé et joint à cette tâche d'exploitation, et non un lien externe ou une URL quelconque."
+
+msgid "Select a Default Company before setting a default Warehouse, Cost Center or Department."
+msgstr "Sélectionnez une société par défaut avant de définir un magasin, un centre de coûts ou un département par défaut."
+
+msgid "Default Company Classification must belong to the Default Company."
+msgstr "La classification de la société par défaut doit appartenir à cette société."
+
+msgid "Only System Manager can set the primary Company and per-Company fleet defaults."
+msgstr "Seul le Gestionnaire système peut définir la société principale et les paramètres du parc propres à chaque société."
+
+msgid "Company Classification in row {0} must be submitted."
+msgstr "La classification de la société à la ligne {0} doit être validée."
+
+msgid "Company Classification in row {0} belongs to another Company."
+msgstr "La classification de la société à la ligne {0} appartient à une autre société."
+
+msgid "Department in Company Defaults row {0} belongs to another Company."
+msgstr "Le département de la ligne {0} des paramètres par société appartient à une autre société."
+
+msgid "Cost Center in Company Defaults row {0} must be an enabled leaf Cost Center for that Company."
+msgstr "Le centre de coûts de la ligne {0} doit être un centre actif de niveau terminal appartenant à cette société."
+
+msgid "Parts Warehouse in Company Defaults row {0} must be an enabled leaf Warehouse for that Company."
+msgstr "Le magasin de pièces de rechange de la ligne {0} doit être un magasin actif de niveau terminal appartenant à cette société."
+
+msgid "Resolve all open breakdowns and safety-critical inspections before cancelling this Vehicle."
+msgstr "Résolvez toutes les pannes ouvertes et les inspections présentant un défaut critique pour la sécurité avant d'annuler ce véhicule."
+
+msgid "Vehicle Company cannot be changed after submission. Use a controlled inter-company transfer process to preserve Fleet history."
+msgstr "La société du véhicule ne peut pas être modifiée après validation. Utilisez un processus contrôlé de transfert intersociétés afin de préserver l'historique du parc."
+
+msgid "Vehicle cannot be set to Active or In Service while {0} exists."
+msgstr "Le véhicule ne peut pas être défini comme actif ou en service tant que {0} existe."
+
+msgid " and "
+msgstr " et "
+
+msgid "The Inspection Supervisor must be an Employee of the Vehicle Company."
+msgstr "Le responsable de l'inspection doit être un salarié de la société du véhicule."
+
+msgid "A submitted inspection with a safety-critical defect cannot be cancelled. Complete a successful follow-up inspection to clear the vehicle safety hold."
+msgstr "Une inspection validée présentant un défaut critique pour la sécurité ne peut pas être annulée. Effectuez une inspection de suivi concluante pour lever l'immobilisation de sécurité du véhicule."
+
+msgid "Select a submitted inspection with an unresolved safety-critical defect."
+msgstr "Sélectionnez une inspection validée présentant un défaut critique pour la sécurité qui n'a pas encore été levé."
+
+msgid "Follow-up Inspection and original Inspection must use the same Vehicle."
+msgstr "L'inspection de suivi et l'inspection d'origine doivent concerner le même véhicule."
+
+msgid "Follow-up Inspection and original Inspection must use the same Company."
+msgstr "L'inspection de suivi et l'inspection d'origine doivent concerner la même société."
+
+msgid "The selected critical inspection has already been cleared by another follow-up."
+msgstr "Le défaut critique de l'inspection sélectionnée a déjà été levé par une autre inspection de suivi."
+
+msgid "A follow-up can clear a critical defect only when its overall result is Pass and it has no critical defects."
+msgstr "Une inspection de suivi ne peut lever un défaut critique que si son résultat global est Conforme et qu'elle ne comporte aucun défaut critique."
+
+msgid "Critical Defect Cleared By and Linked Issue are managed by the inspection workflow."
+msgstr "Les champs « Défaut critique levé par » et « Incident lié » sont gérés par le processus d'inspection."
+
+msgid "{0} is managed by the inspection workflow and cannot be edited directly."
+msgstr "{0} est géré par le processus d'inspection et ne peut pas être modifié directement."
+
+msgid "Linked Issue is managed by the inspection workflow and cannot be edited directly."
+msgstr "L'incident lié est géré par le processus d'inspection et ne peut pas être modifié directement."
+
+msgid "Created from Vehicle Inspection {0}.\n\n{1}"
+msgstr "Créé à partir de l'inspection du véhicule {0}.\n\n{1}"
+
+msgid "Added {0} missing public-works designations to Frappe HR."
+msgstr "{0} désignations manquantes des travaux publics ont été ajoutées à Frappe RH."
+
+msgid "Enable 'Create Missing BTPH Designation Records' before running this action."
+msgstr "Activez « Créer les désignations BTPH manquantes » avant d'exécuter cette action."
+
+msgid "All BTPH job titles in the catalogue already exist. No records were changed."
+msgstr "Tous les intitulés de poste BTPH du catalogue existent déjà. Aucune fiche n'a été modifiée."
+
+msgid "Document "
+msgstr "Document "
