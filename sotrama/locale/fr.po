@@ -2767,6 +2767,9 @@ msgstr "Le planning suivant et la dernière fiche d'intervention sont gérés pa
 msgid "Cancel the active successor Maintenance Schedule before cancelling this completed schedule."
 msgstr "Annulez le plan de maintenance successeur actif avant d'annuler ce plan terminé."
 
+msgid "Cannot update a predecessor schedule from another Company."
+msgstr "Impossible de mettre à jour un plan de maintenance précédent appartenant à une autre société."
+
 msgid "Select the Transport Activity and Transport Basis before submission."
 msgstr "Sélectionnez l'activité et le cadre du transport avant la validation."
 
@@ -2859,6 +2862,3 @@ msgstr "Tous les intitulés de poste BTPH du catalogue existent déjà. Aucune f
 
 msgid "Document "
 msgstr "Document "
-
-msgid "Cannot update a predecessor schedule from another Company."
-msgstr "Impossible de mettre à jour un plan de maintenance précédent appartenant à une autre société."
