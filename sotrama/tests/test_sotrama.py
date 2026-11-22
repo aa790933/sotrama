@@ -261,7 +261,7 @@ class TestSotramaHooks(unittest.TestCase):
                 has_permission.assert_called_once_with(doctype, "read", throw=True)
                 get_allowed.assert_called_once_with(company_permissions, doctype)
                 self.assertEqual(
-                    get_all.call_args.kwargs["filters"][1][1], [expected_company]
+                    get_all.call_args.kwargs["filters"][1][2], [expected_company]
                 )
                 self.assertEqual(result, [[expected_company]])
 
@@ -1170,7 +1170,7 @@ class TestSotramaHooks(unittest.TestCase):
         app_workspace = frappe.get_doc("Workspace", "Sotrama")
         self.assertEqual(
             {item.link_to for item in app_workspace.links if item.type == "Link"},
-            {"Algerian Localization", "Sotrama Settings"},
+            {"Algerian Localization", "Sotrama Settings", "Sotrama Fleet"},
             "Frappe filters child workspaces and DocType links by their own permissions.",
         )
         workspace = frappe.get_doc("Workspace", "Sotrama Fleet")
@@ -1474,7 +1474,8 @@ class TestSotramaHooks(unittest.TestCase):
             "other_costs_delete",
         ):
             self.assertIn(action, script)
-        self.assertIn("frm.is_new() ? permission.create : permission.write", script)
+        self.assertIn("frm.perm?.[0]?.create", script)
+        self.assertIn("frm.perm?.[0]?.write", script)
         self.assertNotIn("frappe.db.get_value('Employee'", script)
 
         inspection_script = (
@@ -1587,7 +1588,8 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("row.status = 'Not Checked'", script)
         self.assertIn("inspection_items_add", script)
         self.assertIn("inspection_items_delete", script)
-        self.assertIn("frm.is_new() ? permission.create : permission.write", script)
+        self.assertIn("frm.perm?.[0]?.create", script)
+        self.assertIn("frm.perm?.[0]?.write", script)
 
     def test_inspection_cannot_be_submitted_with_unchecked_items(self):
         inspection = frappe.new_doc("Vehicle Inspection")
@@ -3438,7 +3440,7 @@ class TestSotramaHooks(unittest.TestCase):
         )
 
         parent = frappe.get_doc("Workspace", "Sotrama")
-        self.assertNotIn("Sotrama Fleet", {row.link_to for row in parent.links})
+        self.assertIn("Sotrama Fleet", {row.link_to for row in parent.links})
 
     def test_dock_workspace_entries_are_gated_by_workspace_permissions(self):
         from frappe.desk.doctype.dock.dock import is_reachable
@@ -6938,10 +6940,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             license_expiry=None,
             safety_training_expiry=None,
         )
-        tasks = [
-            frappe._dict(driver=active_driver.name),
-            frappe._dict(driver=inactive_driver.name),
-        ]
+        tasks = [active_driver.name, inactive_driver.name]
         with (
             patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
             patch(
