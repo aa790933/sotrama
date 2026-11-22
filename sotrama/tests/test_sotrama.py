@@ -224,7 +224,10 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("search_vehicle_companies", vehicle_source)
         self.assertIn("search_driver_companies", driver_source)
 
-        from sotrama.tp.settings import search_driver_companies, search_vehicle_companies
+        from sotrama.tp.settings import (
+            search_driver_companies,
+            search_vehicle_companies,
+        )
 
         company_permissions = [
             {"doc": "SOTRAMA", "applicable_for": "Vehicle"},
