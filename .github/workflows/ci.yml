@@ -730,10 +730,9 @@ jobs:
 
       - name: Create an ERPNext company for Fleet integration tests
         working-directory: /home/runner/frappe-bench
-        run: >-
-          bench --site test_site execute
-          erpnext.setup.setup_wizard.operations.company_setup.create_fiscal_year_and_company
-          --kwargs "{'args': {'company_name': 'Sotrama CI', 'company_abbr': 'SCI', 'currency': 'DZD', 'country': 'Algeria'}}"
+        run: |
+          bench --site test_site execute "frappe.get_doc({'doctype': 'Warehouse Type', 'name': 'Transit'}).insert(ignore_permissions=True) if not frappe.db.exists('Warehouse Type', 'Transit') else None"
+          bench --site test_site execute "frappe.get_attr('erpnext.setup.setup_wizard.operations.company_setup.create_fiscal_year_and_company')({'company_name': 'Sotrama CI', 'company_abbr': 'SCI', 'currency': 'DZD', 'country': 'Algeria'})"
 
       - name: Run Sotrama server-side integration tests
         working-directory: /home/runner/frappe-bench

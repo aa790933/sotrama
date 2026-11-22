@@ -2,6 +2,12 @@
 
 import frappe
 
+# The public setting names are also used by TP Settings (the singleton), but
+# TP Company Defaults is a child table with its own field names.
+COMPANY_DEFAULT_ROW_FIELDS = {
+    "default_company_classification": "company_classification",
+}
+
 
 def validate_company_access(
     company: str, applicable_for: str | None = None, *, user: str | None = None
@@ -72,7 +78,7 @@ def get_tp_company_setting(
             "company": company,
             "active": 1,
         },
-        fieldname,
+        COMPANY_DEFAULT_ROW_FIELDS.get(fieldname, fieldname),
     )
     if value is not None:
         return value

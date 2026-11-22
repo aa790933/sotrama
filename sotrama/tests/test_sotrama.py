@@ -707,6 +707,11 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertIsNotNone(
                 meta.get_field(fieldname), f"Missing TP setting: {fieldname}"
             )
+        company_defaults_meta = frappe.get_meta("TP Company Defaults", cached=False)
+        self.assertIsNotNone(company_defaults_meta.get_field("company_classification"))
+        self.assertIsNone(
+            company_defaults_meta.get_field("default_company_classification")
+        )
         self.assertEqual(meta.get_field("block_expired_driver_license").default, "0")
 
         company_scoped_settings = (
@@ -2940,6 +2945,47 @@ class TestSotramaHooks(unittest.TestCase):
                 "active": 1,
             },
         )
+        self.assertEqual(get_value.call_args.args[2], "default_cost_center")
+
+    def test_company_classification_default_maps_to_child_table_field(self):
+        from sotrama.tp.settings import get_tp_company_setting
+
+        with (
+            patch("sotrama.tp.settings.validate_company_access") as validate_company,
+            patch("sotrama.tp.settings.frappe.db.exists", return_value=True),
+            patch(
+                "sotrama.tp.settings.frappe.db.get_value", return_value="CLASS-A"
+            ) as get_value,
+            patch("sotrama.tp.settings.get_tp_setting") as get_setting,
+        ):
+            result = get_tp_company_setting(
+                "COMPANY-A", "default_company_classification", "Vehicle"
+            )
+
+        self.assertEqual(result, "CLASS-A")
+        validate_company.assert_called_once_with("COMPANY-A", "Vehicle")
+        self.assertEqual(get_value.call_args.args[2], "company_classification")
+        get_setting.assert_not_called()
+
+        with (
+            patch("sotrama.tp.settings.validate_company_access"),
+            patch("sotrama.tp.settings.frappe.db.exists", return_value=True),
+            patch("sotrama.tp.settings.frappe.db.get_value", return_value=None) as get_value,
+            patch(
+                "sotrama.tp.settings.get_tp_setting",
+                side_effect=lambda fieldname, default=None: {
+                    "default_company": "COMPANY-A",
+                    "default_company_classification": "PRIMARY-CLASS",
+                }.get(fieldname, default),
+            ) as get_setting,
+        ):
+            result = get_tp_company_setting(
+                "COMPANY-A", "default_company_classification", "Vehicle"
+            )
+
+        self.assertEqual(result, "PRIMARY-CLASS")
+        self.assertEqual(get_value.call_args.args[2], "company_classification")
+        get_setting.assert_any_call("default_company_classification")
 
         with (
             patch("sotrama.tp.settings.validate_company_access"),
