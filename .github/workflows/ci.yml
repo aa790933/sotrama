@@ -341,7 +341,7 @@ jobs:
           assert 'doc.get("everyone")' in permissions_source
           scheduler_source = Path("sotrama/tp/scheduler/__init__.py").read_text(encoding="utf-8")
           assert "def _user_for_role(role_name, doctype, docname)" in scheduler_source
-          assert '"Fleet Manager", "Vehicle", v["name"]' in scheduler_source
+          assert '"Fleet Manager", "Vehicle", vehicle.name' in scheduler_source
           assert '"Fleet Manager", "Maintenance Schedule", sched.name' in scheduler_source
           assert '"Fleet Manager", "Driver", d.name' in scheduler_source
           assert '"HR Manager", "Driver", d.name' in scheduler_source
@@ -595,7 +595,7 @@ jobs:
           manager_workspace = json.loads(Path("sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json").read_text(encoding="utf-8"))
           assert {row["role"] for row in manager_workspace["roles"]} == {"Fleet Manager", "System Manager"}
           assert "Fleet Cost Analysis" in {row.get("link_to") for row in manager_workspace["links"]}
-          assert "Company Classification" in {row.get("link_to") for row in manager_workspace["links"]}
+          assert "Company Classification" not in {row.get("link_to") for row in manager_workspace["links"]}
           tp_sidebar = json.loads(Path("sotrama/tp/sidebar/tp/tp.json").read_text(encoding="utf-8"))
           assert "Fleet Cost Analysis" not in {row.get("link_to") for row in tp_sidebar["items"]}
           assert "Upcoming Document Expiries" not in {row.get("link_to") for row in tp_sidebar["items"]}
