@@ -35,6 +35,25 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q sotrama
 
+      - name: Verify Frappe v16 server message calls
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          for path in Path("sotrama").rglob("*.py"):
+              tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call):
+                      continue
+                  function = node.func
+                  if not (isinstance(function, ast.Attribute) and function.attr == "msgprint"):
+                      continue
+                  assert not any(keyword.arg == "message" for keyword in node.keywords), (
+                      f"{path}:{node.lineno}: Frappe v16 msgprint takes its message as the first positional argument"
+                  )
+          PY
+
       - name: Check and test Desk scripts
         run: |
           node --check sotrama/public/js/job_card.js
@@ -621,3 +640,101 @@ jobs:
               assert not any(name.endswith("/package.json") for name in names)
           print(f"Verified {wheels[0]}")
           PY
+
+  frappe-integration:
+    name: Frappe 16.60.2 / ERPNext 16.60.0 / HRMS 16.60.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=10
+      redis-cache:
+        image: redis:8-alpine
+        ports:
+          - 13000:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=10
+      redis-queue:
+        image: redis:8-alpine
+        ports:
+          - 11000:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=10
+      redis-socketio:
+        image: redis:8-alpine
+        ports:
+          - 12000:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=10
+    steps:
+      - name: Check out Sotrama
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install system and Bench dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libffi-dev libjpeg-dev libmariadb-dev libssl-dev mariadb-client pkg-config zlib1g-dev
+          python -m pip install --upgrade pip frappe-bench
+          npm install --global yarn@1.22.22
+
+      - name: Initialize Bench with Frappe 16.60.2
+        run: |
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch v16.60.2 --python "$(which python)" ~/frappe-bench
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+          mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      - name: Install ERPNext, HRMS, and Sotrama
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench get-app --branch v16.60.0 erpnext
+          bench get-app --branch v16.60.0 hrms
+          bench get-app --skip-assets sotrama "$GITHUB_WORKSPACE"
+          bench setup requirements --dev
+
+      - name: Create test site and install apps
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench new-site test_site --db-host 127.0.0.1 --db-port 3306 --db-root-password root --admin-password admin
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app hrms
+          bench --site test_site install-app sotrama
+          bench --site test_site set-config allow_tests true
+
+      - name: Create an ERPNext company for Fleet integration tests
+        working-directory: /home/runner/frappe-bench
+        run: >-
+          bench --site test_site execute
+          erpnext.setup.setup_wizard.operations.company_setup.create_fiscal_year_and_company
+          --kwargs "{'args': {'company_name': 'Sotrama CI', 'company_abbr': 'SCI', 'currency': 'DZD', 'country': 'Algeria'}}"
+
+      - name: Run Sotrama server-side integration tests
+        working-directory: /home/runner/frappe-bench
+        run: bench --site test_site run-tests --app sotrama
