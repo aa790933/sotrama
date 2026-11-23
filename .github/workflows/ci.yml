@@ -828,7 +828,24 @@ jobs:
                   else (message.string,)
               )
               if any(not translation for translation in translations):
-                  problems.append((message.lineno, message.id, "untranslated"))
+                  # Frappe's _() explicitly falls back from a contextual
+                  # translation to the generic msgid translation.
+                  fallback = catalog.get(message.id) if message.context else None
+                  fallback_translations = (
+                      fallback.string.values()
+                      if fallback and isinstance(fallback.string, dict)
+                      else fallback.string
+                      if fallback and isinstance(fallback.string, (tuple, list))
+                      else (fallback.string,)
+                      if fallback
+                      else ()
+                  )
+                  if not fallback or not fallback_translations or any(
+                      not translation for translation in fallback_translations
+                  ):
+                      problems.append(
+                          (message.lineno, message.id, f"untranslated (context={message.context!r})")
+                      )
 
           for message, errors in catalog.check():
               if message.fuzzy:

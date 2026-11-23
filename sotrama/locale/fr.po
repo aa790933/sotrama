@@ -3024,3 +3024,108 @@ msgstr "Document "
 
 msgid "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document. Status is updated automatically using the configured alert window."
 msgstr "Ajoutez une ligne par document : choisissez son type, saisissez les dates de délivrance et d'expiration, puis téléversez le scan dans la colonne Pièce jointe. Ouvrez la pièce jointe pour consulter ou imprimer le document original. Le statut est mis à jour automatiquement selon le délai d'alerte configuré."
+
+msgid "A"
+msgstr "A"
+
+msgid "A1"
+msgstr "A1"
+
+msgid "Accounts Manager"
+msgstr "Gestionnaire des comptes"
+
+msgid "B"
+msgstr "B"
+
+msgid "B(E)"
+msgstr "B(E)"
+
+msgid "Breakdown Photo"
+msgstr "Photo de la panne"
+
+msgid "C"
+msgstr "C"
+
+msgid "C(E)"
+msgstr "C(E)"
+
+msgid "C1"
+msgstr "C1"
+
+msgid "C1(E)"
+msgstr "C1(E)"
+
+msgid "D"
+msgstr "D"
+
+msgid "D(E)"
+msgstr "D(E)"
+
+msgid "Driver Compliance Record"
+msgstr "Dossier de conformité du conducteur"
+
+msgid "F"
+msgstr "F"
+
+msgid "File field {0} already exists but is not owned by Sotrama. Resolve the field ownership conflict before migrating Driver attachments."
+msgstr "Le champ de fichier {0} existe déjà, mais n'appartient pas à Sotrama. Résolvez le conflit de propriété du champ avant de migrer les pièces jointes des conducteurs."
+
+msgid "Fleet Manager"
+msgstr "Responsable du parc"
+
+msgid "HR Manager"
+msgstr "Responsable des ressources humaines"
+
+msgid "Inspection Item"
+msgstr "Point de contrôle"
+
+msgid "Job Card Labour"
+msgstr "Main-d'œuvre de la fiche d'intervention"
+
+msgid "Job Card Other Cost"
+msgstr "Autre coût de la fiche d'intervention"
+
+msgid "Job Card Part"
+msgstr "Pièce de la fiche d'intervention"
+
+msgid "Maintenance Job Type"
+msgstr "Type de maintenance"
+
+msgid "Overview"
+msgstr "Vue d'ensemble"
+
+msgid "Review the restricted professional-driver compliance records for {0}. This task intentionally contains no medical result or date."
+msgstr "Consultez les dossiers de conformité professionnelle à accès restreint du conducteur {0}. Cette tâche ne contient volontairement aucun résultat ni aucune date médicale."
+
+msgid "Review the restricted professional-driver compliance records. This task intentionally contains no medical result or date."
+msgstr "Consultez les dossiers de conformité professionnelle à accès restreint. Cette tâche ne contient volontairement aucun résultat ni aucune date médicale."
+
+msgid "Sotrama Settings"
+msgstr "Paramètres Sotrama"
+
+msgid "System Manager"
+msgstr "Administrateur système"
+
+msgid "TP"
+msgstr "TP"
+
+msgid "TP Company Defaults"
+msgstr "Paramètres TP par société"
+
+msgid "Total score {0} falls outside Grade {1} range ({2}–{3}). Please verify the classification criteria."
+msgstr "Le score total {0} est hors de la plage de la note {1} ({2}–{3}). Veuillez vérifier les critères de classification."
+
+msgid "Workshop"
+msgstr "Atelier"
+
+msgid "km"
+msgstr "km"
+
+msgid "m²"
+msgstr "m²"
+
+msgid "m³"
+msgstr "m³"
+
+msgid "t"
+msgstr "t"

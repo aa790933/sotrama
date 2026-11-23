@@ -263,20 +263,18 @@ def check_maintenance_due():
         fields=["name", "vehicle", "next_due_date", "next_due_odometer", "job_type"],
         limit_page_length=0,
     )
-    if not schedules:
-        return
-
     vehicle_names = list({schedule.vehicle for schedule in schedules if schedule.vehicle})
     vehicle_rows = (
         frappe.get_all(
             "Vehicle",
             filters={"name": ["in", vehicle_names]},
-            fields=["name", "current_odometer"],
+            fields=["name", "current_odometer", "docstatus", "vehicle_status"],
             limit_page_length=0,
         )
         if vehicle_names
         else []
     )
+    vehicles_by_name = {vehicle.name: vehicle for vehicle in vehicle_rows}
     odometers_by_vehicle = {
         vehicle.name: vehicle.current_odometer or 0 for vehicle in vehicle_rows
     }
@@ -285,23 +283,30 @@ def check_maintenance_due():
         "ToDo",
         filters={
             "reference_type": "Maintenance Schedule",
-            "reference_name": ["in", [schedule.name for schedule in schedules]],
             "status": "Open",
         },
-        fields=["name", "reference_name"],
+        or_filters=[
+            ["ToDo", "description", "like", "Maintenance Due:%"],
+            ["ToDo", "description", "like", "Maintenance à effectuer :%"],
+            ["ToDo", "description", "like", "%Scheduled maintenance for vehicle%"],
+            ["ToDo", "description", "like", "%La maintenance planifiée du véhicule%"],
+        ],
+        fields=["name", "reference_name", "description"],
         order_by="creation asc, name asc",
         limit_page_length=0,
     )
     todos_by_schedule = {}
     for todo in existing_todos:
-        todos_by_schedule.setdefault(todo.reference_name, todo.name)
+        todos_by_schedule.setdefault(todo.reference_name, []).append(todo)
 
     configured_days = get_tp_setting("maintenance_due_alert_days", 14)
     alert_days = int(14 if configured_days is None else configured_days)
     due_date_threshold = getdate(add_days(today(), alert_days))
     role_users_cache = {}
 
+    retained_todo_names = set()
     for sched in schedules:
+        vehicle_row = vehicles_by_name.get(sched.vehicle)
         due_reasons = []
         if sched.next_due_date and getdate(sched.next_due_date) <= due_date_threshold:
             due_reasons.append(_("due date {0}").format(sched.next_due_date))
@@ -315,7 +320,12 @@ def check_maintenance_due():
                     )
                 )
 
-        if not due_reasons:
+        if (
+            not due_reasons
+            or not vehicle_row
+            or vehicle_row.docstatus != 1
+            or vehicle_row.vehicle_status in ("Retired", "Scrapped")
+        ):
             continue
 
         allocated_to = _user_for_role(
@@ -325,11 +335,12 @@ def check_maintenance_due():
             role_users_cache=role_users_cache,
             known_existing=True,
         )
-        existing = todos_by_schedule.get(sched.name)
+        existing = next(iter(todos_by_schedule.get(sched.name, [])), None)
         if existing:
+            retained_todo_names.add(existing.name)
             frappe.db.set_value(
                 "ToDo",
-                existing,
+                existing.name,
                 {
                     "allocated_to": allocated_to,
                     "description": _("Maintenance Due: {0} (Vehicle: {1})\n{2}").format(
@@ -360,6 +371,14 @@ def check_maintenance_due():
             todo.allocated_to = allocated_to
             todo.assigned_by = "Administrator"
             todo.insert(ignore_permissions=True)
+
+    # Close generated alerts whose schedule is no longer due/active, whose
+    # Vehicle was cancelled, or whose Vehicle is retired/scrapped.
+    for todo in existing_todos:
+        if todo.name not in retained_todo_names:
+            frappe.db.set_value(
+                "ToDo", todo.name, "status", "Closed", update_modified=False
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -426,40 +445,37 @@ def check_driver_license_expiry():
         for record in compliance_records:
             compliance_records_by_driver.setdefault(record.parent, []).append(record)
 
-    driver_names = [driver.name for driver in drivers]
-    existing_todos = (
-        frappe.get_all(
-            "ToDo",
-            filters={
-                "reference_type": "Driver",
-                "reference_name": ["in", driver_names],
-                "status": "Open",
-            },
-            or_filters=[
-                ["ToDo", "description", "like", "%license expires%"],
-                [
-                    "ToDo",
-                    "description",
-                    "like",
-                    "%restricted professional-driver compliance records%",
-                ],
-                ["ToDo", "description", "like", "%safety training expires%"],
-            ],
-            fields=["name", "reference_name", "description"],
-            order_by="creation asc, name asc",
-            limit_page_length=0,
-        )
-        if driver_names
-        else []
+    existing_todos = frappe.get_all(
+        "ToDo",
+        filters={"reference_type": "Driver", "status": "Open"},
+        or_filters=[
+            ["ToDo", "description", "like", "%license expires%"],
+            ["ToDo", "description", "like", "%Le permis du conducteur%"],
+            ["ToDo", "description", "like", "%Driver License Expiring:%"],
+            ["ToDo", "description", "like", "%Expiration du permis du conducteur%"],
+            ["ToDo", "description", "like", "%restricted professional-driver compliance records%"],
+            ["ToDo", "description", "like", "%dossiers de conformité professionnelle à accès restreint%"],
+            ["ToDo", "description", "like", "%Restricted Driver Compliance Review%"],
+            ["ToDo", "description", "like", "%Contrôle restreint de conformité du conducteur%"],
+            ["ToDo", "description", "like", "%safety training expires%"],
+            ["ToDo", "description", "like", "%La formation sécurité du conducteur%"],
+            ["ToDo", "description", "like", "%Safety Training Expiring:%"],
+            ["ToDo", "description", "like", "%Expiration de la formation sécurité%"],
+        ],
+        fields=["name", "reference_name", "description"],
+        order_by="creation asc, name asc",
+        limit_page_length=0,
     )
     todos_by_driver = {}
     for todo in existing_todos:
         todos_by_driver.setdefault(todo.reference_name, []).append(todo)
 
     role_users_cache = {}
+    active_alerts = set()
 
     for d in drivers:
         if d.license_expiry and getdate(d.license_expiry) <= getdate(threshold):
+            active_alerts.add((d.name, "license"))
             title = _("Driver License Expiring: {0}").format(d["driver_name"])
             description = _("Driver {0} license expires on {1}.").format(
                 d["driver_name"], d["license_expiry"]
@@ -472,7 +488,7 @@ def check_driver_license_expiry():
                 known_existing=True,
             )
             existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "license expires"
+                todos_by_driver, d.name, "license"
             )
             if existing:
                 frappe.db.set_value(
@@ -519,6 +535,7 @@ def check_driver_license_expiry():
                     break
 
         if compliance_due:
+            active_alerts.add((d.name, "compliance"))
             allocated_to = _user_for_role(
                 "HR Manager",
                 "Driver",
@@ -527,7 +544,7 @@ def check_driver_license_expiry():
                 known_existing=True,
             )
             existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "restricted professional-driver compliance records"
+                todos_by_driver, d.name, "compliance"
             )
             if existing:
                 frappe.db.set_value(
@@ -564,6 +581,7 @@ def check_driver_license_expiry():
         if d.safety_training_expiry and getdate(d.safety_training_expiry) <= getdate(
             threshold
         ):
+            active_alerts.add((d.name, "safety"))
             title = _("Safety Training Expiring: {0}").format(d["driver_name"])
             description = _("Driver {0} safety training expires on {1}.").format(
                 d["driver_name"], d["safety_training_expiry"]
@@ -576,7 +594,7 @@ def check_driver_license_expiry():
                 known_existing=True,
             )
             existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "safety training expires"
+                todos_by_driver, d.name, "safety"
             )
             if existing:
                 frappe.db.set_value(
@@ -602,14 +620,58 @@ def check_driver_license_expiry():
                     )
                 )
 
+    # Close obsolete alerts after renewals, cleared compliance requirements,
+    # removed expiry dates, or Driver deactivation/cancellation.
+    for driver_name, todos in todos_by_driver.items():
+        for todo in todos:
+            alert_kind = _driver_alert_kind(todo.description)
+            if alert_kind and (driver_name, alert_kind) not in active_alerts:
+                frappe.db.set_value(
+                    "ToDo", todo.name, "status", "Closed", update_modified=False
+                )
 
-def _find_driver_alert_todo(todos_by_driver, driver_name, description_phrase):
-    phrase = description_phrase.lower()
+
+def _driver_alert_kind(description):
+    description = (description or "").lower()
+    if any(
+        phrase in description
+        for phrase in (
+            "license expires",
+            "le permis du conducteur",
+            "driver license expiring:",
+            "expiration du permis du conducteur",
+        )
+    ):
+        return "license"
+    if any(
+        phrase in description
+        for phrase in (
+            "restricted professional-driver compliance records",
+            "dossiers de conformité professionnelle à accès restreint",
+            "restricted driver compliance review",
+            "contrôle restreint de conformité du conducteur",
+        )
+    ):
+        return "compliance"
+    if any(
+        phrase in description
+        for phrase in (
+            "safety training expires",
+            "la formation sécurité du conducteur",
+            "safety training expiring:",
+            "expiration de la formation sécurité",
+        )
+    ):
+        return "safety"
+    return None
+
+
+def _find_driver_alert_todo(todos_by_driver, driver_name, alert_kind):
     return next(
         (
             todo
             for todo in todos_by_driver.get(driver_name, [])
-            if phrase in (todo.description or "").lower()
+            if _driver_alert_kind(todo.description) == alert_kind
         ),
         None,
     )
