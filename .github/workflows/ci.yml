@@ -162,6 +162,21 @@ jobs:
           assert labour_fields["mechanic"]["label"] == "Employee (Mechanic)"
           assert not labour_fields["mechanic"]["in_list_view"]
           assert labour_fields["mechanic_name"]["in_list_view"]
+          child_grid_fields = {
+              "inspection_item": ("category", "item_details", "status"),
+              "job_card_part": ("item", "quantity", "rate", "amount"),
+              "job_card_labour": ("mechanic_name", "hours", "rate", "amount"),
+              "job_card_other_cost": ("description", "category", "amount", "date"),
+              "breakdown_photo": ("photo", "caption", "photo_date"),
+              "job_card_photo": ("photo", "caption", "photo_date"),
+              "vehicle_document": ("document_type", "issue_date", "expiry_date", "attachment"),
+          }
+          for child_name, fieldnames in child_grid_fields.items():
+              child_path = Path("sotrama/tp/doctype") / child_name / f"{child_name}.json"
+              child_data = json.loads(child_path.read_text(encoding="utf-8"))
+              child_fields = {field["fieldname"]: field for field in child_data["fields"]}
+              for fieldname in fieldnames:
+                  assert child_fields[fieldname].get("in_list_view"), f"{child_name}.{fieldname} must be visible in its parent grid"
           driver = json.loads(Path("sotrama/tp/doctype/driver/driver.json").read_text(encoding="utf-8"))
           employee_link = next(field for field in driver["fields"] if field["fieldname"] == "employee")
           assert "Only HR Manager and System Manager" in employee_link["description"]

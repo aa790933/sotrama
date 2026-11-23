@@ -62,9 +62,10 @@ def ensure_default_masters():
 def ensure_public_works_designations():
     """Create missing Algerian BTPH job titles in Frappe HR's Designation master.
 
-    This helper is called only after an administrator explicitly enables the
-    option in Sotrama Settings. Existing Designation records are never changed
-    or deleted; HR users continue managing them through the standard HRMS UI.
+    This helper is called only after an authorized user explicitly starts the
+    import from Sotrama Settings. Existing Designation records are never
+    changed or deleted; HR users continue managing them through the standard
+    HRMS UI.
     """
     import frappe
     from frappe.exceptions import DuplicateEntryError
