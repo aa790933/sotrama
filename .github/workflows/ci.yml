@@ -805,6 +805,65 @@ jobs:
         run: |
           cp apps/sotrama/sotrama/locale/fr.po "$RUNNER_TEMP/sotrama-fr.po.before-sync"
           bench generate-pot-file --app sotrama
+          # Frappe's default Babel extraction does not scan JSON Print Format
+          # layouts. Add their labels/text/options to the same official POT
+          # catalog before update-po-files synchronizes the French PO file.
+          ./env/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          from babel.messages.pofile import read_po, write_po
+
+          app_path = Path("apps/sotrama/sotrama")
+          pot_path = app_path / "locale" / "main.pot"
+          non_translatable_options = {
+              "A", "A1", "B(E)", "C", "C1", "C1(E)", "C(E)",
+              "D", "D(E)", "F", "km", "m²", "m³", "t",
+          }
+          with pot_path.open("rb") as pot_file:
+              catalog = read_po(pot_file)
+
+          added = set()
+
+          def add_print_format_strings(value, source_path):
+              if isinstance(value, dict):
+                  for key in ("label", "text"):
+                      message = value.get(key)
+                      if isinstance(message, str) and message:
+                          catalog.add(
+                              message,
+                              locations=[(str(source_path.relative_to(app_path)), 1)],
+                          )
+                          added.add(message)
+                  if value.get("fieldtype") == "Select" and value.get("options"):
+                      for option in value["options"].splitlines():
+                          if option and option not in non_translatable_options:
+                              catalog.add(
+                                  option,
+                                  locations=[(str(source_path.relative_to(app_path)), 1)],
+                              )
+                              added.add(option)
+                  for child in value.values():
+                      add_print_format_strings(child, source_path)
+              elif isinstance(value, list):
+                  for child in value:
+                      add_print_format_strings(child, source_path)
+
+          for source_path in app_path.rglob("print_format/**/*.json"):
+              definition = json.loads(source_path.read_text(encoding="utf-8-sig"))
+              format_data = definition.get("format_data")
+              if format_data:
+                  add_print_format_strings(json.loads(format_data), source_path)
+
+          with pot_path.open("wb") as pot_file:
+              write_po(
+                  pot_file,
+                  catalog,
+                  width=None,
+                  sort_output=True,
+                  ignore_obsolete=True,
+              )
+          print(f"Added/verified {len(added)} Print Format strings in {pot_path}.")
+          PY
           bench update-po-files --app sotrama --locale fr
           ./env/bin/python - <<'PY'
           import os
