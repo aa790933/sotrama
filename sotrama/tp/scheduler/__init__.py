@@ -684,25 +684,35 @@ def remediate_fleet_alert_todo_assignments():
         filters=[],
         or_filters=[
             ["ToDo", "description", "like", "Vehicle Document Expiring:%"],
+            ["ToDo", "description", "like", "Expiration d'un document du véhicule :%"],
             ["ToDo", "description", "like", "Document '% expires on %"],
+            ["ToDo", "description", "like", "%du véhicule%expire le%"],
             ["ToDo", "description", "like", "Maintenance Due:%"],
+            ["ToDo", "description", "like", "Maintenance à effectuer :%"],
             [
                 "ToDo",
                 "description",
                 "like",
                 "Scheduled maintenance for vehicle % is due:%",
             ],
+            ["ToDo", "description", "like", "%La maintenance planifiée du véhicule%"],
             ["ToDo", "description", "like", "Driver License Expiring:%"],
+            ["ToDo", "description", "like", "Expiration du permis du conducteur :%"],
             ["ToDo", "description", "like", "% license expires on %"],
+            ["ToDo", "description", "like", "%Le permis du conducteur%expire le%"],
             ["ToDo", "description", "like", "Safety Training Expiring:%"],
+            ["ToDo", "description", "like", "Expiration de la formation sécurité :%"],
             ["ToDo", "description", "like", "% safety training expires on %"],
+            ["ToDo", "description", "like", "%La formation sécurité du conducteur%expire le%"],
             ["ToDo", "description", "like", "%Restricted Driver Compliance Review%"],
+            ["ToDo", "description", "like", "%Contrôle restreint de conformité du conducteur%"],
             [
                 "ToDo",
                 "description",
                 "like",
                 "%restricted professional-driver compliance records%",
             ],
+            ["ToDo", "description", "like", "%dossiers de conformité professionnelle à accès restreint%"],
         ],
         fields=[
             "name",
@@ -737,16 +747,25 @@ def remediate_fleet_alert_todo_assignments():
         allocated_to = "Administrator"
         updates = {}
 
+        lowered_description = description.lower()
         if (
-            description.startswith("Vehicle Document Expiring:")
-            or "Document '" in description
+            lowered_description.startswith(
+                ("vehicle document expiring:", "expiration d'un document du véhicule :")
+            )
+            or "document '" in lowered_description
+            or "du véhicule" in lowered_description and "expire le" in lowered_description
         ) and reference_type == "Vehicle":
             allocated_to = _user_for_role(
                 "Fleet Manager", "Vehicle", reference_name, role_users_cache=role_users_cache
             )
         elif (
-            description.startswith(
-                ("Maintenance Due:", "Scheduled maintenance for vehicle ")
+            lowered_description.startswith(
+                (
+                    "maintenance due:",
+                    "scheduled maintenance for vehicle ",
+                    "maintenance à effectuer :",
+                    "la maintenance planifiée du véhicule ",
+                )
             )
         ) and reference_type == "Maintenance Schedule":
             allocated_to = _user_for_role(
@@ -756,8 +775,11 @@ def remediate_fleet_alert_todo_assignments():
                 role_users_cache=role_users_cache,
             )
         elif (
-            description.startswith("Driver License Expiring:")
-            or " license expires on " in description
+            lowered_description.startswith(
+                ("driver license expiring:", "expiration du permis du conducteur :")
+            )
+            or " license expires on " in lowered_description
+            or "le permis du conducteur" in lowered_description
         ) and reference_type == "Driver":
             allocated_to = _user_for_role(
                 "Fleet Manager", "Driver", reference_name, role_users_cache=role_users_cache
@@ -771,8 +793,11 @@ def remediate_fleet_alert_todo_assignments():
                 else _("The referenced Driver record is unavailable; contact HR.")
             )
         elif (
-            description.startswith("Safety Training Expiring:")
-            or " safety training expires on " in description
+            lowered_description.startswith(
+                ("safety training expiring:", "expiration de la formation sécurité :")
+            )
+            or " safety training expires on " in lowered_description
+            or "la formation sécurité du conducteur" in lowered_description
         ) and reference_type == "Driver":
             allocated_to = _user_for_role(
                 "HR Manager", "Driver", reference_name, role_users_cache=role_users_cache
@@ -786,8 +811,14 @@ def remediate_fleet_alert_todo_assignments():
                 else _("The referenced Driver record is unavailable; contact HR.")
             )
         elif (
-            description.startswith("Restricted Driver Compliance Review")
-            or "restricted professional-driver compliance records" in description
+            lowered_description.startswith(
+                (
+                    "restricted driver compliance review",
+                    "contrôle restreint de conformité du conducteur",
+                )
+            )
+            or "restricted professional-driver compliance records" in lowered_description
+            or "dossiers de conformité professionnelle à accès restreint" in lowered_description
         ) and reference_type == "Driver":
             allocated_to = _user_for_role(
                 "HR Manager", "Driver", reference_name, role_users_cache=role_users_cache

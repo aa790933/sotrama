@@ -7848,6 +7848,72 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(compliance_update["allocated_to"], "hr@example.invalid")
         self.assertNotIn("POSITIVE", compliance_update["description"])
 
+    def test_french_legacy_driver_alerts_are_sanitized_and_routed_to_the_right_role(self):
+        from sotrama.tp.scheduler import remediate_fleet_alert_todo_assignments
+
+        driver = frappe._dict(
+            name="DRV-LEGACY-FR",
+            driver_name="Conducteur historique",
+            license_expiry="2026-12-01",
+            safety_training_expiry="2026-12-15",
+        )
+        todos = [
+            frappe._dict(
+                name="TODO-LICENSE-FR-LEGACY",
+                reference_type="Driver",
+                reference_name=driver.name,
+                allocated_to="fleet@example.invalid",
+                description="Expiration du permis du conducteur : Conducteur historique\nLe permis du conducteur Conducteur historique expire le 2026-12-01 ; SECRET-LICENSE-NUMBER",
+            ),
+            frappe._dict(
+                name="TODO-SAFETY-FR-LEGACY",
+                reference_type="Driver",
+                reference_name=driver.name,
+                allocated_to="fleet@example.invalid",
+                description="Expiration de la formation sécurité : Conducteur historique\nLa formation sécurité du conducteur Conducteur historique expire le 2026-12-15.",
+            ),
+            frappe._dict(
+                name="TODO-COMPLIANCE-FR-LEGACY",
+                reference_type="Driver",
+                reference_name=driver.name,
+                allocated_to="fleet@example.invalid",
+                description="Contrôle restreint de conformité du conducteur\nRésultat médical : POSITIF ; date : 2026-11-01. Consultez les dossiers de conformité professionnelle à accès restreint.",
+            ),
+        ]
+
+        with (
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all", side_effect=[todos, [driver]]
+            ) as get_all,
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                side_effect=[
+                    "fleet@example.invalid",
+                    "hr@example.invalid",
+                    "hr@example.invalid",
+                ],
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+        ):
+            remediate_fleet_alert_todo_assignments()
+
+        self.assertTrue(get_all.call_args_list[0].kwargs["or_filters"])
+        updates = {call.args[1]: call.args[2] for call in set_value.call_args_list}
+        self.assertEqual(len(updates), 3)
+        self.assertNotIn("SECRET-LICENSE-NUMBER", updates[todos[0].name]["description"])
+        self.assertNotIn("allocated_to", updates[todos[0].name])
+        self.assertEqual(todos[0].allocated_to, "fleet@example.invalid")
+        self.assertEqual(updates[todos[1].name]["allocated_to"], "hr@example.invalid")
+        self.assertTrue(
+            any(
+                phrase in updates[todos[1].name]["description"].lower()
+                for phrase in ("safety training", "formation sécurité")
+            )
+        )
+        self.assertEqual(updates[todos[2].name]["allocated_to"], "hr@example.invalid")
+        self.assertNotIn("POSITIF", updates[todos[2].name]["description"])
+        self.assertNotIn("2026-11-01", updates[todos[2].name]["description"])
+
     def test_driver_alerts_do_not_disclose_licence_number_or_safety_expiry_to_fleet(
         self,
     ):
