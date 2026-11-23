@@ -1572,6 +1572,7 @@ class TestSotramaHooks(unittest.TestCase):
         labour_meta = frappe.get_meta("Job Card Labour", cached=False)
         for fieldname in ("mechanic_name", "hours", "rate", "amount"):
             self.assertTrue(labour_meta.get_field(fieldname).in_list_view, fieldname)
+        self.assertTrue(labour_meta.get_field("mechanic").in_list_view)
         other_cost_meta = frappe.get_meta("Job Card Other Cost", cached=False)
         for fieldname in ("description", "category", "amount", "date"):
             self.assertTrue(other_cost_meta.get_field(fieldname).in_list_view, fieldname)
@@ -1592,7 +1593,7 @@ class TestSotramaHooks(unittest.TestCase):
 
         self.assertEqual(labour_meta.get_field("mechanic").options, "Employee")
         self.assertEqual(labour_meta.get_field("mechanic").label, "Employee (Mechanic)")
-        self.assertFalse(labour_meta.get_field("mechanic").in_list_view)
+        self.assertTrue(labour_meta.get_field("mechanic").in_list_view)
         self.assertTrue(labour_meta.get_field("mechanic_name").in_list_view)
 
         script = (
