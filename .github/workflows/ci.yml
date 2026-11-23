@@ -803,15 +803,49 @@ jobs:
       - name: Sync and validate Sotrama French Gettext catalog
         working-directory: /home/runner/frappe-bench
         run: |
+          cp apps/sotrama/sotrama/locale/fr.po "$RUNNER_TEMP/sotrama-fr.po.before-sync"
           bench generate-pot-file --app sotrama
           bench update-po-files --app sotrama --locale fr
           ./env/bin/python - <<'PY'
+          import os
           from pathlib import Path
-          from babel.messages.pofile import read_po
+          from babel.messages.pofile import read_po, write_po
 
           catalog_path = Path("apps/sotrama/sotrama/locale/fr.po")
+          previous_catalog_path = Path(os.environ["RUNNER_TEMP"]) / "sotrama-fr.po.before-sync"
+          with previous_catalog_path.open("rb") as previous_file:
+              previous_catalog = read_po(previous_file)
           with catalog_path.open("rb") as catalog_file:
               catalog = read_po(catalog_file)
+
+          # Frappe falls back from a contextual msgid to its generic msgid.
+          # update-po-files may drop that generic entry when the POT now
+          # contains only a contextual form, so preserve the old translation
+          # explicitly in the new context before validating/compiling it.
+          for message in catalog:
+              if not message.id or not message.context or message.fuzzy:
+                  continue
+              translations = (
+                  message.string.values()
+                  if isinstance(message.string, dict)
+                  else message.string
+                  if isinstance(message.string, (tuple, list))
+                  else (message.string,)
+              )
+              if all(translations):
+                  continue
+              fallback = previous_catalog.get(message.id)
+              if not fallback or fallback.fuzzy:
+                  continue
+              fallback_translations = (
+                  fallback.string.values()
+                  if isinstance(fallback.string, dict)
+                  else fallback.string
+                  if isinstance(fallback.string, (tuple, list))
+                  else (fallback.string,)
+              )
+              if fallback_translations and all(fallback_translations):
+                  message.string = fallback.string
 
           problems = []
           for message in catalog:
@@ -857,6 +891,15 @@ jobs:
               for line, message_id, reason in problems:
                   print(f"{catalog_path}:{line}: {reason}: {message_id}")
               raise SystemExit(f"Found {len(problems)} incomplete French translations.")
+
+          with catalog_path.open("wb") as catalog_file:
+              write_po(
+                  catalog_file,
+                  catalog,
+                  width=None,
+                  sort_output=True,
+                  ignore_obsolete=True,
+              )
 
           translated = sum(1 for message in catalog if message.id)
           print(f"Validated {translated} French Gettext messages against the generated POT.")

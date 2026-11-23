@@ -7690,6 +7690,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             name="TODO-DATE",
             reference_name="SCH-DATE",
             description="Maintenance Due: Oil Change (Vehicle: VEH-DATE)",
+            status="Open",
         )
         created_todo = Mock(name="TODO-ODO")
         created_todo.name = "TODO-ODO"
@@ -7714,7 +7715,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(get_all.call_args_list[2].args[0], "ToDo")
         self.assertEqual(
             get_all.call_args_list[2].kwargs["filters"],
-            {"reference_type": "Maintenance Schedule", "status": "Open"},
+            {"reference_type": "Maintenance Schedule"},
         )
         self.assertTrue(get_all.call_args_list[2].kwargs["or_filters"])
         get_value.assert_not_called()
@@ -7757,16 +7758,19 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                 name="TODO-NOT-DUE",
                 reference_name="SCH-NOT-DUE",
                 description="Maintenance Due: Oil Change (Vehicle: VEH-ACTIVE)",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-CANCELLED-VEHICLE",
                 reference_name="SCH-CANCELLED-VEHICLE",
                 description="Maintenance Due: Inspection (Vehicle: VEH-CANCELLED)",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-PAUSED-SCHEDULE",
                 reference_name="SCH-PAUSED",
                 description="Maintenance à effectuer : Inspection (véhicule : VEH-PAUSED)",
+                status="Open",
             ),
         ]
 
@@ -7786,6 +7790,85 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                 "ToDo", todo.name, "status", "Closed", update_modified=False
             )
         new_doc.assert_not_called()
+
+    def test_maintenance_due_scheduler_respects_manual_close_per_schedule_cycle(self):
+        from sotrama.tp.scheduler import (
+            _maintenance_alert_signature,
+            check_maintenance_due,
+        )
+
+        same_cycle = frappe._dict(
+            name="SCH-MANUALLY-CLOSED",
+            vehicle="VEH-CLOSED",
+            next_due_date=add_days(today(), 2),
+            next_due_odometer=1000,
+            job_type="Oil Change",
+        )
+        new_cycle = frappe._dict(
+            name="SCH-RESCHEDULED",
+            vehicle="VEH-RESCHEDULED",
+            next_due_date=add_days(today(), 3),
+            next_due_odometer=2000,
+            job_type="Inspection",
+        )
+        previous_cycle = frappe._dict(
+            name=new_cycle.name,
+            next_due_date=add_days(today(), 90),
+            next_due_odometer=new_cycle.next_due_odometer,
+        )
+        vehicles = [
+            frappe._dict(
+                name="VEH-CLOSED", current_odometer=500, docstatus=1, vehicle_status="Active"
+            ),
+            frappe._dict(
+                name="VEH-RESCHEDULED", current_odometer=1500, docstatus=1, vehicle_status="Active"
+            ),
+        ]
+        todos = [
+            frappe._dict(
+                name="TODO-CLOSED-SAME-CYCLE",
+                reference_name=same_cycle.name,
+                description=f"Maintenance Due: Oil Change\n{_maintenance_alert_signature(same_cycle)}",
+                status="Closed",
+            ),
+            frappe._dict(
+                name="TODO-OPEN-DUPLICATE-SAME-CYCLE",
+                reference_name=same_cycle.name,
+                description=f"Maintenance Due: Oil Change\n{_maintenance_alert_signature(same_cycle)}",
+                status="Open",
+            ),
+            frappe._dict(
+                name="TODO-CLOSED-OLD-CYCLE",
+                reference_name=new_cycle.name,
+                description=f"Maintenance Due: Inspection\n{_maintenance_alert_signature(previous_cycle)}",
+                status="Closed",
+            ),
+        ]
+        created_todo = Mock()
+        created_todo.name = "TODO-NEW-CYCLE"
+
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=14),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[same_cycle, new_cycle], vehicles, todos],
+            ),
+            patch("sotrama.tp.scheduler._user_for_role", return_value="fleet@example.invalid"),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc", return_value=created_todo) as new_doc,
+        ):
+            check_maintenance_due()
+
+        new_doc.assert_called_once_with("ToDo")
+        created_todo.insert.assert_called_once_with(ignore_permissions=True)
+        self.assertIn(_maintenance_alert_signature(new_cycle), created_todo.description)
+        set_value.assert_called_once_with(
+            "ToDo",
+            "TODO-OPEN-DUPLICATE-SAME-CYCLE",
+            "status",
+            "Closed",
+            update_modified=False,
+        )
 
     def test_legacy_driver_alerts_are_sanitized_and_routed_to_the_right_role(self):
         from sotrama.tp.scheduler import remediate_fleet_alert_todo_assignments
@@ -7956,7 +8039,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         self.assertEqual(get_all.call_args_list[2].args[0], "ToDo")
         self.assertEqual(
             get_all.call_args_list[2].kwargs["filters"],
-            {"reference_type": "Driver", "status": "Open"},
+            {"reference_type": "Driver"},
         )
 
     def test_driver_scheduler_closes_renewed_cleared_and_inactive_alerts_in_french(self):
@@ -7978,12 +8061,16 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         )
         compliance_records = [
             frappe._dict(
+                name="COMPLIANCE-MEDICAL-001",
+                modified="2026-11-20 10:00:00",
                 parent=compliant_driver.name,
                 check_type="Medical Fitness Examination",
                 result="Fit",
                 valid_until=add_days(today(), 365),
             ),
             frappe._dict(
+                name="COMPLIANCE-DRUG-001",
+                modified="2026-11-20 10:00:00",
                 parent=compliant_driver.name,
                 check_type="Drug Screening",
                 result="Negative",
@@ -7995,26 +8082,31 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                 name="TODO-LICENSE-FR",
                 reference_name=active_driver.name,
                 description="Expiration du permis du conducteur : Conducteur renouvelé\nLe permis du conducteur expire le 2026-12-01.",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-SAFETY-FR",
                 reference_name=active_driver.name,
                 description="Expiration de la formation sécurité : Conducteur renouvelé\nLa formation sécurité du conducteur expire le 2026-12-01.",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-COMPLIANCE-FR",
                 reference_name=active_driver.name,
                 description="Contrôle restreint de conformité du conducteur\nConsultez les dossiers de conformité professionnelle à accès restreint des conducteurs.",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-INACTIVE-DRIVER",
                 reference_name="DRV-INACTIVE",
                 description="Driver Former Driver license expires on 2026-12-01.",
+                status="Open",
             ),
             frappe._dict(
                 name="TODO-COMPLIANCE-COMPLETED",
                 reference_name=compliant_driver.name,
                 description="Review the restricted professional-driver compliance records. This task intentionally contains no medical result or date.",
+                status="Open",
             ),
         ]
 
@@ -8040,6 +8132,263 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
                 "ToDo", todo.name, "status", "Closed", update_modified=False
             )
         new_doc.assert_not_called()
+
+    def test_driver_scheduler_respects_manual_close_for_same_expiry_only(self):
+        from sotrama.tp.scheduler import check_driver_license_expiry
+
+        same_expiry_driver = frappe._dict(
+            name="DRV-CLOSED-SAME-EXPIRY",
+            driver_name="Driver Same Expiry",
+            license_expiry=add_days(today(), 10),
+            safety_training_expiry=None,
+        )
+        renewed_driver = frappe._dict(
+            name="DRV-NEW-EXPIRY",
+            driver_name="Driver New Expiry",
+            license_expiry=add_days(today(), 11),
+            safety_training_expiry=None,
+        )
+        safety_driver = frappe._dict(
+            name="DRV-CLOSED-SAFETY",
+            driver_name="Driver Safety Same Expiry",
+            license_expiry=None,
+            safety_training_expiry=add_days(today(), 12),
+        )
+        old_expiry = add_days(today(), -10)
+        todos = [
+            frappe._dict(
+                name="TODO-CLOSED-SAME-EXPIRY",
+                reference_name=same_expiry_driver.name,
+                description=f"Driver License Expiring: Driver Same Expiry\nDriver Driver Same Expiry license expires on {same_expiry_driver.license_expiry}.",
+                status="Closed",
+            ),
+            frappe._dict(
+                name="TODO-OPEN-DUPLICATE-CLOSED-EXPIRY",
+                reference_name=same_expiry_driver.name,
+                description=f"Driver License Expiring: Driver Same Expiry\nDriver Driver Same Expiry license expires on {same_expiry_driver.license_expiry}.",
+                status="Open",
+            ),
+            frappe._dict(
+                name="TODO-CLOSED-OLD-EXPIRY",
+                reference_name=renewed_driver.name,
+                description=f"Driver License Expiring: Driver New Expiry\nDriver Driver New Expiry license expires on {old_expiry}.",
+                status="Closed",
+            ),
+            frappe._dict(
+                name="TODO-CLOSED-SAFETY-EXPIRY",
+                reference_name=safety_driver.name,
+                description=f"Safety Training Expiring: Driver Safety Same Expiry\nDriver Driver Safety Same Expiry safety training expires on {safety_driver.safety_training_expiry}.",
+                status="Closed",
+            ),
+        ]
+        created_todo = Mock()
+        created_todo.name = "TODO-NEW-EXPIRY"
+
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[], [same_expiry_driver, renewed_driver, safety_driver], todos],
+            ),
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                side_effect=[
+                    "fleet@example.invalid",
+                    "fleet@example.invalid",
+                    "hr@example.invalid",
+                ],
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc", return_value=created_todo) as new_doc,
+        ):
+            check_driver_license_expiry()
+
+        new_doc.assert_called_once_with("ToDo")
+        created_todo.insert.assert_called_once_with(ignore_permissions=True)
+        self.assertEqual(created_todo.reference_name, renewed_driver.name)
+        self.assertIn(str(renewed_driver.license_expiry), created_todo.description)
+        set_value.assert_called_once_with(
+            "ToDo",
+            "TODO-OPEN-DUPLICATE-CLOSED-EXPIRY",
+            "status",
+            "Closed",
+            update_modified=False,
+        )
+
+    def test_driver_scheduler_keeps_one_open_alert_and_closes_duplicates(self):
+        from sotrama.tp.scheduler import check_driver_license_expiry
+
+        driver = frappe._dict(
+            name="DRV-DUPLICATE-ALERT",
+            driver_name="Driver Duplicate",
+            license_expiry=add_days(today(), 10),
+            safety_training_expiry=None,
+        )
+        todos = [
+            frappe._dict(
+                name="TODO-KEEP",
+                reference_name=driver.name,
+                description=f"Driver License Expiring: Driver Duplicate\nDriver Driver Duplicate license expires on {driver.license_expiry}.",
+                status="Open",
+            ),
+            frappe._dict(
+                name="TODO-CLOSE-DUPLICATE",
+                reference_name=driver.name,
+                description=f"Driver License Expiring: Driver Duplicate\nDriver Driver Duplicate license expires on {driver.license_expiry}.",
+                status="Open",
+            ),
+        ]
+
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[], [driver], todos],
+            ),
+            patch("sotrama.tp.scheduler._user_for_role", return_value="fleet@example.invalid"),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc") as new_doc,
+        ):
+            check_driver_license_expiry()
+
+        new_doc.assert_not_called()
+        set_value.assert_any_call(
+            "ToDo",
+            "TODO-CLOSE-DUPLICATE",
+            "status",
+            "Closed",
+            update_modified=False,
+        )
+        self.assertNotIn(
+            ("ToDo", "TODO-KEEP", "status", "Closed"),
+            [call.args for call in set_value.call_args_list],
+        )
+
+    def test_driver_compliance_signature_tracks_record_revision_without_medical_values(self):
+        from sotrama.tp.scheduler import _driver_compliance_signature
+
+        original = {
+            "Medical Fitness Examination": frappe._dict(
+                name="COMPLIANCE-MEDICAL-001",
+                modified="2026-11-20 10:00:00",
+                result="Fit",
+                valid_until="2026-12-01",
+            ),
+            "Drug Screening": frappe._dict(
+                name="COMPLIANCE-DRUG-001",
+                modified="2026-11-20 10:00:00",
+                result="Negative",
+                valid_until="2026-12-01",
+            ),
+        }
+        changed_medical_values = {
+            "Medical Fitness Examination": frappe._dict(
+                name="COMPLIANCE-MEDICAL-001",
+                modified="2026-11-20 10:00:00",
+                result="Unfit",
+                valid_until="2027-01-01",
+            ),
+            "Drug Screening": original["Drug Screening"],
+        }
+        revised_record = {
+            **original,
+            "Medical Fitness Examination": frappe._dict(
+                name="COMPLIANCE-MEDICAL-001",
+                modified="2026-11-21 10:00:00",
+                result="Fit",
+                valid_until="2026-12-01",
+            ),
+        }
+
+        signature = _driver_compliance_signature(original)
+        self.assertEqual(len(signature), 16)
+        self.assertEqual(
+            signature, _driver_compliance_signature(changed_medical_values)
+        )
+        self.assertNotEqual(signature, _driver_compliance_signature(revised_record))
+        self.assertNotIn("Fit", signature)
+        self.assertNotIn("2026-12-01", signature)
+
+    def test_driver_scheduler_suppresses_manually_closed_compliance_snapshot(self):
+        from sotrama.tp.scheduler import (
+            _driver_compliance_description,
+            _driver_compliance_signature,
+            check_driver_license_expiry,
+        )
+
+        same_snapshot_driver = frappe._dict(
+            name="DRV-CLOSED-COMPLIANCE",
+            driver_name="Driver Compliance",
+            license_expiry=None,
+            safety_training_expiry=None,
+        )
+        changed_snapshot_driver = frappe._dict(
+            name="DRV-CHANGED-COMPLIANCE",
+            driver_name="Driver Updated Compliance",
+            license_expiry=None,
+            safety_training_expiry=None,
+        )
+        old_signature = _driver_compliance_signature({})
+        changed_records = [
+            frappe._dict(
+                name="COMPLIANCE-MEDICAL-UPDATED",
+                modified="2026-11-22 10:00:00",
+                parent=changed_snapshot_driver.name,
+                check_type="Medical Fitness Examination",
+                test_date=today(),
+                result="Fit",
+                valid_until=add_days(today(), 365),
+            )
+        ]
+        todos = [
+            frappe._dict(
+                name="TODO-CLOSED-SAME-COMPLIANCE-SNAPSHOT",
+                reference_name=same_snapshot_driver.name,
+                description=_driver_compliance_description(
+                    same_snapshot_driver.driver_name, old_signature
+                ),
+                status="Closed",
+            ),
+            frappe._dict(
+                name="TODO-CLOSED-OLD-COMPLIANCE-SNAPSHOT",
+                reference_name=changed_snapshot_driver.name,
+                description=_driver_compliance_description(
+                    changed_snapshot_driver.driver_name, old_signature
+                ),
+                status="Closed",
+            ),
+        ]
+        created_todo = Mock()
+        created_todo.name = "TODO-NEW-COMPLIANCE-SNAPSHOT"
+
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=60),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[
+                    [same_snapshot_driver.name, changed_snapshot_driver.name],
+                    [same_snapshot_driver, changed_snapshot_driver],
+                    changed_records,
+                    todos,
+                ],
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.exists", return_value=True),
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                return_value="hr@example.invalid",
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc", return_value=created_todo) as new_doc,
+        ):
+            check_driver_license_expiry()
+
+        new_doc.assert_called_once_with("ToDo")
+        created_todo.insert.assert_called_once_with(ignore_permissions=True)
+        self.assertEqual(created_todo.reference_name, changed_snapshot_driver.name)
+        self.assertIn("[SOTRAMA-DRIVER-COMPLIANCE:", created_todo.description)
+        self.assertNotIn("Fit", created_todo.description)
+        self.assertNotIn(str(changed_records[0].valid_until), created_todo.description)
+        set_value.assert_not_called()
 
     def test_driver_compliance_scheduler_reads_only_active_regulated_drivers(self):
         from sotrama.tp.scheduler import check_driver_license_expiry
@@ -8085,6 +8434,9 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         )
         self.assertEqual(get_all.call_args_list[4].args[0], "Has Role")
         compliance_todo.insert.assert_called_once_with(ignore_permissions=True)
+        self.assertIn("[SOTRAMA-DRIVER-COMPLIANCE:", compliance_todo.description)
+        self.assertNotIn("Medical Fitness", compliance_todo.description)
+        self.assertNotIn("Fit", compliance_todo.description)
 
 
 class TestFleetLinkedDocumentPermissions(unittest.TestCase):

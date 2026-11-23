@@ -253,6 +253,10 @@ msgstr "Sotrama | Gestion du parc de travaux publics"
 msgid "VEHICLE INSPECTION"
 msgstr "CONTRÔLE DU VÉHICULE"
 
+msgctxt "fr"
+msgid "VEHICLE INSPECTION"
+msgstr "CONTRÔLE DU VÉHICULE"
+
 msgid "System / Category"
 msgstr "Système / catégorie"
 

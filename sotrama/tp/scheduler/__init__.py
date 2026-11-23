@@ -7,6 +7,8 @@ These run once per day via Frappe's scheduler to:
   - Check for expiring driver licenses
 """
 
+import hashlib
+
 import frappe
 from frappe import _
 from frappe.utils import add_days, getdate, today
@@ -281,17 +283,14 @@ def check_maintenance_due():
 
     existing_todos = frappe.get_all(
         "ToDo",
-        filters={
-            "reference_type": "Maintenance Schedule",
-            "status": "Open",
-        },
+        filters={"reference_type": "Maintenance Schedule"},
         or_filters=[
             ["ToDo", "description", "like", "Maintenance Due:%"],
             ["ToDo", "description", "like", "Maintenance à effectuer :%"],
             ["ToDo", "description", "like", "%Scheduled maintenance for vehicle%"],
             ["ToDo", "description", "like", "%La maintenance planifiée du véhicule%"],
         ],
-        fields=["name", "reference_name", "description"],
+        fields=["name", "reference_name", "description", "status"],
         order_by="creation asc, name asc",
         limit_page_length=0,
     )
@@ -335,7 +334,24 @@ def check_maintenance_due():
             role_users_cache=role_users_cache,
             known_existing=True,
         )
-        existing = next(iter(todos_by_schedule.get(sched.name, [])), None)
+        schedule_todos = todos_by_schedule.get(sched.name, [])
+        alert_signature = _maintenance_alert_signature(sched)
+        closed_existing = next(
+            (
+                todo
+                for todo in schedule_todos
+                if todo.status in ("Closed", "Cancelled")
+                and alert_signature in (todo.description or "")
+            ),
+            None,
+        )
+        if closed_existing:
+            continue
+
+        existing = next(
+            (todo for todo in schedule_todos if todo.status in ("Open", "Replied")),
+            None,
+        )
         if existing:
             retained_todo_names.add(existing.name)
             frappe.db.set_value(
@@ -349,7 +365,9 @@ def check_maintenance_due():
                         _("Scheduled maintenance for vehicle {0} is due: {1}.").format(
                             sched.get("vehicle"), "; ".join(due_reasons)
                         ),
-                    ),
+                    )
+                    + "\n"
+                    + alert_signature,
                 },
                 update_modified=False,
             )
@@ -364,6 +382,8 @@ def check_maintenance_due():
                 + _("Scheduled maintenance for vehicle {0} is due: {1}.").format(
                     sched.get("vehicle"), "; ".join(due_reasons)
                 )
+                + "\n"
+                + alert_signature
             )
             todo.reference_type = "Maintenance Schedule"
             todo.reference_name = sched["name"]
@@ -375,10 +395,20 @@ def check_maintenance_due():
     # Close generated alerts whose schedule is no longer due/active, whose
     # Vehicle was cancelled, or whose Vehicle is retired/scrapped.
     for todo in existing_todos:
-        if todo.name not in retained_todo_names:
+        if todo.status in ("Open", "Replied") and todo.name not in retained_todo_names:
             frappe.db.set_value(
                 "ToDo", todo.name, "status", "Closed", update_modified=False
             )
+
+
+def _maintenance_alert_signature(schedule):
+    """Return a non-sensitive identity for one scheduled maintenance cycle."""
+    cycle_data = (
+        f"{schedule.name}|{schedule.next_due_date or '-'}|"
+        f"{schedule.next_due_odometer or '-'}"
+    )
+    signature = hashlib.sha256(cycle_data.encode("utf-8")).hexdigest()[:16]
+    return f"[SOTRAMA-MAINTENANCE-CYCLE:{signature}]"
 
 
 # ---------------------------------------------------------------------------
@@ -438,7 +468,7 @@ def check_driver_license_expiry():
                 "parenttype": "Driver",
                 "parentfield": "compliance_records",
             },
-            fields=["parent", "check_type", "test_date", "result", "valid_until"],
+            fields=["name", "parent", "check_type", "test_date", "result", "valid_until", "modified"],
             order_by="parent asc, test_date desc, idx desc",
             limit_page_length=0,
         )
@@ -447,7 +477,7 @@ def check_driver_license_expiry():
 
     existing_todos = frappe.get_all(
         "ToDo",
-        filters={"reference_type": "Driver", "status": "Open"},
+        filters={"reference_type": "Driver"},
         or_filters=[
             ["ToDo", "description", "like", "%license expires%"],
             ["ToDo", "description", "like", "%Le permis du conducteur%"],
@@ -462,7 +492,7 @@ def check_driver_license_expiry():
             ["ToDo", "description", "like", "%Safety Training Expiring:%"],
             ["ToDo", "description", "like", "%Expiration de la formation sécurité%"],
         ],
-        fields=["name", "reference_name", "description"],
+        fields=["name", "reference_name", "description", "status"],
         order_by="creation asc, name asc",
         limit_page_length=0,
     )
@@ -471,11 +501,10 @@ def check_driver_license_expiry():
         todos_by_driver.setdefault(todo.reference_name, []).append(todo)
 
     role_users_cache = {}
-    active_alerts = set()
+    retained_todo_names = set()
 
     for d in drivers:
         if d.license_expiry and getdate(d.license_expiry) <= getdate(threshold):
-            active_alerts.add((d.name, "license"))
             title = _("Driver License Expiring: {0}").format(d["driver_name"])
             description = _("Driver {0} license expires on {1}.").format(
                 d["driver_name"], d["license_expiry"]
@@ -487,32 +516,42 @@ def check_driver_license_expiry():
                 role_users_cache=role_users_cache,
                 known_existing=True,
             )
-            existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "license"
+            closed_existing = any(
+                todo.status in ("Closed", "Cancelled")
+                and _driver_alert_kind(todo.description) == "license"
+                and str(d.license_expiry) in (todo.description or "")
+                for todo in todos_by_driver.get(d.name, [])
             )
-            if existing:
-                frappe.db.set_value(
-                    "ToDo",
-                    existing.name,
-                    {"allocated_to": allocated_to, "description": description},
-                    update_modified=False,
+            if not closed_existing:
+                existing = _find_driver_alert_todo(
+                    todos_by_driver, d.name, "license", statuses=("Open", "Replied")
                 )
-            else:
-                todo = frappe.new_doc("ToDo")
-                todo.description = f"{title}\n{description}"
-                todo.reference_type = "Driver"
-                todo.reference_name = d["name"]
-                todo.priority = "High"
-                todo.allocated_to = allocated_to
-                todo.assigned_by = "Administrator"
-                todo.insert(ignore_permissions=True)
-                todos_by_driver.setdefault(d.name, []).append(
-                    frappe._dict(
-                        name=todo.name,
-                        reference_name=d.name,
-                        description=todo.description,
+                if existing:
+                    retained_todo_names.add(existing.name)
+                    frappe.db.set_value(
+                        "ToDo",
+                        existing.name,
+                        {"allocated_to": allocated_to, "description": description},
+                        update_modified=False,
                     )
-                )
+                else:
+                    todo = frappe.new_doc("ToDo")
+                    todo.description = f"{title}\n{description}"
+                    todo.reference_type = "Driver"
+                    todo.reference_name = d["name"]
+                    todo.priority = "High"
+                    todo.allocated_to = allocated_to
+                    todo.assigned_by = "Administrator"
+                    todo.insert(ignore_permissions=True)
+                    todos_by_driver.setdefault(d.name, []).append(
+                        frappe._dict(
+                            name=todo.name,
+                            reference_name=d.name,
+                            description=todo.description,
+                            status="Open",
+                        )
+                    )
+                    retained_todo_names.add(todo.name)
 
         compliance_due = False
         if d.name in regulated_driver_names:
@@ -535,7 +574,10 @@ def check_driver_license_expiry():
                     break
 
         if compliance_due:
-            active_alerts.add((d.name, "compliance"))
+            compliance_signature = _driver_compliance_signature(latest_by_type)
+            compliance_description = _driver_compliance_description(
+                d.driver_name, compliance_signature
+            )
             allocated_to = _user_for_role(
                 "HR Manager",
                 "Driver",
@@ -543,27 +585,31 @@ def check_driver_license_expiry():
                 role_users_cache=role_users_cache,
                 known_existing=True,
             )
-            existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "compliance"
+            closed_existing = next(
+                (
+                    todo
+                    for todo in todos_by_driver.get(d.name, [])
+                    if todo.status in ("Closed", "Cancelled")
+                    and _driver_alert_kind(todo.description) == "compliance"
+                    and _driver_compliance_signature_from_description(todo.description)
+                    == compliance_signature
+                ),
+                None,
             )
-            if existing:
+            existing = _find_driver_alert_todo(
+                todos_by_driver, d.name, "compliance", statuses=("Open", "Replied")
+            )
+            if not closed_existing and existing:
+                retained_todo_names.add(existing.name)
                 frappe.db.set_value(
                     "ToDo",
                     existing.name,
-                    "allocated_to",
-                    allocated_to,
+                    {"allocated_to": allocated_to, "description": compliance_description},
                     update_modified=False,
                 )
-            else:
+            elif not closed_existing and not existing:
                 todo = frappe.new_doc("ToDo")
-                todo.description = (
-                    _("Restricted Driver Compliance Review")
-                    + "\n"
-                    + _(
-                        "Review the restricted professional-driver compliance records for {0}. "
-                        "This task intentionally contains no medical result or date."
-                    ).format(d.driver_name)
-                )
+                todo.description = compliance_description
                 todo.reference_type = "Driver"
                 todo.reference_name = d.name
                 todo.priority = "High"
@@ -575,13 +621,14 @@ def check_driver_license_expiry():
                         name=todo.name,
                         reference_name=d.name,
                         description=todo.description,
+                        status="Open",
                     )
                 )
+                retained_todo_names.add(todo.name)
 
         if d.safety_training_expiry and getdate(d.safety_training_expiry) <= getdate(
             threshold
         ):
-            active_alerts.add((d.name, "safety"))
             title = _("Safety Training Expiring: {0}").format(d["driver_name"])
             description = _("Driver {0} safety training expires on {1}.").format(
                 d["driver_name"], d["safety_training_expiry"]
@@ -593,39 +640,48 @@ def check_driver_license_expiry():
                 role_users_cache=role_users_cache,
                 known_existing=True,
             )
-            existing = _find_driver_alert_todo(
-                todos_by_driver, d.name, "safety"
+            closed_existing = any(
+                todo.status in ("Closed", "Cancelled")
+                and _driver_alert_kind(todo.description) == "safety"
+                and str(d.safety_training_expiry) in (todo.description or "")
+                for todo in todos_by_driver.get(d.name, [])
             )
-            if existing:
-                frappe.db.set_value(
-                    "ToDo",
-                    existing.name,
-                    {"allocated_to": allocated_to, "description": description},
-                    update_modified=False,
+            if not closed_existing:
+                existing = _find_driver_alert_todo(
+                    todos_by_driver, d.name, "safety", statuses=("Open", "Replied")
                 )
-            else:
-                todo = frappe.new_doc("ToDo")
-                todo.description = f"{title}\n{description}"
-                todo.reference_type = "Driver"
-                todo.reference_name = d["name"]
-                todo.priority = "Medium"
-                todo.allocated_to = allocated_to
-                todo.assigned_by = "Administrator"
-                todo.insert(ignore_permissions=True)
-                todos_by_driver.setdefault(d.name, []).append(
-                    frappe._dict(
-                        name=todo.name,
-                        reference_name=d.name,
-                        description=todo.description,
+                if existing:
+                    retained_todo_names.add(existing.name)
+                    frappe.db.set_value(
+                        "ToDo",
+                        existing.name,
+                        {"allocated_to": allocated_to, "description": description},
+                        update_modified=False,
                     )
-                )
+                else:
+                    todo = frappe.new_doc("ToDo")
+                    todo.description = f"{title}\n{description}"
+                    todo.reference_type = "Driver"
+                    todo.reference_name = d["name"]
+                    todo.priority = "Medium"
+                    todo.allocated_to = allocated_to
+                    todo.assigned_by = "Administrator"
+                    todo.insert(ignore_permissions=True)
+                    todos_by_driver.setdefault(d.name, []).append(
+                        frappe._dict(
+                            name=todo.name,
+                            reference_name=d.name,
+                            description=todo.description,
+                            status="Open",
+                        )
+                    )
+                    retained_todo_names.add(todo.name)
 
-    # Close obsolete alerts after renewals, cleared compliance requirements,
-    # removed expiry dates, or Driver deactivation/cancellation.
-    for driver_name, todos in todos_by_driver.items():
+    # Keep one active alert per driver/type. Close duplicates and obsolete
+    # alerts after renewals, cleared compliance requirements, or deactivation.
+    for todos in todos_by_driver.values():
         for todo in todos:
-            alert_kind = _driver_alert_kind(todo.description)
-            if alert_kind and (driver_name, alert_kind) not in active_alerts:
+            if todo.status in ("Open", "Replied") and todo.name not in retained_todo_names:
                 frappe.db.set_value(
                     "ToDo", todo.name, "status", "Closed", update_modified=False
                 )
@@ -666,12 +722,50 @@ def _driver_alert_kind(description):
     return None
 
 
-def _find_driver_alert_todo(todos_by_driver, driver_name, alert_kind):
+def _driver_compliance_signature(latest_by_type):
+    """Hash compliance record identities, never medical results or dates."""
+    parts = []
+    for check_type in ("Medical Fitness Examination", "Drug Screening"):
+        record = latest_by_type.get(check_type)
+        if record:
+            parts.append(f"{check_type}:{record.name}:{record.modified or ''}")
+        else:
+            parts.append(f"{check_type}:missing")
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
+def _driver_compliance_description(driver_name, signature):
+    return (
+        _("Restricted Driver Compliance Review")
+        + "\n"
+        + _(
+            "Review the restricted professional-driver compliance records for {0}. "
+            "This task intentionally contains no medical result or date."
+        ).format(driver_name)
+        + "\n"
+        + f"[SOTRAMA-DRIVER-COMPLIANCE:{signature}]"
+    )
+
+
+def _driver_compliance_signature_from_description(description):
+    marker = "[SOTRAMA-DRIVER-COMPLIANCE:"
+    description = description or ""
+    marker_start = description.find(marker)
+    if marker_start >= 0:
+        marker_end = description.find("]", marker_start)
+        if marker_end > marker_start:
+            return description[marker_start + len(marker) : marker_end].strip()
+    return None
+
+
+def _find_driver_alert_todo(
+    todos_by_driver, driver_name, alert_kind, statuses=("Open", "Replied")
+):
     return next(
         (
             todo
             for todo in todos_by_driver.get(driver_name, [])
-            if _driver_alert_kind(todo.description) == alert_kind
+            if todo.status in statuses and _driver_alert_kind(todo.description) == alert_kind
         ),
         None,
     )
