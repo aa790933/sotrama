@@ -3021,3 +3021,6 @@ msgstr "Suivi des entretiens"
 
 msgid "Document "
 msgstr "Document "
+
+msgid "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document. Status is updated automatically using the configured alert window."
+msgstr "Ajoutez une ligne par document : choisissez son type, saisissez les dates de délivrance et d'expiration, puis téléversez le scan dans la colonne Pièce jointe. Ouvrez la pièce jointe pour consulter ou imprimer le document original. Le statut est mis à jour automatiquement selon le délai d'alerte configuré."

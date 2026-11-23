@@ -192,7 +192,7 @@
    "fieldtype": "Section Break",
    "fieldname": "section_documents",
    "label": "Vehicle Documents",
-   "collapsible": 0,
+   "collapsible": 1,
    "description": "Store the vehicle's registration certificate (carte grise), insurance, technical inspection and each renewal here. Attach the scanned file to each row."
   },
   {
