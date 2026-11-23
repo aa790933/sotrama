@@ -4523,6 +4523,58 @@ class TestVehicle(unittest.TestCase):
             ["Expiring Soon", "Expired", "Pending", "Valid"],
         )
 
+    def test_cancelling_vehicle_closes_only_its_document_expiry_alerts(self):
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.name = "VEH-CANCEL-EXPIRY-001"
+        expiry_todo = frappe._dict(
+            name="TODO-VEHICLE-EXPIRY",
+            description="Vehicle Document Row: ROW-VEHICLE-EXPIRY | Expiry: 2026-12-01",
+        )
+        legacy_todo = frappe._dict(
+            name="TODO-VEHICLE-EXPIRY-LEGACY",
+            description="Vehicle Document Expiring: Insurance Certificate (Vehicle: TEST-001)",
+        )
+        unrelated_todo = frappe._dict(
+            name="TODO-VEHICLE-OTHER", description="Follow up with workshop"
+        )
+
+        with (
+            patch(
+                "sotrama.tp.doctype.vehicle.vehicle.frappe.get_all",
+                return_value=[expiry_todo, legacy_todo, unrelated_todo],
+            ) as get_all,
+            patch(
+                "sotrama.tp.doctype.vehicle.vehicle.frappe.db.set_value"
+            ) as set_value,
+        ):
+            vehicle._cancel_related_records()
+
+        get_all.assert_called_once_with(
+            "ToDo",
+            filters={
+                "reference_type": "Vehicle",
+                "reference_name": vehicle.name,
+                "status": "Open",
+            },
+            fields=["name", "description"],
+            limit_page_length=0,
+        )
+        set_value.assert_any_call(
+            "Vehicle", vehicle.name, "vehicle_status", "Out of Service"
+        )
+        set_value.assert_any_call(
+            "ToDo", expiry_todo.name, "status", "Closed", update_modified=False
+        )
+        set_value.assert_any_call(
+            "ToDo", legacy_todo.name, "status", "Closed", update_modified=False
+        )
+        self.assertNotIn(
+            mock_call(
+                "ToDo", unrelated_todo.name, "status", "Closed", update_modified=False
+            ),
+            set_value.call_args_list,
+        )
+
     def test_vehicle_registration_or_fleet_number_is_unique_within_company(self):
         vehicle = frappe.new_doc("Vehicle")
         vehicle.company = self.company

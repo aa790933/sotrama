@@ -331,5 +331,32 @@ class Vehicle(Document):
     # ------------------------------------------------------------------
 
     def _cancel_related_records(self):
-        """When a vehicle is cancelled, mark it out of service."""
+        """Take the vehicle out of service and close its document-expiry alerts."""
         frappe.db.set_value("Vehicle", self.name, "vehicle_status", "Out of Service")
+
+        open_todos = frappe.get_all(
+            "ToDo",
+            filters={
+                "reference_type": "Vehicle",
+                "reference_name": self.name,
+                "status": "Open",
+            },
+            fields=["name", "description"],
+            limit_page_length=0,
+        )
+        legacy_alert_prefixes = {
+            _("Vehicle Document Expiring: {0} (Vehicle: {1})", lang="en").split(
+                "{0}", 1
+            )[0],
+            _("Vehicle Document Expiring: {0} (Vehicle: {1})", lang="fr").split(
+                "{0}", 1
+            )[0],
+        }
+        for todo in open_todos:
+            description = todo.description or ""
+            if "Vehicle Document Row:" in description or any(
+                prefix and prefix in description for prefix in legacy_alert_prefixes
+            ):
+                frappe.db.set_value(
+                    "ToDo", todo.name, "status", "Closed", update_modified=False
+                )
