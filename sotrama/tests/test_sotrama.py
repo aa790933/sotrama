@@ -460,15 +460,29 @@ class TestSotramaHooks(unittest.TestCase):
         catalog_path = package_path / "locale" / "fr.po"
         with catalog_path.open("rb") as source_file:
             catalog = read_po(source_file)
-        translations = {
-            message.id: message.string for message in catalog if message.id
-        }
-        msgids = set(translations)
+        translations = {}
+        msgids = set()
+        for message in catalog:
+            if not message.id:
+                continue
+            msgids.add(message.id)
+            values = (
+                tuple(message.string.values())
+                if isinstance(message.string, dict)
+                else message.string
+                if isinstance(message.string, (tuple, list))
+                else (message.string,)
+            )
+            if values and all(values):
+                translations.setdefault(message.id, []).append(message.string)
 
         def assert_translated(message, description):
             self.assertIn(message, msgids, description)
-            translation = translations[message]
-            self.assertTrue(translation, f"Empty French translation: {description}")
+            self.assertIn(
+                message,
+                translations,
+                f"Empty French translation: {description}",
+            )
 
         non_translatable_options = {
             "A1",
