@@ -438,10 +438,19 @@ class TestSotramaHooks(unittest.TestCase):
             self.assertIn(f'msgid "{source}"\nmsgstr "{expected}"', catalog)
 
     def test_frappe_loads_compiled_french_translations_when_available(self):
-        translation_path = Path(
-            frappe.get_site_path("assets", "locale", "fr", "LC_MESSAGES", "sotrama.mo")
+        translation_paths = (
+            Path(
+                frappe.get_site_path(
+                    "assets", "locale", "fr", "LC_MESSAGES", "sotrama.mo"
+                )
+            ),
+            Path(
+                frappe.get_site_path(
+                    "..", "assets", "locale", "fr", "LC_MESSAGES", "sotrama.mo"
+                )
+            ).resolve(),
         )
-        if not translation_path.is_file():
+        if not any(path.is_file() for path in translation_paths):
             self.skipTest("French translations have not been compiled on this site.")
 
         self.assertEqual(frappe._("Vehicle", lang="fr"), "Véhicule")
