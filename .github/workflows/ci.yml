@@ -809,6 +809,7 @@ jobs:
           # layouts. Add their labels/text/options to the same official POT
           # catalog before update-po-files synchronizes the French PO file.
           ./env/bin/python - <<'PY'
+          import ast
           import json
           from pathlib import Path
           from babel.messages.pofile import read_po, write_po
@@ -854,6 +855,38 @@ jobs:
               if format_data:
                   add_print_format_strings(json.loads(format_data), source_path)
 
+          # Also include literal frappe._(...) calls. The default extractor
+          # recognizes bare _(...) but can miss the dotted frappe._(...) form;
+          # AST parsing also preserves Python's implicit adjacent-string joining.
+          for source_path in app_path.rglob("*.py"):
+              tree = ast.parse(
+                  source_path.read_text(encoding="utf-8-sig"), filename=str(source_path)
+              )
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call) or not node.args:
+                      continue
+                  function = node.func
+                  is_gettext_call = (
+                      isinstance(function, ast.Name) and function.id == "_"
+                  ) or (
+                      isinstance(function, ast.Attribute) and function.attr == "_"
+                  )
+                  argument = node.args[0]
+                  if (
+                      not is_gettext_call
+                      or not isinstance(argument, ast.Constant)
+                      or not isinstance(argument.value, str)
+                      or argument.value == "and "
+                  ):
+                      continue
+                  catalog.add(
+                      argument.value,
+                      locations=[
+                          (str(source_path.relative_to(app_path)), node.lineno)
+                      ],
+                  )
+                  added.add(argument.value)
+
           with pot_path.open("wb") as pot_file:
               write_po(
                   pot_file,
@@ -862,12 +895,15 @@ jobs:
                   sort_output=True,
                   ignore_obsolete=True,
               )
-          print(f"Added/verified {len(added)} Print Format strings in {pot_path}.")
+          print(f"Added/verified {len(added)} additional Gettext messages in {pot_path}.")
           PY
           bench update-po-files --app sotrama --locale fr
           ./env/bin/python - <<'PY'
           import os
+          import re
+          from collections import Counter
           from pathlib import Path
+          from string import Formatter
           from babel.messages.pofile import read_po, write_po
 
           catalog_path = Path("apps/sotrama/sotrama/locale/fr.po")
@@ -945,6 +981,58 @@ jobs:
                   continue
               for error in errors:
                   problems.append((message.lineno, message.id, f"invalid translation: {error}"))
+
+          percent_placeholder = re.compile(
+              r"%(?:\(([^)]+)\))?[#0\- +]?(?:\d+)?(?:\.\d+)?[diouxXeEfFgGcrsa%]"
+          )
+
+          def brace_placeholders(value):
+              try:
+                  return Counter(
+                      field
+                      for _, field, _, _ in Formatter().parse(value)
+                      if field is not None
+                  )
+              except ValueError:
+                  return None
+
+          def percent_placeholders(value):
+              return Counter(
+                  match.group(0)
+                  for match in percent_placeholder.finditer(value)
+                  if match.group(0) != "%%"
+              )
+
+          # Babel validates placeholders for flagged messages. Check both
+          # Python brace and percent placeholders for every catalog entry too,
+          # including older PO entries that predate format flags.
+          for message in catalog:
+              if not message.id or not message.string:
+                  continue
+              source_braces = brace_placeholders(message.id)
+              source_percent = percent_placeholders(message.id)
+              translations = (
+                  message.string.values()
+                  if isinstance(message.string, dict)
+                  else message.string
+                  if isinstance(message.string, (tuple, list))
+                  else (message.string,)
+              )
+              for translation in translations:
+                  if not translation:
+                      continue
+                  translated_braces = brace_placeholders(translation)
+                  if (
+                      source_braces is not None
+                      and translated_braces != source_braces
+                  ):
+                      problems.append(
+                          (message.lineno, message.id, "brace placeholder mismatch")
+                      )
+                  if percent_placeholders(translation) != source_percent:
+                      problems.append(
+                          (message.lineno, message.id, "percent placeholder mismatch")
+                      )
 
           if problems:
               for line, message_id, reason in problems:

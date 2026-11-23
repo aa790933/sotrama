@@ -602,8 +602,22 @@ class TestSotramaHooks(unittest.TestCase):
 
         for path in package_path.rglob("*.py"):
             source = path.read_text(encoding="utf-8-sig")
-            for quote, literal in re.findall(r"_\(\s*(['\"])(.*?)\1", source, re.DOTALL):
-                message = ast.literal_eval(f"{quote}{literal}{quote}")
+            tree = ast.parse(source, filename=str(path))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                function = node.func
+                is_gettext_call = (
+                    isinstance(function, ast.Name) and function.id == "_"
+                ) or (isinstance(function, ast.Attribute) and function.attr == "_")
+                if not is_gettext_call or not node.args:
+                    continue
+                argument = node.args[0]
+                if not isinstance(argument, ast.Constant) or not isinstance(
+                    argument.value, str
+                ):
+                    continue
+                message = argument.value
                 if message == "and ":
                     continue
                 assert_translated(message, f"French Python message: {path}:{message}")

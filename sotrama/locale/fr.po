@@ -3133,3 +3133,15 @@ msgstr "m³"
 
 msgid "t"
 msgstr "t"
+
+msgid "The existing {0} field on {1} is {2}, but Sotrama requires {3}. No data was changed. Review or rename the existing field before enabling this feature."
+msgstr "Le champ {0} existant sur {1} est de type {2}, alors que Sotrama exige {3}. Aucune donnée n’a été modifiée. Vérifiez ou renommez le champ existant avant d’activer cette fonctionnalité."
+
+msgid "The field {0} already exists on {1} and is owned by module {2}. Sotrama will not take ownership of or modify another app's field. Choose a different field name or resolve the ownership conflict first."
+msgstr "Le champ {0} existe déjà sur {1} et appartient au module {2}. Sotrama ne prendra pas possession du champ d’une autre application et ne le modifiera pas. Choisissez un autre nom de champ ou résolvez d’abord le conflit de propriété."
+
+msgid "The legacy Company field {0} exists but is not owned by Sotrama. Review or rename it before enabling the Algerian Company Extension."
+msgstr "L’ancien champ Company {0} existe, mais n’appartient pas à Sotrama. Vérifiez-le ou renommez-le avant d’activer l’extension algérienne de l’entreprise."
+
+msgid "The module {0} already belongs to app {1}. Sotrama will not change another app's module ownership. Review the existing Module Def before installing Sotrama."
+msgstr "Le module {0} appartient déjà à l’application {1}. Sotrama ne modifiera pas la propriété du module d’une autre application. Vérifiez le Module Def existant avant d’installer Sotrama."
