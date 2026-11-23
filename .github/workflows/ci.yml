@@ -816,7 +816,7 @@ jobs:
           app_path = Path("apps/sotrama/sotrama")
           pot_path = app_path / "locale" / "main.pot"
           non_translatable_options = {
-              "A", "A1", "B(E)", "C", "C1", "C1(E)", "C(E)",
+              "A", "A1", "B", "B(E)", "C", "C1", "C1(E)", "C(E)",
               "D", "D(E)", "F", "km", "m²", "m³", "t",
           }
           with pot_path.open("rb") as pot_file:
