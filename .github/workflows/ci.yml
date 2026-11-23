@@ -805,7 +805,7 @@ jobs:
         run: |
           bench generate-pot-file --app sotrama
           bench update-po-files --app sotrama --locale fr
-          python - <<'PY'
+          ./env/bin/python - <<'PY'
           from pathlib import Path
           from babel.messages.pofile import read_po
 
@@ -817,16 +817,24 @@ jobs:
           for message in catalog:
               if not message.id:
                   continue
-              if "fuzzy" in (message.flags or ()):
+              if message.fuzzy:
                   problems.append((message.lineno, message.id, "fuzzy"))
                   continue
               translations = (
                   message.string.values()
                   if isinstance(message.string, dict)
+                  else message.string
+                  if isinstance(message.string, (tuple, list))
                   else (message.string,)
               )
               if any(not translation for translation in translations):
                   problems.append((message.lineno, message.id, "untranslated"))
+
+          for message, errors in catalog.check():
+              if message.fuzzy:
+                  continue
+              for error in errors:
+                  problems.append((message.lineno, message.id, f"invalid translation: {error}"))
 
           if problems:
               for line, message_id, reason in problems:
