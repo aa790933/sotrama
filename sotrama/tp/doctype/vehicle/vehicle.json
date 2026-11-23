@@ -190,6 +190,54 @@
   },
   {
    "fieldtype": "Section Break",
+   "fieldname": "section_documents",
+   "label": "Vehicle Documents",
+   "collapsible": 0,
+   "description": "Store the vehicle's registration certificate (carte grise), insurance, technical inspection and each renewal here. Attach the scanned file to each row."
+  },
+  {
+   "label": "Registration Document",
+   "fieldname": "registration_document",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "description": "Carte grise / registration certificate"
+  },
+  {
+   "label": "Insurance Document",
+   "fieldname": "insurance_document",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "description": "Insurance certificate"
+  },
+  {
+   "label": "Pollution Certificate",
+   "fieldname": "pollution_document",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "description": "Pollution Under Control certificate"
+  },
+  {
+   "label": "Technical Inspection Certificate",
+   "fieldname": "technical_document",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "description": "Technical inspection (visite technique)"
+  },
+  {
+   "label": "Vehicle Documents",
+   "fieldname": "vehicle_documents",
+   "fieldtype": "Table",
+   "options": "Vehicle Document",
+   "in_standard_filter": 1,
+   "description": "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document."
+  },
+  {
+   "label": "Notes",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor"
+  },
+  {
+   "fieldtype": "Section Break",
    "fieldname": "section_assignment",
    "label": "Fleet Assignment",
    "collapsible": 1
@@ -261,53 +309,6 @@
    "options": "Asset",
    "description": "Optional ERPNext fixed asset; it must belong to the same Company.",
    "permlevel": 1
-  },
-  {
-   "fieldtype": "Section Break",
-   "fieldname": "section_documents",
-   "label": "Vehicle Documents",
-   "collapsible": 1
-  },
-  {
-   "label": "Registration Document",
-   "fieldname": "registration_document",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "description": "Carte grise / registration certificate"
-  },
-  {
-   "label": "Insurance Document",
-   "fieldname": "insurance_document",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "description": "Insurance certificate"
-  },
-  {
-   "label": "Pollution Certificate",
-   "fieldname": "pollution_document",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "description": "Pollution Under Control certificate"
-  },
-  {
-   "label": "Technical Inspection Certificate",
-   "fieldname": "technical_document",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "description": "Technical inspection (visite technique)"
-  },
-  {
-   "label": "Notes",
-   "fieldname": "notes",
-   "fieldtype": "Text Editor"
-  },
-  {
-   "label": "Vehicle Documents",
-   "fieldname": "vehicle_documents",
-   "fieldtype": "Table",
-   "options": "Vehicle Document",
-   "in_standard_filter": 1,
-   "description": "Add one row per vehicle document, with its issue date, expiry date and attachment."
   }
  ],
  "links": [],
@@ -318,8 +319,7 @@
  "title_field": "license_plate",
  "show_title_field_in_link": 1,
  "naming_rule": "Expression",
- "naming_expression": "VEH-.YYYY.-.####",
- "autoname": "format",
+ "autoname": "VEH-.YYYY.-.####",
  "permissions": [
   {
    "role": "System Manager",

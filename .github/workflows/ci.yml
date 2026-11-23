@@ -93,13 +93,13 @@ jobs:
 
           settings = json.loads(Path("sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json").read_text(encoding="utf-8"))
           settings_fields = {field["fieldname"]: field for field in settings["fields"]}
-          designation_setting = settings_fields["add_public_works_designations"]
-          assert designation_setting["fieldtype"] == "Check"
-          assert designation_setting["default"] == "0"
-          assert designation_setting["permlevel"] == 1
-          assert "Import BTPH job titles on save" == designation_setting["label"]
-          assert "does not create Employees or assign jobs" in designation_setting["description"]
-          assert any(permission["role"] == "HR Manager" and permission.get("permlevel", 0) == 1 and permission.get("write") for permission in settings["permissions"])
+          assert "add_public_works_designations" not in settings_fields
+          settings_js = Path("sotrama/public/js/sotrama_settings.js").read_text(encoding="utf-8")
+          settings_controller = Path("sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.py").read_text(encoding="utf-8")
+          assert "Import Missing BTPH Job Titles" in settings_js
+          assert "frappe.confirm(" in settings_js
+          assert 'frappe.only_for(["System Manager", "HR Manager"])' in settings_controller
+          assert 'frappe.has_permission("Designation", "create", throw=True)' in settings_controller
 
           designation_tree = ast.parse(Path("sotrama/designations.py").read_text(encoding="utf-8"))
           designation_assignment = next(
@@ -171,7 +171,8 @@ jobs:
           inspection_js = Path("sotrama/public/js/inspection.js").read_text(encoding="utf-8")
           assert "frm.perm?.[0]?.create" in inspection_js
           assert "frm.perm?.[0]?.write" in inspection_js
-          assert "Add Inspection Check" in inspection_js
+          assert "Add Custom Check" in inspection_js
+          assert "new frappe.ui.Dialog" in inspection_js
           assert "inspection_items_add" in inspection_js
           assert "inspection_items_delete" in inspection_js
           assert "search_workshop_employees" in inspection_js
@@ -192,7 +193,7 @@ jobs:
           assert "_enforce_safety_critical_flags" in inspection_controller
           assert "_ensure_standard_checklist" in inspection_controller
           assert "STANDARD_INSPECTION_CHECKS" in inspection_controller
-          assert "row.is_safety_critical = 1" in inspection_js
+          assert "row.is_safety_critical = check.is_safety_critical ? 1 : 0" in inspection_js
           operational_task_js = Path("sotrama/public/js/operational_task.js").read_text(encoding="utf-8")
           assert "search_workshop_employees" in operational_task_js
           assert '"Operational Task": "public/js/operational_task.js"' in Path("sotrama/hooks.py").read_text(encoding="utf-8")
@@ -672,6 +673,7 @@ jobs:
               assert "sotrama/public/js/operational_task.js" in names
               assert "sotrama/tp/patches/v1_3/migrate_fleet_document_options.py" in names
               assert "sotrama/tp/patches/v1_3/simplify_fleet_reference_masters.py" in names
+              assert "sotrama/tp/patches/v1_3/normalize_fleet_master_names.py" in names
               assert "sotrama/overrides/file.py" in names
               assert "sotrama/locale/fr.po" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names

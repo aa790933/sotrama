@@ -10,41 +10,31 @@
   {
    "fieldtype": "Tab Break",
    "fieldname": "tab_algerian_company",
-   "label": "Algerian Company",
-   "description": "Optional registration details for Algerian legal entities. Company remains the standard ERPNext record."
+   "label": "Algerian Company"
   },
   {
    "fieldtype": "Section Break",
    "fieldname": "section_algeria_company",
    "label": "Company registration identifiers",
-   "description": "Add the Algerian identifiers to the standard ERPNext Company form. NIF uses ERPNext's existing Tax ID field; Sotrama adds Article d'imposition, NIS, RC and Capital Social."
+   "description": "Optional Algerian identifiers on the standard ERPNext Company record. NIF remains in ERPNext's Tax ID field."
   },
   {
    "fieldtype": "Check",
    "fieldname": "enable_algerian_company_fields",
-   "label": "Show additional Algerian fields",
+   "label": "Enable Algerian registration fields",
    "default": "0",
-   "description": "Enable the additional Article d'imposition, NIS, RC and Capital Social fields on the standard Company form. They appear only when Company Country is Algeria. Enter NIF in ERPNext's Tax ID field. Turning this off hides Sotrama-managed fields but preserves their metadata and saved values."
+   "description": "Show Article d'imposition, NIS, RC and Capital Social on Company records whose Country is Algeria. Enter NIF in ERPNext's Tax ID field. Disabling this hides the Sotrama fields without deleting their definitions or saved values."
   },
   {
    "fieldtype": "Tab Break",
    "fieldname": "tab_hr_integration",
-   "label": "HR & Designations",
-   "description": "Prepare the French BTPH job-title catalogue in the standard Frappe HR Designation master."
+   "label": "HR & Designations"
   },
   {
    "fieldtype": "Section Break",
    "fieldname": "section_public_works_designations",
    "label": "BTPH job-title catalogue",
-   "description": "Add the curated French public-works job titles to Frappe HR. Employees and their assignments continue to be managed in the standard HRMS Employee form."
-  },
-  {
-   "fieldtype": "Check",
-   "fieldname": "add_public_works_designations",
-   "label": "Import BTPH job titles on save",
-   "default": "0",
-   "permlevel": 1,
-   "description": "When checked and saved, Sotrama adds only missing entries from the curated 202-title French BTPH list to HRMS > Designation. This creates job-title master records only; it does not create Employees or assign jobs. After the first import, use Create Missing Job Titles to add later catalogue additions. Existing designations are never renamed, overwritten or deleted."
+   "description": "Import the curated 202-title French BTPH catalogue into HRMS > Designation. Only missing titles are added; existing designations are left untouched. Manage employees and their assignments in the standard HRMS Employee form."
   }
  ],
  "permissions": [
@@ -61,12 +51,6 @@
    "share": 0
   },
   {
-   "role": "System Manager",
-   "permlevel": 1,
-   "read": 1,
-   "write": 1
-  },
-  {
    "role": "Accounts Manager",
    "read": 1,
    "write": 0,
@@ -81,12 +65,6 @@
   {
    "role": "HR Manager",
    "read": 1
-  },
-  {
-   "role": "HR Manager",
-   "permlevel": 1,
-   "read": 1,
-   "write": 1
   }
  ],
  "icon": "settings-2",

@@ -12,6 +12,7 @@
    "label": "Photo",
    "fieldname": "photo",
    "fieldtype": "Attach Image",
+   "in_list_view": 1,
    "reqd": 1
   },
   {
@@ -21,12 +22,14 @@
   {
    "label": "Caption",
    "fieldname": "caption",
-   "fieldtype": "Small Text"
+   "fieldtype": "Small Text",
+   "in_list_view": 1
   },
   {
    "label": "Date",
    "fieldname": "photo_date",
-   "fieldtype": "Date"
+   "fieldtype": "Date",
+   "in_list_view": 1
   }
  ],
  "istable": 1,

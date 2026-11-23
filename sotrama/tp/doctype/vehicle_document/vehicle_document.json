@@ -31,12 +31,14 @@
   {
    "label": "Issue Date",
    "fieldname": "issue_date",
-   "fieldtype": "Date"
+   "fieldtype": "Date",
+   "in_list_view": 1
   },
   {
    "label": "Attachment",
    "fieldname": "attachment",
-   "fieldtype": "Attach"
+   "fieldtype": "Attach",
+   "in_list_view": 1
   },
   {
    "label": "Status",

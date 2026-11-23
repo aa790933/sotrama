@@ -166,7 +166,6 @@ frappe.ui.form.on('Maintenance Job Card', {
 });
 
 frappe.ui.form.on('Job Card Part', {
-    // Single-row removal and bulk deletion are separate Frappe Grid events.
     parts_used_remove(frm) {
         return updateTotals(frm);
     },

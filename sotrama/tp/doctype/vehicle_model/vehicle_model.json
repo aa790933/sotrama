@@ -33,7 +33,8 @@
    "fieldname": "model_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "reqd": 1
+   "reqd": 1,
+   "description": "Enter the manufacturer's model designation. The record ID combines the selected make and this model name."
   },
   {
    "label": "Description",
@@ -54,8 +55,8 @@
  "track_changes": 1,
  "title_field": "model_name",
  "show_title_field_in_link": 0,
- "naming_rule": "Expression",
- "autoname": "format:{vehicle_make}-{model_name}",
+ "naming_rule": "By script",
+ "autoname": "",
  "permissions": [
   {
    "role": "System Manager",

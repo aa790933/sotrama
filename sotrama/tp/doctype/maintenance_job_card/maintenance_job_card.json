@@ -340,8 +340,7 @@
  "is_submittable": 1,
  "track_changes": 1,
  "naming_rule": "Expression",
- "naming_expression": "JC-.YYYY.-.####",
- "autoname": "format",
+ "autoname": "JC-.YYYY.-.####",
  "permissions": [
   {
    "role": "System Manager",

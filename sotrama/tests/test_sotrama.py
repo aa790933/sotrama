@@ -409,6 +409,27 @@ class TestSotramaHooks(unittest.TestCase):
                 "Certificat d'immatriculation (carte grise)",
             ),
             (
+                "Enable Algerian registration fields",
+                "Activer les identifiants d'immatriculation algériens",
+            ),
+            ("Add Custom Check", "Ajouter un contrôle personnalisé"),
+            (
+                "Import Missing BTPH Job Titles",
+                "Importer les intitulés BTPH manquants",
+            ),
+            (
+                "Job Type Name is required",
+                "Le nom du type d'intervention est obligatoire",
+            ),
+            (
+                "Enter the manufacturer's name. This value is also used as the readable record ID.",
+                "Saisissez le nom du constructeur. Cette valeur sert également d'identifiant lisible de la fiche.",
+            ),
+            (
+                "Enter the manufacturer's model designation. The record ID combines the selected make and this model name.",
+                "Saisissez la désignation du modèle du constructeur. L'identifiant de la fiche combine la marque sélectionnée et ce nom de modèle.",
+            ),
+            (
                 "Officially Confirmed Not Subject",
                 "Non soumis (confirmation officielle)",
             ),
@@ -1318,28 +1339,19 @@ class TestSotramaHooks(unittest.TestCase):
             },
         )
 
-    def test_sotrama_settings_expose_optional_hr_designation_seed(self):
+    def test_sotrama_settings_keep_company_toggle_and_explicit_btph_import_action(self):
         meta = frappe.get_meta("Sotrama Settings", cached=False)
-        field = meta.get_field("add_public_works_designations")
-        self.assertIsNotNone(field)
-        self.assertEqual(field.fieldtype, "Check")
-        self.assertEqual(field.default, "0")
-        self.assertEqual(field.permlevel, 1)
-        self.assertEqual(field.label, "Import BTPH job titles on save")
-        self.assertIn("When checked and saved", field.description)
-
-        hr_permissions = [
-            permission
-            for permission in meta.permissions
-            if permission.role == "HR Manager" and permission.permlevel == 1
-        ]
-        self.assertTrue(hr_permissions)
-        self.assertTrue(hr_permissions[0].read)
-        self.assertTrue(hr_permissions[0].write)
+        self.assertIsNone(meta.get_field("add_public_works_designations"))
+        catalogue = meta.get_field("section_public_works_designations")
+        self.assertIn("202-title", catalogue.description)
+        self.assertIn("Only missing", catalogue.description)
+        self.assertFalse(
+            any(permission.permlevel == 1 for permission in meta.permissions)
+        )
 
         company_field = meta.get_field("enable_algerian_company_fields")
         self.assertEqual(company_field.permlevel, 0)
-        self.assertEqual(company_field.label, "Show additional Algerian fields")
+        self.assertEqual(company_field.label, "Enable Algerian registration fields")
         self.assertIn("NIF", company_field.description)
 
         doctype_js = frappe.get_hooks("doctype_js", app_name="sotrama")
@@ -1350,7 +1362,7 @@ class TestSotramaHooks(unittest.TestCase):
             ).is_file()
         )
 
-    def test_explicit_btph_job_title_action_requires_enabled_setting_and_permission(
+    def test_explicit_btph_job_title_action_requires_role_and_designation_create_permission(
         self,
     ):
         from sotrama.sotrama.doctype.sotrama_settings.sotrama_settings import (
@@ -1362,9 +1374,9 @@ class TestSotramaHooks(unittest.TestCase):
                 "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.only_for"
             ) as only_for,
             patch(
-                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.get_single",
-                return_value=frappe._dict(add_public_works_designations=1),
-            ),
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.has_permission",
+                return_value=True,
+            ) as has_permission,
             patch(
                 "sotrama.setup.ensure_public_works_designations",
                 return_value=["TITLE-001"],
@@ -1375,6 +1387,7 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertEqual(result["created_count"], 1)
         self.assertEqual(result["created"], ["TITLE-001"])
         only_for.assert_called_once_with(["System Manager", "HR Manager"])
+        has_permission.assert_called_once_with("Designation", "create", throw=True)
         seed.assert_called_once_with()
 
         with (
@@ -1382,12 +1395,14 @@ class TestSotramaHooks(unittest.TestCase):
                 "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.only_for"
             ),
             patch(
-                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.get_single",
-                return_value=frappe._dict(add_public_works_designations=0),
+                "sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.frappe.has_permission",
+                side_effect=frappe.PermissionError,
             ),
-            self.assertRaises(frappe.ValidationError),
+            patch("sotrama.setup.ensure_public_works_designations") as seed,
+            self.assertRaises(frappe.PermissionError),
         ):
             create_missing_public_works_designations()
+        seed.assert_not_called()
 
     def test_fleet_manager_role_profile_does_not_escalate_to_system_manager(self):
         profile = frappe.get_doc("Role Profile", "Fleet Manager")
@@ -1551,6 +1566,20 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("hourly rate", labour.description)
         self.assertIn("additional maintenance expenses", other_costs.description)
 
+        part_meta = frappe.get_meta("Job Card Part", cached=False)
+        for fieldname in ("item", "quantity", "rate", "amount"):
+            self.assertTrue(part_meta.get_field(fieldname).in_list_view, fieldname)
+        labour_meta = frappe.get_meta("Job Card Labour", cached=False)
+        for fieldname in ("mechanic_name", "hours", "rate", "amount"):
+            self.assertTrue(labour_meta.get_field(fieldname).in_list_view, fieldname)
+        other_cost_meta = frappe.get_meta("Job Card Other Cost", cached=False)
+        for fieldname in ("description", "category", "amount", "date"):
+            self.assertTrue(other_cost_meta.get_field(fieldname).in_list_view, fieldname)
+        for doctype in ("Breakdown Photo", "Job Card Photo"):
+            photo_meta = frappe.get_meta(doctype, cached=False)
+            for fieldname in ("photo", "caption", "photo_date"):
+                self.assertTrue(photo_meta.get_field(fieldname).in_list_view, f"{doctype}.{fieldname}")
+
         print_format = frappe.get_doc("Print Format", "Maintenance Job Card Report")
         self.assertTrue(print_format.print_format_builder_beta)
         print_layout = json.loads(print_format.format_data)
@@ -1561,7 +1590,6 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertTrue(inspection_print.print_format_builder_beta)
         json.loads(inspection_print.format_data)
 
-        labour_meta = frappe.get_meta("Job Card Labour", cached=False)
         self.assertEqual(labour_meta.get_field("mechanic").options, "Employee")
         self.assertEqual(labour_meta.get_field("mechanic").label, "Employee (Mechanic)")
         self.assertFalse(labour_meta.get_field("mechanic").in_list_view)
@@ -1581,8 +1609,11 @@ class TestSotramaHooks(unittest.TestCase):
             "frappe.call({",
             "total_parts_cost: totalParts",
             "total_labour_cost: totalLabour",
+            "parts_used_remove",
             "parts_used_delete",
+            "labour_lines_remove",
             "labour_lines_delete",
+            "other_costs_remove",
             "other_costs_delete",
         ):
             self.assertIn(action, script)
@@ -1692,13 +1723,19 @@ class TestSotramaHooks(unittest.TestCase):
         self.assertIn("Not Checked", status.options.splitlines())
         self.assertIn("Okay", status.options.splitlines())
         self.assertIn("Defective", status.options.splitlines())
+        self.assertTrue(item_meta.get_field("category").in_list_view)
+        self.assertTrue(item_meta.get_field("item_details").in_list_view)
+        self.assertTrue(status.in_list_view)
 
         script = (
             _sotrama_package_path() / "public/js/inspection.js"
         ).read_text(encoding="utf-8")
-        self.assertIn("Add Inspection Check", script)
-        self.assertIn("row.status = 'Not Checked'", script)
+        self.assertIn("Add Custom Check", script)
+        self.assertIn("new frappe.ui.Dialog", script)
+        self.assertIn("status: 'Not Checked'", script)
+        self.assertNotIn("is_safety_critical: 1", script)
         self.assertIn("inspection_items_add", script)
+        self.assertIn("inspection_items_remove", script)
         self.assertIn("inspection_items_delete", script)
         self.assertIn("frm.perm?.[0]?.create", script)
         self.assertIn("frm.perm?.[0]?.write", script)
@@ -4415,6 +4452,7 @@ class TestVehicle(unittest.TestCase):
         self.assertEqual(vehicle.vehicle_status, "Active")
         self.assertEqual(vehicle.fuel_type, "Diesel")
         self.assertEqual(vehicle.license_plate, "TEST-001")
+        self.assertRegex(vehicle.name, r"^VEH-\d{4}-\d{4}$")
         self.assertFalse(vehicle.company_classification)
 
         vehicle_meta = frappe.get_meta("Vehicle", cached=False)
@@ -4425,9 +4463,26 @@ class TestVehicle(unittest.TestCase):
             "section_specs",
             "section_acquisition",
             "section_assignment",
-            "section_documents",
         ):
             self.assertTrue(vehicle_meta.get_field(section).collapsible, section)
+        self.assertFalse(vehicle_meta.get_field("section_documents").collapsible)
+        self.assertIn(
+            "carte grise", vehicle_meta.get_field("section_documents").description
+        )
+        document_meta = frappe.get_meta("Vehicle Document", cached=False)
+        self.assertTrue(document_meta.get_field("issue_date").in_list_view)
+        self.assertTrue(document_meta.get_field("expiry_date").in_list_view)
+        self.assertTrue(document_meta.get_field("attachment").in_list_view)
+        self.assertTrue(document_meta.get_field("attachment").in_list_view)
+        vehicle_field_order = [field.fieldname for field in vehicle_meta.fields]
+        self.assertLess(
+            vehicle_field_order.index("vehicle_documents"),
+            vehicle_field_order.index("section_assignment"),
+        )
+        self.assertLess(
+            vehicle_field_order.index("vehicle_documents"),
+            vehicle_field_order.index("notes"),
+        )
         self.assertEqual(
             [field.fieldname for field in vehicle_meta.fields if field.fieldtype == "Tab Break"],
             [
@@ -4531,10 +4586,13 @@ class TestVehicle(unittest.TestCase):
         model_meta = frappe.get_meta("Vehicle Model", cached=False)
         self.assertEqual(model_meta.title_field, "model_name")
         self.assertFalse(model_meta.show_title_field_in_link)
+        self.assertEqual(model_meta.naming_rule, "By script")
         self.assertTrue(model_meta.get_field("make").hidden)
         make_meta = frappe.get_meta("Vehicle Make", cached=False)
         self.assertEqual(make_meta.title_field, "make_name")
         self.assertTrue(make_meta.show_title_field_in_link)
+        self.assertEqual(make_meta.naming_rule, "By fieldname")
+        self.assertEqual(make_meta.autoname, "field:make_name")
         self.assertEqual(
             frappe.get_meta("Vehicle", cached=False).title_field, "license_plate"
         )
@@ -4545,6 +4603,348 @@ class TestVehicle(unittest.TestCase):
             frappe.get_meta("Maintenance Job Type", cached=False).title_field,
             "job_type_name",
         )
+        self.assertEqual(
+            frappe.get_meta("Maintenance Job Type", cached=False).naming_rule,
+            "By fieldname",
+        )
+        self.assertEqual(
+            frappe.get_meta("Maintenance Job Type", cached=False).autoname,
+            "field:job_type_name",
+        )
+
+    def test_fleet_documents_use_native_v16_naming_patterns(self):
+        expected_patterns = {
+            "Breakdown Incident": "BRK-.YYYY.-.####",
+            "Company Classification": "CLAS-.YYYY.-.####",
+            "Driver": "DRV-.####",
+            "Maintenance Job Card": "JC-.YYYY.-.####",
+            "Maintenance Schedule": "SCH-.YYYY.-.####",
+            "Operational Task": "OT-.YYYY.-.####",
+            "Vehicle": "VEH-.YYYY.-.####",
+            "Vehicle Inspection": "INSP-.YYYY.-.####",
+        }
+        for doctype, pattern in expected_patterns.items():
+            with self.subTest(doctype=doctype):
+                meta = frappe.get_meta(doctype, cached=False)
+                self.assertEqual(meta.naming_rule, "Expression")
+                self.assertEqual(meta.autoname, pattern)
+                self.assertFalse(getattr(meta, "naming_expression", None))
+
+    def test_maintenance_job_type_uses_trimmed_readable_name(self):
+        job_type = frappe.new_doc("Maintenance Job Type")
+        job_type_name = f"Preventive Service {uuid.uuid4().hex[:6]}"
+        job_type.job_type_name = f"  {job_type_name}  "
+        job_type.job_category = "General"
+        job_type.insert(ignore_permissions=True)
+
+        self.assertEqual(job_type.name, job_type_name)
+        self.assertEqual(job_type.job_type_name, job_type_name)
+        _delete_test_record("Maintenance Job Type", job_type.name)
+
+    def test_new_vehicle_make_and_model_names_are_readable(self):
+        make_name = f"Tata UX {uuid.uuid4().hex[:6]}"
+        make = frappe.new_doc("Vehicle Make")
+        make.make_name = f"  {make_name}  "
+        make.insert(ignore_permissions=True)
+
+        model = frappe.new_doc("Vehicle Model")
+        model.vehicle_make = make.name
+        model.model_name = " Actros 2646 "
+        model.insert(ignore_permissions=True)
+
+        self.assertEqual(make.name, make_name)
+        self.assertEqual(make.make_name, make_name)
+        self.assertEqual(model.model_name, "Actros 2646")
+        self.assertEqual(model.name, f"{make.name}-Actros 2646")
+        _delete_test_record("Vehicle Model", model.name)
+        _delete_test_record("Vehicle Make", make.name)
+
+    def test_same_model_designation_is_allowed_for_different_makes(self):
+        makes = []
+        models = []
+        model_name = f"Shared Model {uuid.uuid4().hex[:6]}"
+        try:
+            for label in ("Make A", "Make B"):
+                make = frappe.new_doc("Vehicle Make")
+                make.make_name = f"{label} {uuid.uuid4().hex[:6]}"
+                make.insert(ignore_permissions=True)
+                makes.append(make)
+
+                model = frappe.new_doc("Vehicle Model")
+                model.vehicle_make = make.name
+                model.model_name = model_name
+                model.insert(ignore_permissions=True)
+                models.append(model)
+
+            self.assertEqual(len({model.name for model in models}), 2)
+            self.assertEqual(
+                {model.name for model in models},
+                {f"{make.name}-{model_name}" for make in makes},
+            )
+        finally:
+            for model in models:
+                _delete_test_record("Vehicle Model", model.name)
+            for make in makes:
+                _delete_test_record("Vehicle Make", make.name)
+
+    def test_model_name_uses_manufacturer_label_when_legacy_make_id_is_random(self):
+        legacy_make = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": f"legacy-{uuid.uuid4().hex[:8]}",
+                "make_name": f"Tata Legacy {uuid.uuid4().hex[:6]}",
+                "active": 1,
+            }
+        )
+        legacy_make.db_insert()
+
+        model = frappe.new_doc("Vehicle Model")
+        model.vehicle_make = legacy_make.name
+        model.model_name = "Actros 2646"
+        model.insert(ignore_permissions=True)
+
+        self.assertEqual(model.name, f"{legacy_make.make_name}-Actros 2646")
+        _delete_test_record("Vehicle Model", model.name)
+        _delete_test_record("Vehicle Make", legacy_make.name)
+
+    def test_fleet_master_name_migration_updates_existing_links(self):
+        from sotrama.tp.patches.v1_3.normalize_fleet_master_names import execute
+
+        old_make_name = f"m{uuid.uuid4().hex[:11]}"
+        make_name = f"Tata Migration {uuid.uuid4().hex[:6]}"
+        model_name = "Actros 2646"
+        old_model_name = f"{old_make_name}-{model_name}"
+        old_job_type_name = f"j{uuid.uuid4().hex[:11]}"
+        job_type_name = f"Legacy Job {uuid.uuid4().hex[:6]}"
+
+        legacy_make = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": old_make_name,
+                "make_name": make_name,
+                "active": 1,
+            }
+        )
+        legacy_make.db_insert()
+        legacy_model = frappe.get_doc(
+            {
+                "doctype": "Vehicle Model",
+                "name": old_model_name,
+                "vehicle_make": old_make_name,
+                "make": old_make_name,
+                "model_name": model_name,
+                "active": 1,
+            }
+        )
+        legacy_model.db_insert()
+        legacy_model_without_link = frappe.get_doc(
+            {
+                "doctype": "Vehicle Model",
+                "name": f"{old_make_name}-Legacy Model",
+                "make": old_make_name,
+                "model_name": "Legacy Model",
+                "active": 1,
+            }
+        )
+        legacy_model_without_link.db_insert()
+        legacy_job_type = frappe.get_doc(
+            {
+                "doctype": "Maintenance Job Type",
+                "name": old_job_type_name,
+                "job_type_name": job_type_name,
+                "job_category": "Engine",
+                "active": 1,
+            }
+        )
+        legacy_job_type.db_insert()
+
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.company = self.company
+        vehicle.license_plate = f"TEST-RENAME-{uuid.uuid4().hex[:6]}"
+        vehicle.vehicle_category = "Truck"
+        vehicle.vehicle_make = old_make_name
+        vehicle.model = old_model_name
+        vehicle.insert(ignore_permissions=True)
+
+        execute()
+
+        new_model_name = f"{make_name}-{model_name}"
+        new_legacy_model_name = f"{make_name}-Legacy Model"
+        vehicle.reload()
+        self.assertTrue(frappe.db.exists("Vehicle Make", make_name))
+        self.assertFalse(frappe.db.exists("Vehicle Make", old_make_name))
+        self.assertTrue(frappe.db.exists("Vehicle Model", new_model_name))
+        self.assertFalse(frappe.db.exists("Vehicle Model", old_model_name))
+        self.assertEqual(vehicle.vehicle_make, make_name)
+        self.assertEqual(vehicle.model, new_model_name)
+        self.assertEqual(
+            frappe.db.get_value("Vehicle Model", new_model_name, "make"),
+            make_name,
+        )
+        self.assertTrue(frappe.db.exists("Vehicle Model", new_legacy_model_name))
+        self.assertFalse(
+            frappe.db.exists("Vehicle Model", f"{old_make_name}-Legacy Model")
+        )
+        self.assertEqual(
+            frappe.db.get_value(
+                "Vehicle Model", new_legacy_model_name, "vehicle_make"
+            ),
+            make_name,
+        )
+        self.assertTrue(frappe.db.exists("Maintenance Job Type", job_type_name))
+        self.assertFalse(frappe.db.exists("Maintenance Job Type", old_job_type_name))
+
+        # The normalization is safe to invoke again (for example from a
+        # manually retried migration in a disposable test database).
+        execute()
+        self.assertTrue(frappe.db.exists("Vehicle Make", make_name))
+        self.assertTrue(frappe.db.exists("Vehicle Model", new_model_name))
+        self.assertTrue(frappe.db.exists("Maintenance Job Type", job_type_name))
+
+        _delete_test_record("Vehicle", vehicle.name)
+        _delete_test_record("Vehicle Model", new_legacy_model_name)
+        _delete_test_record("Vehicle Model", new_model_name)
+        _delete_test_record("Vehicle Make", make_name)
+        _delete_test_record("Maintenance Job Type", job_type_name)
+
+    def test_fleet_master_name_migration_skips_name_collisions(self):
+        from sotrama.tp.patches.v1_3.normalize_fleet_master_names import execute
+
+        target_name = f"Tata Collision {uuid.uuid4().hex[:6]}"
+        old_name = f"m{uuid.uuid4().hex[:11]}"
+        existing = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": target_name,
+                "make_name": target_name,
+                "active": 1,
+            }
+        )
+        existing.db_insert()
+        legacy = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": old_name,
+                "make_name": target_name,
+                "active": 1,
+            }
+        )
+        legacy.db_insert()
+
+        job_type_target = f"Legacy Job Collision {uuid.uuid4().hex[:6]}"
+        old_job_type_name = f"j{uuid.uuid4().hex[:11]}"
+        existing_job_type = frappe.get_doc(
+            {
+                "doctype": "Maintenance Job Type",
+                "name": job_type_target,
+                "job_type_name": job_type_target,
+                "job_category": "Engine",
+                "active": 1,
+            }
+        )
+        existing_job_type.db_insert()
+        legacy_job_type = frappe.get_doc(
+            {
+                "doctype": "Maintenance Job Type",
+                "name": old_job_type_name,
+                "job_type_name": f" {job_type_target} ",
+                "job_category": "Engine",
+                "active": 1,
+            }
+        )
+        legacy_job_type.db_insert()
+
+        execute()
+
+        self.assertTrue(frappe.db.exists("Vehicle Make", target_name))
+        self.assertTrue(frappe.db.exists("Vehicle Make", old_name))
+        self.assertTrue(frappe.db.exists("Maintenance Job Type", job_type_target))
+        self.assertTrue(frappe.db.exists("Maintenance Job Type", old_job_type_name))
+        self.assertEqual(
+            frappe.db.get_value(
+                "Maintenance Job Type", old_job_type_name, "job_type_name"
+            ),
+            f" {job_type_target} ",
+            "A colliding legacy Job Type must remain untouched",
+        )
+        _delete_test_record("Vehicle Make", old_name)
+        _delete_test_record("Vehicle Make", target_name)
+        _delete_test_record("Maintenance Job Type", old_job_type_name)
+        _delete_test_record("Maintenance Job Type", job_type_target)
+
+    def test_fleet_master_name_migration_does_not_partially_update_model_collision(self):
+        from sotrama.tp.patches.v1_3.normalize_fleet_master_names import execute
+
+        make_name = f"Tata Model Collision {uuid.uuid4().hex[:6]}"
+        old_make_name = f"m{uuid.uuid4().hex[:11]}"
+        model_name = f"Model {uuid.uuid4().hex[:6]}"
+        old_model_name = f"{old_make_name}-{model_name}"
+        target_model_name = f"{make_name}-{model_name}"
+
+        canonical_make = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": make_name,
+                "make_name": make_name,
+                "active": 1,
+            }
+        )
+        canonical_make.db_insert()
+        legacy_make = frappe.get_doc(
+            {
+                "doctype": "Vehicle Make",
+                "name": old_make_name,
+                "make_name": make_name,
+                "active": 1,
+            }
+        )
+        legacy_make.db_insert()
+        canonical_model = frappe.get_doc(
+            {
+                "doctype": "Vehicle Model",
+                "name": target_model_name,
+                "vehicle_make": make_name,
+                "make": make_name,
+                "model_name": model_name,
+                "active": 1,
+            }
+        )
+        canonical_model.db_insert()
+        legacy_model = frappe.get_doc(
+            {
+                "doctype": "Vehicle Model",
+                "name": old_model_name,
+                "vehicle_make": old_make_name,
+                "make": old_make_name,
+                "model_name": model_name,
+                "active": 1,
+            }
+        )
+        legacy_model.db_insert()
+
+        try:
+            execute()
+
+            self.assertTrue(frappe.db.exists("Vehicle Make", old_make_name))
+            self.assertTrue(frappe.db.exists("Vehicle Model", old_model_name))
+            self.assertEqual(
+                frappe.db.get_value("Vehicle Model", old_model_name, "vehicle_make"),
+                old_make_name,
+            )
+            self.assertEqual(
+                frappe.db.get_value("Vehicle Model", old_model_name, "make"),
+                old_make_name,
+            )
+            self.assertEqual(
+                frappe.db.get_value("Vehicle Model", old_model_name, "model_name"),
+                model_name,
+            )
+            self.assertTrue(frappe.db.exists("Vehicle Model", target_model_name))
+        finally:
+            _delete_test_record("Vehicle Model", old_model_name)
+            _delete_test_record("Vehicle Model", target_model_name)
+            _delete_test_record("Vehicle Make", old_make_name)
+            _delete_test_record("Vehicle Make", make_name)
 
     def test_vehicle_picker_queries_only_offer_submitted_vehicles(self):
         for script_name in (

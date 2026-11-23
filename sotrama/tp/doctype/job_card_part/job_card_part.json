@@ -30,6 +30,7 @@
    "label": "Quantity",
    "fieldname": "quantity",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "reqd": 1,
    "default": "1"
   },
@@ -43,12 +44,14 @@
    "label": "Rate (DZD)",
    "fieldname": "rate",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "reqd": 1
   },
   {
    "label": "Amount (DZD)",
    "fieldname": "amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "read_only": 1
   },
   {

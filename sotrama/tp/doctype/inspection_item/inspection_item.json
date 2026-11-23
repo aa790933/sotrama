@@ -19,6 +19,7 @@
    "label": "Item Details",
    "fieldname": "item_details",
    "fieldtype": "Text",
+   "in_list_view": 1,
    "reqd": 1
   },
   {

@@ -6,7 +6,7 @@ from frappe.model.document import Document
 
 
 class SotramaSettings(Document):
-    """Apply explicitly enabled, non-destructive Sotrama features."""
+    """Apply non-destructive Sotrama configuration."""
 
     def on_update(self):
         if self.is_new() or self.has_value_changed("enable_algerian_company_fields"):
@@ -14,34 +14,11 @@ class SotramaSettings(Document):
 
             sync_company_fields()
 
-        if self.add_public_works_designations and (
-            self.is_new() or self.has_value_changed("add_public_works_designations")
-        ):
-            from sotrama.setup import ensure_public_works_designations
-
-            created = ensure_public_works_designations()
-            if created:
-                frappe.msgprint(
-                    _(
-                        "Added {0} missing public-works designations to Frappe HR."
-                    ).format(len(created)),
-                    title=_("Designations added"),
-                    indicator="green",
-                )
-
-
 @frappe.whitelist()
 def create_missing_public_works_designations():
-    """Explicitly add missing company BTPH job titles from the Settings form."""
+    """Explicitly add missing BTPH job titles from the Settings form."""
     frappe.only_for(["System Manager", "HR Manager"])
-
-    settings = frappe.get_single("Sotrama Settings")
-    if not settings.add_public_works_designations:
-        frappe.throw(
-            _(
-                "Enable the BTPH job-title option before running this action."
-            )
-        )
+    frappe.has_permission("Designation", "create", throw=True)
 
     from sotrama.setup import ensure_public_works_designations
 

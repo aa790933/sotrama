@@ -58,9 +58,8 @@
  "track_changes": 1,
  "title_field": "job_type_name",
  "show_title_field_in_link": 1,
- "naming_rule": "Expression",
- "naming_expression": "{job_type_name}",
- "autoname": "format",
+ "naming_rule": "By fieldname",
+ "autoname": "field:job_type_name",
  "permissions": [
   {
    "role": "System Manager",

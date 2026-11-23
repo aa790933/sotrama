@@ -121,8 +121,14 @@ msgstr "Le numéro d'immatriculation ou de parc doit être unique au sein de la 
 msgid "Vehicle Make"
 msgstr "Marque"
 
+msgid "Enter the manufacturer's name. This value is also used as the readable record ID."
+msgstr "Saisissez le nom du constructeur. Cette valeur sert également d'identifiant lisible de la fiche."
+
 msgid "Vehicle Model"
 msgstr "Modèle du véhicule"
+
+msgid "Enter the manufacturer's model designation. The record ID combines the selected make and this model name."
+msgstr "Saisissez la désignation du modèle du constructeur. L'identifiant de la fiche combine la marque sélectionnée et ce nom de modèle."
 
 msgid "Manufacturer Details"
 msgstr "Détails du constructeur"
@@ -613,8 +619,8 @@ msgstr "À utiliser uniquement lorsqu'un contrôle de suivi réussi lève une d�
 msgid "Calculated automatically: Pass when all checks are Okay, Conditional Pass for non-critical defects, and Fail for safety-critical defects."
 msgstr "Calculé automatiquement : Conforme lorsque tous les points sont conformes, Conforme sous réserve en présence de défauts non critiques et Non conforme en présence de défauts critiques pour la sécurité."
 
-msgid "The standard checklist is added automatically to new inspections. Use Add Inspection Check for an additional vehicle-specific check."
-msgstr "La liste de contrôle standard est ajoutée automatiquement aux nouvelles inspections. Utiliser Add Inspection Check pour ajouter un point de contrôle propre au véhicule."
+msgid "The standard checklist is added automatically to new inspections. Use Add Custom Check to add a vehicle-specific check."
+msgstr "La liste de contrôle standard est ajoutée automatiquement aux nouveaux contrôles. Utilisez Ajouter un contrôle personnalisé pour ajouter un point propre au véhicule."
 
 msgid "Successful follow-up inspection that cleared this critical defect."
 msgstr "Inspection de suivi réussie ayant permis de lever cette défectuosité critique."
@@ -747,6 +753,12 @@ msgstr "Date de délivrance"
 
 msgid "Attachment"
 msgstr "Pièce jointe"
+
+msgid "Store the vehicle's registration certificate (carte grise), insurance, technical inspection and each renewal here. Attach the scanned file to each row."
+msgstr "Conservez ici la carte grise, l'assurance, le contrôle technique et chaque renouvellement. Joignez le fichier numérisé à chaque ligne."
+
+msgid "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document."
+msgstr "Ajoutez une ligne par document : choisissez son type, indiquez les dates d'émission et d'expiration, puis téléversez le scan dans la colonne Pièce jointe. Ouvrez la pièce jointe pour consulter ou imprimer le document original."
 
 msgid "Status"
 msgstr "Statut"
@@ -1639,6 +1651,9 @@ msgstr "Catégorie d'intervention"
 msgid "Job Type Name"
 msgstr "Nom du type d'intervention"
 
+msgid "Job Type Name is required"
+msgstr "Le nom du type d'intervention est obligatoire"
+
 msgid "Labour Entry"
 msgstr "Ligne de main-d'œuvre"
 
@@ -1984,8 +1999,23 @@ msgstr "Le kilométrage après intervention ne peut pas être inférieur au kilo
 msgid "Safety-critical defect detected — submitting this inspection will mark the vehicle Out of Service."
 msgstr "Défaut critique pour la sécurité détecté — la validation de ce contrôle mettra le véhicule hors service."
 
-msgid "Add Inspection Check"
-msgstr "Ajouter un point de contrôle"
+msgid "Add Custom Check"
+msgstr "Ajouter un contrôle personnalisé"
+
+msgid "Add Vehicle-Specific Check"
+msgstr "Ajouter un contrôle propre au véhicule"
+
+msgid "What to Check"
+msgstr "Point à contrôler"
+
+msgid "Name the vehicle system or area to inspect."
+msgstr "Indiquez le système ou la zone du véhicule à inspecter."
+
+msgid "Describe the exact point the inspector must verify."
+msgstr "Décrivez précisément le point que l'inspecteur doit vérifier."
+
+msgid "Add Check"
+msgstr "Ajouter le contrôle"
 
 msgid "Checklist"
 msgstr "Liste de contrôle"
@@ -2926,32 +2956,23 @@ msgstr "Gérez les marques, les modèles et les types de services de maintenance
 msgid "Company registration identifiers"
 msgstr "Identifiants d'immatriculation de la société"
 
-msgid "Show additional Algerian fields"
-msgstr "Afficher les champs algériens supplémentaires"
+msgid "Enable Algerian registration fields"
+msgstr "Activer les identifiants d'immatriculation algériens"
 
-msgid "Enable the additional Article d'imposition, NIS, RC and Capital Social fields on the standard Company form. They appear only when Company Country is Algeria. Enter NIF in ERPNext's Tax ID field. Turning this off hides Sotrama-managed fields but preserves their metadata and saved values."
-msgstr "Activez les champs Article d'imposition, NIS, RC et Capital social dans le formulaire standard Société. Ils apparaissent uniquement lorsque le pays de la société est l'Algérie. Saisissez le NIF dans le champ Tax ID d'ERPNext. La désactivation masque les champs gérés par Sotrama sans supprimer leur définition ni leurs valeurs."
+msgid "Show Article d'imposition, NIS, RC and Capital Social on Company records whose Country is Algeria. Enter NIF in ERPNext's Tax ID field. Disabling this hides the Sotrama fields without deleting their definitions or saved values."
+msgstr "Affichez l'Article d'imposition, le NIS, le RC et le capital social sur les sociétés dont le pays est l'Algérie. Saisissez le NIF dans le champ Tax ID d'ERPNext. La désactivation masque les champs Sotrama sans supprimer leur définition ni leurs valeurs enregistrées."
 
-msgid "Optional registration details for Algerian legal entities. Company remains the standard ERPNext record."
-msgstr "Informations d'immatriculation facultatives pour les entités juridiques algériennes. La société reste un enregistrement ERPNext standard."
+msgid "Optional Algerian identifiers on the standard ERPNext Company record. NIF remains in ERPNext's Tax ID field."
+msgstr "Identifiants algériens facultatifs sur la fiche Société standard d'ERPNext. Le NIF reste dans le champ Tax ID d'ERPNext."
 
 msgid "Add the Algerian identifiers to the standard ERPNext Company form. NIF uses ERPNext's existing Tax ID field; Sotrama adds Article d'imposition, NIS, RC and Capital Social."
 msgstr "Ajoutez les identifiants algériens au formulaire Société standard d'ERPNext. Le NIF utilise le champ Tax ID existant ; Sotrama ajoute l'Article d'imposition, le NIS, le RC et le capital social."
 
-msgid "Prepare the French BTPH job-title catalogue in the standard Frappe HR Designation master."
-msgstr "Préparez le catalogue français des intitulés BTPH dans le référentiel standard des désignations de Frappe RH."
-
 msgid "BTPH job-title catalogue"
 msgstr "Catalogue des intitulés de poste BTPH"
 
-msgid "Add the curated French public-works job titles to Frappe HR. Employees and their assignments continue to be managed in the standard HRMS Employee form."
-msgstr "Ajoutez les intitulés français sélectionnés des travaux publics dans Frappe RH. Les employés et leurs affectations restent gérés dans le formulaire Employé standard de HRMS."
-
-msgid "Import BTPH job titles on save"
-msgstr "Importer les intitulés de poste BTPH à l'enregistrement"
-
-msgid "When checked and saved, Sotrama adds only missing entries from the curated 202-title French BTPH list to HRMS > Designation. This creates job-title master records only; it does not create Employees or assign jobs. After the first import, use Create Missing Job Titles to add later catalogue additions. Existing designations are never renamed, overwritten or deleted."
-msgstr "Lorsque cette option est cochée puis enregistrée, Sotrama ajoute uniquement les entrées manquantes du catalogue français BTPH de 202 intitulés dans HRMS > Désignation. Seules des fiches de référentiel sont créées ; aucun employé ni aucune affectation n'est créé. Après le premier import, utilisez Créer les intitulés manquants pour ajouter les futurs intitulés du catalogue. Les désignations existantes ne sont jamais renommées, remplacées ou supprimées."
+msgid "Import the curated 202-title French BTPH catalogue into HRMS > Designation. Only missing titles are added; existing designations are left untouched. Manage employees and their assignments in the standard HRMS Employee form."
+msgstr "Importez le catalogue français BTPH sélectionné de 202 intitulés dans HRMS > Désignation. Seuls les intitulés manquants sont ajoutés ; les désignations existantes restent intactes. Gérez les employés et leurs affectations dans le formulaire Employé standard de HRMS."
 
 msgid "Central Sotrama setup for Algerian Company registration and the Frappe HR job-title catalogue. Fleet operating policies are available from Fleet Settings."
 msgstr "Configuration centrale de Sotrama pour l'immatriculation des sociétés algériennes et le catalogue des fonctions Frappe RH. Les règles d'exploitation du parc sont accessibles dans Paramètres du parc."
@@ -2962,8 +2983,11 @@ msgstr "Ouvrir les sociétés"
 msgid "Open Designations"
 msgstr "Ouvrir les désignations"
 
-msgid "Create Missing Job Titles"
-msgstr "Créer les intitulés manquants"
+msgid "Import Missing BTPH Job Titles"
+msgstr "Importer les intitulés BTPH manquants"
+
+msgid "Add only missing titles from the 202-title French BTPH catalogue? Existing designations and Employee records will not be changed."
+msgstr "Ajouter uniquement les intitulés manquants du catalogue français BTPH de 202 intitulés ? Les désignations existantes et les fiches Employé ne seront pas modifiées."
 
 msgid "Acquisition & Value"
 msgstr "Acquisition et valeur"

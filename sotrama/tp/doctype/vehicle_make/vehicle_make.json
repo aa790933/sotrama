@@ -14,7 +14,8 @@
    "fieldname": "make_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "reqd": 1
+   "reqd": 1,
+   "description": "Enter the manufacturer's name. This value is also used as the readable record ID."
   },
   {
    "fieldtype": "Column Break",
@@ -39,9 +40,8 @@
  "track_changes": 1,
  "title_field": "make_name",
  "show_title_field_in_link": 1,
- "naming_rule": "Expression",
- "naming_expression": "{make_name}",
- "autoname": "format",
+ "naming_rule": "By fieldname",
+ "autoname": "field:make_name",
  "permissions": [
   {
    "role": "System Manager",

@@ -2,10 +2,14 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-function loadHandlers(path, { canCreate = () => true, frappeOverrides = {}, locals = {} } = {}) {
+function loadHandlers(
+	path,
+	{ canCreate = () => true, frappeOverrides = {}, locals = {}, Dialog } = {},
+) {
 	const handlers = {};
 	const frappe = {
 		ui: {
+			Dialog,
 			form: {
 				on(doctype, events) {
 					handlers[doctype] = events;
@@ -42,8 +46,11 @@ function makeForm({ isNew = false, docstatus = 0, permissions = [], company = "S
 		add_custom_button(...args) {
 			this.buttons.push(args);
 		},
-		add_child() {
-			return {};
+		add_child(fieldname, values = {}) {
+			this.doc[fieldname] ||= [];
+			const row = { ...values };
+			this.doc[fieldname].push(row);
+			return row;
 		},
         set_query(fieldname, callback) {
             this.queries[fieldname] = callback;
@@ -65,12 +72,33 @@ const settingsHandlers = loadHandlers("sotrama/public/js/sotrama_settings.js", {
 		set_route() {},
 	},
 })["Sotrama Settings"];
-form = makeForm({ doc: { add_public_works_designations: 1 } });
+form = makeForm();
 settingsHandlers.refresh(form);
 assert.deepEqual(
 	form.buttons.map(([label]) => label),
-	["Open Companies", "Open Designations", "Create Missing Job Titles"],
-	"Company, HR navigation and designation creation actions must appear only for permitted users",
+	["Open Companies", "Open Designations", "Import Missing BTPH Job Titles"],
+	"Company, HR navigation and the explicit BTPH import action must appear only for permitted users",
+);
+
+let importConfirmation = "";
+let importCall;
+const settingsImportAction = loadHandlers("sotrama/public/js/sotrama_settings.js", {
+	frappeOverrides: {
+		user: { has_role: (role) => role === "HR Manager" },
+		perm: { has_perm: () => true },
+		set_route() {},
+		confirm(message, onYes) { importConfirmation = message; onYes(); },
+		call(args) { importCall = args; },
+	},
+})["Sotrama Settings"];
+form = makeForm();
+settingsImportAction.refresh(form);
+form.buttons.find(([label]) => label === "Import Missing BTPH Job Titles")[1]();
+assert.match(importConfirmation, /202-title French BTPH catalogue/);
+assert.equal(
+	importCall.method,
+	"sotrama.sotrama.doctype.sotrama_settings.sotrama_settings.create_missing_public_works_designations",
+	"The import action must call the explicit server-side catalogue operation after confirmation",
 );
 
 const settingsWithoutDesignationCreate = loadHandlers("sotrama/public/js/sotrama_settings.js", {
@@ -83,7 +111,7 @@ const settingsWithoutDesignationCreate = loadHandlers("sotrama/public/js/sotrama
 		set_route() {},
 	},
 })["Sotrama Settings"];
-form = makeForm({ doc: { add_public_works_designations: 1 } });
+form = makeForm();
 settingsWithoutDesignationCreate.refresh(form);
 assert.deepEqual(
 	form.buttons.map(([label]) => label),
@@ -98,7 +126,7 @@ const settingsWithoutCompanyRead = loadHandlers("sotrama/public/js/sotrama_setti
 		set_route() {},
 	},
 })["Sotrama Settings"];
-form = makeForm({ doc: { add_public_works_designations: 1 } });
+form = makeForm();
 settingsWithoutCompanyRead.refresh(form);
 assert.equal(form.buttons.length, 0, "Users without Company or HR permissions must not see setup navigation actions");
 
@@ -173,6 +201,14 @@ assert.equal(form.doc.total_other_cost, 3);
 assert.equal(form.doc.total_cost, 15, "Single-row part removal must refresh the job-card total");
 
 form = makeForm({ doc: {
+	parts_used: [],
+	labour_lines: [{ amount: 12 }],
+	other_costs: [{ amount: 3 }],
+} });
+jobCardChildren["Job Card Part"].parts_used_delete(form);
+assert.equal(form.doc.total_cost, 15, "Bulk part deletion must refresh the job-card total");
+
+form = makeForm({ doc: {
 	parts_used: [{ amount: 20 }],
 	labour_lines: [],
 	other_costs: [{ amount: 3 }],
@@ -188,14 +224,6 @@ form = makeForm({ doc: {
 jobCardChildren["Job Card Other Cost"].other_costs_remove(form);
 assert.equal(form.doc.total_cost, 32, "Single-row other-cost removal must refresh the job-card total");
 
-form = makeForm({ doc: {
-	parts_used: [],
-	labour_lines: [{ amount: 5 }],
-	other_costs: [],
-} });
-jobCardChildren["Job Card Part"].parts_used_delete(form);
-assert.equal(form.doc.total_cost, 5, "Bulk row deletion must refresh the job-card total");
-
 const inspectionChildren = loadHandlers("sotrama/public/js/inspection.js");
 const inspectionItems = inspectionChildren["Inspection Item"];
 assert.equal(typeof inspectionItems.inspection_items_remove, "function", "Inspection summary must refresh after one check is removed");
@@ -206,8 +234,39 @@ form = makeForm({ doc: {
 inspectionItems.inspection_items_remove(form);
 assert.equal(form.doc.total_defects, 0);
 assert.equal(form.doc.overall_status, "Pass", "Removing a defective check must refresh the inspection result");
+form = makeForm({ doc: { inspection_items: [{ status: "Okay", remarks: "" }] } });
 inspectionItems.inspection_items_delete(form);
-assert.equal(form.doc.overall_status, "Pass", "Bulk deletion must refresh the inspection result");
+assert.equal(form.doc.overall_status, "Pass", "Bulk check deletion must refresh the inspection result");
+
+const inspectionDialogs = [];
+class TestDialog {
+	constructor(options) { this.options = options; inspectionDialogs.push(this); }
+	show() { this.shown = true; }
+	hide() { this.hidden = true; }
+}
+const inspectionWithDialog = loadHandlers("sotrama/public/js/inspection.js", {
+	Dialog: TestDialog,
+})["Vehicle Inspection"];
+form = makeForm({ isNew: true, permissions: [{ create: true }], doc: {
+	inspection_items: [{ category: "Existing", item_details: "Existing point", status: "Okay" }],
+} });
+inspectionWithDialog.refresh(form);
+assert.equal(form.buttons[0][0], "Add Custom Check");
+form.buttons[0][1]();
+assert.equal(inspectionDialogs.length, 1);
+assert.deepEqual(
+	Array.from(inspectionDialogs[0].options.fields, (field) => field.fieldname),
+	["category", "item_details"],
+	"A custom inspection check must ask for a category and a clear inspection point without placeholder values",
+);
+inspectionDialogs[0].options.primary_action({ category: "  ", item_details: "  " });
+assert.equal(form.doc.inspection_items.length, 1, "Blank custom checks must not be added");
+assert.equal(inspectionDialogs[0].hidden, undefined, "The dialog must remain open until valid details are supplied");
+inspectionDialogs[0].options.primary_action({ category: "Hydraulic system", item_details: "Check hose leaks" });
+assert.equal(form.doc.inspection_items[1].category, "Hydraulic system");
+assert.equal(form.doc.inspection_items[1].status, "Not Checked");
+assert.notEqual(form.doc.inspection_items[1].is_safety_critical, 1, "Custom checks must not be marked safety-critical without an explicit assessment");
+assert.equal(inspectionDialogs[0].hidden, true);
 
 const vehicleHandlers = loadHandlers("sotrama/public/js/vehicle.js", {
 	canCreate: (doctype) => doctype === "Maintenance Job Card",

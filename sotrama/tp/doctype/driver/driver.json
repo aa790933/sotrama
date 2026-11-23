@@ -244,8 +244,7 @@
  "title_field": "driver_name",
  "show_title_field_in_link": 1,
  "naming_rule": "Expression",
- "naming_expression": "DRV-.####",
- "autoname": "format",
+ "autoname": "DRV-.####",
  "permissions": [
   {
    "role": "System Manager",

@@ -7,7 +7,16 @@ class VehicleModel(Document):
     """Vehicle Model — specific model under a make (e.g. Actros 2646)."""
 
     def before_naming(self):
+        self.model_name = (self.model_name or "").strip()
         self._set_vehicle_make_from_legacy()
+
+    def autoname(self):
+        if not self.vehicle_make or not self.model_name:
+            return
+        make_name = frappe.db.get_value(
+            "Vehicle Make", self.vehicle_make, "make_name"
+        ) or self.vehicle_make
+        self.name = f"{make_name.strip()}-{self.model_name}"
 
     def validate(self):
         if not self.model_name:
@@ -26,7 +35,9 @@ class VehicleModel(Document):
         )
         if duplicate and (self.is_new() or duplicate != self.name):
             frappe.throw(
-                _("A model with this name already exists for the selected Vehicle Make.")
+                _(
+                    "A model with this name already exists for the selected Vehicle Make."
+                )
             )
 
         previous = self.get_doc_before_save()

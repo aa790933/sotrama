@@ -67,12 +67,42 @@ frappe.ui.form.on('Vehicle Inspection', {
             ? !!frm.perm?.[0]?.create
             : !!frm.perm?.[0]?.write;
         if (frm.doc.docstatus === 0 && canEdit) {
-            frm.add_custom_button(__('Add Inspection Check'), () => {
-                const row = frm.add_child('inspection_items');
-                row.status = 'Not Checked';
-                row.is_safety_critical = 1;
-                frm.refresh_field('inspection_items');
-                updateInspectionSummary(frm);
+            frm.add_custom_button(__('Add Custom Check'), () => {
+                const dialog = new frappe.ui.Dialog({
+                    title: __('Add Vehicle-Specific Check'),
+                    fields: [
+                        {
+                            fieldtype: 'Data',
+                            fieldname: 'category',
+                            label: __('Category'),
+                            reqd: 1,
+                            description: __('Name the vehicle system or area to inspect.'),
+                        },
+                        {
+                            fieldtype: 'Small Text',
+                            fieldname: 'item_details',
+                            label: __('What to Check'),
+                            reqd: 1,
+                            description: __('Describe the exact point the inspector must verify.'),
+                        },
+                    ],
+                    primary_action_label: __('Add Check'),
+                    primary_action(values) {
+                        const category = (values.category || '').trim();
+                        const itemDetails = (values.item_details || '').trim();
+                        if (!category || !itemDetails) return;
+
+                        frm.add_child('inspection_items', {
+                            category,
+                            item_details: itemDetails,
+                            status: 'Not Checked',
+                        });
+                        frm.refresh_field('inspection_items');
+                        updateInspectionSummary(frm);
+                        dialog.hide();
+                    },
+                });
+                dialog.show();
             }, __('Checklist'));
         }
 
