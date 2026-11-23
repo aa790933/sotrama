@@ -800,10 +800,47 @@ jobs:
           bench --site test_site migrate
           bench --site test_site set-config allow_tests true
 
+      - name: Sync and validate Sotrama French Gettext catalog
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench generate-pot-file --app sotrama
+          bench update-po-files --app sotrama --locale fr
+          python - <<'PY'
+          from pathlib import Path
+          from babel.messages.pofile import read_po
+
+          catalog_path = Path("apps/sotrama/sotrama/locale/fr.po")
+          with catalog_path.open("rb") as catalog_file:
+              catalog = read_po(catalog_file)
+
+          problems = []
+          for message in catalog:
+              if not message.id:
+                  continue
+              if "fuzzy" in (message.flags or ()):
+                  problems.append((message.lineno, message.id, "fuzzy"))
+                  continue
+              translations = (
+                  message.string.values()
+                  if isinstance(message.string, dict)
+                  else (message.string,)
+              )
+              if any(not translation for translation in translations):
+                  problems.append((message.lineno, message.id, "untranslated"))
+
+          if problems:
+              for line, message_id, reason in problems:
+                  print(f"{catalog_path}:{line}: {reason}: {message_id}")
+              raise SystemExit(f"Found {len(problems)} incomplete French translations.")
+
+          translated = sum(1 for message in catalog if message.id)
+          print(f"Validated {translated} French Gettext messages against the generated POT.")
+          PY
+
       - name: Compile Sotrama French translations
         working-directory: /home/runner/frappe-bench
         run: |
-          bench --site test_site execute frappe.gettext.translate.compile_translations --kwargs "{'target_app': 'sotrama', 'locale': 'fr', 'force': True}"
+          bench compile-po-to-mo --app sotrama --locale fr --force
           test -s sites/assets/locale/fr/LC_MESSAGES/sotrama.mo
 
       - name: Create an ERPNext company for Fleet integration tests
