@@ -4467,7 +4467,7 @@ class TestVehicle(unittest.TestCase):
             "section_assignment",
         ):
             self.assertTrue(vehicle_meta.get_field(section).collapsible, section)
-        self.assertFalse(vehicle_meta.get_field("section_documents").collapsible)
+        self.assertTrue(vehicle_meta.get_field("section_documents").collapsible)
         self.assertIn(
             "carte grise", vehicle_meta.get_field("section_documents").description
         )
