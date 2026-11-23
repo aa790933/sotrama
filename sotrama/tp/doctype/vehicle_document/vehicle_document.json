@@ -47,7 +47,8 @@
    "options": "\nValid\nExpiring Soon\nExpired\nPending",
    "read_only": 1,
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "description": "Calculated automatically from the expiry date and configured alert window."
   }
  ],
  "istable": 1,

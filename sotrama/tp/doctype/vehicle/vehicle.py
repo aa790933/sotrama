@@ -14,6 +14,7 @@ class Vehicle(Document):
     def validate(self):
         self._validate_license_plate()
         self._set_defaults()
+        self._update_vehicle_document_statuses()
         self._validate_unique_fleet_number()
         from sotrama.tp.settings import validate_company_access
 
@@ -24,6 +25,16 @@ class Vehicle(Document):
         self._validate_asset_link()
         self._validate_company_ownership()
         self._validate_safety_hold()
+
+    def _update_vehicle_document_statuses(self):
+        from sotrama.tp.doctype.vehicle_document.vehicle_document import (
+            get_vehicle_document_status,
+        )
+        from sotrama.tp.settings import get_tp_setting
+
+        alert_days = get_tp_setting("vehicle_document_alert_days", 30)
+        for row in self.get("vehicle_documents") or []:
+            row.status = get_vehicle_document_status(row.expiry_date, alert_days)
 
     def before_cancel(self):
         from sotrama.tp.validation import get_open_vehicle_safety_holds

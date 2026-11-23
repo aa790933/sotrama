@@ -11,6 +11,7 @@ import unittest
 import uuid
 from pathlib import Path
 from unittest.mock import Mock, patch
+from unittest.mock import call as mock_call
 
 import frappe
 from frappe.utils import add_days, getdate, today
@@ -4474,7 +4475,7 @@ class TestVehicle(unittest.TestCase):
         self.assertTrue(document_meta.get_field("issue_date").in_list_view)
         self.assertTrue(document_meta.get_field("expiry_date").in_list_view)
         self.assertTrue(document_meta.get_field("attachment").in_list_view)
-        self.assertTrue(document_meta.get_field("attachment").in_list_view)
+        self.assertTrue(document_meta.get_field("status").in_list_view)
         vehicle_field_order = [field.fieldname for field in vehicle_meta.fields]
         self.assertLess(
             vehicle_field_order.index("vehicle_documents"),
@@ -4493,8 +4494,34 @@ class TestVehicle(unittest.TestCase):
             ],
         )
 
-        # Cleanup
         _delete_test_record("Vehicle", vehicle.name)
+
+    def test_vehicle_document_statuses_are_recalculated_on_parent_save(self):
+        vehicle = frappe.new_doc("Vehicle")
+        vehicle.append(
+            "vehicle_documents",
+            {"document_type": "Insurance Certificate", "expiry_date": add_days(today(), 5)},
+        )
+        vehicle.append(
+            "vehicle_documents",
+            {"document_type": "Technical Inspection", "expiry_date": add_days(today(), -1)},
+        )
+        vehicle.append(
+            "vehicle_documents",
+            {"document_type": "Registration Certificate"},
+        )
+        vehicle.append(
+            "vehicle_documents",
+            {"document_type": "Other Document", "expiry_date": add_days(today(), 31)},
+        )
+
+        with patch("sotrama.tp.settings.get_tp_setting", return_value=30):
+            vehicle._update_vehicle_document_statuses()
+
+        self.assertEqual(
+            [row.status for row in vehicle.vehicle_documents],
+            ["Expiring Soon", "Expired", "Pending", "Valid"],
+        )
 
     def test_vehicle_registration_or_fleet_number_is_unique_within_company(self):
         vehicle = frappe.new_doc("Vehicle")
@@ -7142,6 +7169,64 @@ class TestTpSettingsFieldPermissions(unittest.TestCase):
 class TestFleetSchedulerPrivacy(unittest.TestCase):
     """Scheduler alerts must respect document access and field privacy."""
 
+    def test_vehicle_document_status_uses_the_configured_expiry_window(self):
+        from sotrama.tp.doctype.vehicle_document.vehicle_document import (
+            get_vehicle_document_status,
+        )
+
+        reference_date = today()
+        self.assertEqual(get_vehicle_document_status(None, 30, reference_date), "Pending")
+        self.assertEqual(
+            get_vehicle_document_status(add_days(reference_date, -1), 30, reference_date),
+            "Expired",
+        )
+        self.assertEqual(
+            get_vehicle_document_status(reference_date, 30, reference_date),
+            "Expiring Soon",
+        )
+        self.assertEqual(
+            get_vehicle_document_status(add_days(reference_date, 30), 30, reference_date),
+            "Expiring Soon",
+        )
+        self.assertEqual(
+            get_vehicle_document_status(add_days(reference_date, 31), 30, reference_date),
+            "Valid",
+        )
+
+    def test_vehicle_document_status_backfill_updates_only_changed_rows(self):
+        from sotrama.tp.doctype.vehicle_document.vehicle_document import (
+            refresh_vehicle_document_statuses,
+        )
+
+        documents = [
+            frappe._dict(
+                name="ROW-STATUS-CHANGED",
+                expiry_date=add_days(today(), 5),
+                status="Valid",
+            ),
+            frappe._dict(
+                name="ROW-STATUS-UNCHANGED",
+                expiry_date=add_days(today(), 365),
+                status="Valid",
+            ),
+        ]
+        with (
+            patch("frappe.db.table_exists", return_value=True),
+            patch("frappe.get_all", return_value=documents),
+            patch("sotrama.tp.settings.get_tp_setting", return_value=30),
+            patch("frappe.db.set_value") as set_value,
+        ):
+            changed = refresh_vehicle_document_statuses()
+
+        self.assertEqual(changed, 1)
+        set_value.assert_called_once_with(
+            "Vehicle Document",
+            "ROW-STATUS-CHANGED",
+            "status",
+            "Expiring Soon",
+            update_modified=False,
+        )
+
     def test_document_expiry_scheduler_batches_documents_for_submitted_vehicles(self):
         from sotrama.tp.scheduler import check_document_expiries
 
@@ -7151,6 +7236,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             vehicle_status="Active",
         )
         document = frappe._dict(
+            name="ROW-EXPIRY-001",
             parent=vehicle.name,
             document_type="Insurance Certificate",
             expiry_date=add_days(today(), 5),
@@ -7171,6 +7257,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             patch(
                 "sotrama.tp.scheduler.frappe.db.get_value", return_value="en"
             ),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
             patch("sotrama.tp.scheduler.frappe.new_doc", return_value=todo),
         ):
             check_document_expiries()
@@ -7186,6 +7273,7 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
             get_all.call_args_list[0].kwargs["filters"]["docstatus"], 1
         )
         self.assertEqual(get_all.call_args_list[1].args[0], "Vehicle Document")
+        self.assertIn("name", get_all.call_args_list[1].kwargs["fields"])
         self.assertEqual(
             get_all.call_args_list[1].kwargs["filters"]["parent"],
             ["in", [vehicle.name]],
@@ -7201,8 +7289,247 @@ class TestFleetSchedulerPrivacy(unittest.TestCase):
         )
         self.assertIn("Vehicle Document Expiring", todo.description)
         self.assertIn("Insurance Certificate", todo.description)
+        self.assertIn("Vehicle Document Row: ROW-EXPIRY-001", todo.description)
         self.assertEqual(todo.priority, "Medium")
+        self.assertEqual(document.status, "Expiring Soon")
+        set_value.assert_any_call(
+            "Vehicle Document",
+            "ROW-EXPIRY-001",
+            "status",
+            "Expiring Soon",
+            update_modified=False,
+        )
         todo.insert.assert_called_once_with(ignore_permissions=True)
+
+    def test_document_expiry_scheduler_keeps_same_type_renewals_separate(self):
+        from sotrama.tp.scheduler import check_document_expiries
+
+        vehicle = frappe._dict(
+            name="VEH-EXPIRY-RENEWALS",
+            license_plate="RENEWALS-001",
+            vehicle_status="Active",
+        )
+        documents = [
+            frappe._dict(
+                name="ROW-INSURANCE-OLD",
+                parent=vehicle.name,
+                document_type="Insurance Certificate",
+                expiry_date=add_days(today(), 5),
+                status="Valid",
+            ),
+            frappe._dict(
+                name="ROW-INSURANCE-RENEWAL",
+                parent=vehicle.name,
+                document_type="Insurance Certificate",
+                expiry_date=add_days(today(), 365),
+                status="Valid",
+            ),
+        ]
+        todos = []
+        for name in ("TODO-INSURANCE-OLD", "TODO-INSURANCE-RENEWAL"):
+            todo = Mock()
+            todo.name = name
+            todo.status = "Open"
+            todos.append(todo)
+
+        todo_read_count = {"count": 0}
+
+        def get_all(doctype, **kwargs):
+            if doctype == "Vehicle":
+                return [vehicle]
+            if doctype == "Vehicle Document":
+                return documents
+            if doctype == "ToDo":
+                todo_read_count["count"] += 1
+                if todo_read_count["count"] == 1:
+                    return []
+                return [
+                    frappe._dict(
+                        name=todo.name,
+                        reference_name=vehicle.name,
+                        description=todo.description,
+                        status=todo.status,
+                    )
+                    for todo in todos
+                ]
+            self.fail(f"Unexpected scheduler query: {doctype}")
+
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=400),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=get_all,
+            ),
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                return_value="fleet@example.invalid",
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.get_value", return_value="en"),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch(
+                "sotrama.tp.scheduler.frappe.new_doc", side_effect=todos
+            ) as new_doc,
+        ):
+            check_document_expiries()
+            check_document_expiries()
+
+        self.assertEqual(new_doc.call_count, 2)
+        self.assertEqual(set_value.call_count, 4)
+        descriptions = [todo.description for todo in todos]
+        self.assertIn("Vehicle Document Row: ROW-INSURANCE-OLD", descriptions[0])
+        self.assertIn("Vehicle Document Row: ROW-INSURANCE-RENEWAL", descriptions[1])
+        self.assertNotEqual(descriptions[0], descriptions[1])
+
+    def test_document_expiry_scheduler_closes_alert_after_document_renewal(self):
+        from sotrama.tp.scheduler import check_document_expiries
+
+        vehicle = frappe._dict(
+            name="VEH-EXPIRY-RENEWED",
+            license_plate="RENEWED-001",
+            vehicle_status="Active",
+        )
+        renewed_expiry = add_days(today(), 365)
+        document = frappe._dict(
+            name="ROW-INSURANCE-RENEWED",
+            parent=vehicle.name,
+            document_type="Insurance Certificate",
+            expiry_date=renewed_expiry,
+            status="Expiring Soon",
+        )
+        old_todo = frappe._dict(
+            name="TODO-INSURANCE-RENEWED",
+            reference_name=vehicle.name,
+            description=(
+                "Vehicle Document Expiring: Insurance Certificate\n"
+                "Document expires on the old date\n"
+                f"Vehicle Document Row: {document.name} | Expiry: {add_days(today(), 5)}"
+            ),
+            status="Open",
+        )
+        legacy_french_todo = frappe._dict(
+            name="TODO-INSURANCE-LEGACY-FR",
+            reference_name=vehicle.name,
+            description=(
+                "Expiration d'un document du véhicule : Assurance "
+                f"(véhicule : {vehicle.license_plate})\n"
+                f"Ancienne échéance : {add_days(today(), 5)}"
+            ),
+            status="Open",
+        )
+        unrelated_todo = frappe._dict(
+            name="TODO-MAINTENANCE-UNRELATED",
+            reference_name=vehicle.name,
+            description="Maintenance due for this vehicle",
+            status="Open",
+        )
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=30),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[
+                    [vehicle],
+                    [document],
+                    [old_todo, legacy_french_todo, unrelated_todo],
+                ],
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.set_value") as set_value,
+            patch("sotrama.tp.scheduler.frappe.new_doc") as new_doc,
+        ):
+            check_document_expiries()
+
+        self.assertEqual(document.status, "Valid")
+        set_value.assert_any_call(
+            "Vehicle Document",
+            document.name,
+            "status",
+            "Valid",
+            update_modified=False,
+        )
+        set_value.assert_any_call(
+            "ToDo",
+            old_todo.name,
+            "status",
+            "Closed",
+            update_modified=False,
+        )
+        set_value.assert_any_call(
+            "ToDo",
+            legacy_french_todo.name,
+            "status",
+            "Closed",
+            update_modified=False,
+        )
+        self.assertNotIn(
+            mock_call(
+                "ToDo",
+                unrelated_todo.name,
+                "status",
+                "Closed",
+                update_modified=False,
+            ),
+            set_value.call_args_list,
+        )
+        new_doc.assert_not_called()
+
+    def test_document_expiry_scheduler_does_not_reopen_closed_or_cancelled_alerts(self):
+        from sotrama.tp.scheduler import check_document_expiries
+
+        vehicle = frappe._dict(
+            name="VEH-EXPIRY-DISMISSED",
+            license_plate="DISMISSED-001",
+            vehicle_status="Active",
+        )
+        documents = [
+            frappe._dict(
+                name="ROW-EXPIRY-CLOSED",
+                parent=vehicle.name,
+                document_type="Insurance Certificate",
+                expiry_date=add_days(today(), 5),
+                status="Valid",
+            ),
+            frappe._dict(
+                name="ROW-EXPIRY-CANCELLED",
+                parent=vehicle.name,
+                document_type="Technical Inspection",
+                expiry_date=add_days(today(), 5),
+                status="Valid",
+            ),
+        ]
+        todos = [
+            frappe._dict(
+                name="TODO-EXPIRY-CLOSED",
+                reference_name=vehicle.name,
+                description=(
+                    f"Vehicle Document Row: {documents[0].name} | Expiry: {documents[0].expiry_date}"
+                ),
+                status="Closed",
+            ),
+            frappe._dict(
+                name="TODO-EXPIRY-CANCELLED",
+                reference_name=vehicle.name,
+                description=(
+                    f"Vehicle Document Row: {documents[1].name} | Expiry: {documents[1].expiry_date}"
+                ),
+                status="Cancelled",
+            ),
+        ]
+        with (
+            patch("sotrama.tp.scheduler.get_tp_setting", return_value=30),
+            patch(
+                "sotrama.tp.scheduler.frappe.get_all",
+                side_effect=[[vehicle], documents, todos],
+            ),
+            patch(
+                "sotrama.tp.scheduler._user_for_role",
+                return_value="fleet@example.invalid",
+            ),
+            patch("sotrama.tp.scheduler.frappe.db.get_value", return_value="en"),
+            patch("sotrama.tp.scheduler.frappe.db.set_value"),
+            patch("sotrama.tp.scheduler.frappe.new_doc") as new_doc,
+        ):
+            check_document_expiries()
+
+        new_doc.assert_not_called()
 
     def test_role_assignment_requires_read_permission_for_the_exact_document(self):
         from sotrama.tp.scheduler import _user_for_role

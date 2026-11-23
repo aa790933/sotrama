@@ -209,6 +209,14 @@ jobs:
           assert "_ensure_standard_checklist" in inspection_controller
           assert "STANDARD_INSPECTION_CHECKS" in inspection_controller
           assert "row.is_safety_critical = check.is_safety_critical ? 1 : 0" in inspection_js
+          vehicle_controller = Path("sotrama/tp/doctype/vehicle/vehicle.py").read_text(encoding="utf-8")
+          vehicle_document_controller = Path("sotrama/tp/doctype/vehicle_document/vehicle_document.py").read_text(encoding="utf-8")
+          scheduler = Path("sotrama/tp/scheduler/__init__.py").read_text(encoding="utf-8")
+          assert "_update_vehicle_document_statuses()" in vehicle_controller
+          assert "get_vehicle_document_status" in vehicle_document_controller
+          assert "refresh_vehicle_document_statuses()" in Path("sotrama/hooks.py").read_text(encoding="utf-8")
+          assert "Vehicle Document Row: {doc.name} | Expiry: {doc.expiry_date}" in scheduler
+          assert '"status", "Closed", update_modified=False' in scheduler
           operational_task_js = Path("sotrama/public/js/operational_task.js").read_text(encoding="utf-8")
           assert "search_workshop_employees" in operational_task_js
           assert '"Operational Task": "public/js/operational_task.js"' in Path("sotrama/hooks.py").read_text(encoding="utf-8")
@@ -689,6 +697,7 @@ jobs:
               assert "sotrama/tp/patches/v1_3/migrate_fleet_document_options.py" in names
               assert "sotrama/tp/patches/v1_3/simplify_fleet_reference_masters.py" in names
               assert "sotrama/tp/patches/v1_3/normalize_fleet_master_names.py" in names
+              assert "sotrama/tp/doctype/vehicle_document/vehicle_document.py" in names
               assert "sotrama/overrides/file.py" in names
               assert "sotrama/locale/fr.po" in names
               assert "sotrama/sotrama/workspace/sotrama/sotrama.json" in names

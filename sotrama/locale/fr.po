@@ -2602,6 +2602,12 @@ msgstr "Contexte de paramètres par société non pris en charge."
 msgid "Vehicle Document Expiring: {0} (Vehicle: {1})"
 msgstr "Expiration d'un document du véhicule : {0} (véhicule : {1})"
 
+msgid "Status is updated automatically using the configured alert window."
+msgstr "Le statut est mis à jour automatiquement selon le délai d'alerte configuré."
+
+msgid "Calculated automatically from the expiry date and configured alert window."
+msgstr "Calculé automatiquement à partir de la date d'expiration et du délai d'alerte configuré."
+
 msgid "Vehicle is required"
 msgstr "Le véhicule est obligatoire."
 

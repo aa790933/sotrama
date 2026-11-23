@@ -229,7 +229,7 @@
    "fieldtype": "Table",
    "options": "Vehicle Document",
    "in_standard_filter": 1,
-   "description": "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document."
+   "description": "Add one row per document: choose its type, enter issue and expiry dates, then upload the scan in the Attachment column. Open the attachment to view or print the original document. Status is updated automatically using the configured alert window."
   },
   {
    "label": "Notes",

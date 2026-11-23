@@ -604,6 +604,17 @@ def run_after_migrate():
     from sotrama.tp.scheduler import remediate_fleet_alert_todo_assignments
 
     remediate_fleet_alert_todo_assignments()
+    from sotrama.tp.doctype.vehicle_document.vehicle_document import (
+        refresh_vehicle_document_statuses,
+    )
+
+    try:
+        refresh_vehicle_document_statuses()
+    except Exception:  # noqa: BLE001 - the daily scheduler can retry this display-only backfill
+        frappe.log_error(
+            title="Vehicle Document status refresh failed",
+            message=frappe.get_traceback(),
+        )
     try:
         migration_result = migrate_legacy_company_nif()
         hide_managed_legacy_company_nif(migration_result)
