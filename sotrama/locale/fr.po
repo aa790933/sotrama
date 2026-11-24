@@ -3211,3 +3211,9 @@ msgstr "Les URL distantes ne peuvent pas être jointes aux fiches du parc rattac
 
 msgid "A duplicate of private Fleet attachment content cannot be attached to an unrelated document."
 msgstr "Une copie du contenu d’une pièce jointe privée du parc ne peut pas être jointe à un document hors de ce périmètre."
+
+msgid "Setup Initialized"
+msgstr "Configuration initialisée"
+
+msgid "Internal marker used to recover an interrupted first-time Sotrama setup."
+msgstr "Marqueur interne utilisé pour récupérer une installation Sotrama interrompue pour la première fois."
