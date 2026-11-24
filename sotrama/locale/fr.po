@@ -127,8 +127,8 @@ msgstr "Saisissez le nom du constructeur. Cette valeur sert également d'identif
 msgid "Vehicle Model"
 msgstr "Modèle du véhicule"
 
-msgid "Enter the manufacturer's model designation. The record ID combines the selected make and this model name."
-msgstr "Saisissez la désignation du modèle du constructeur. L'identifiant de la fiche combine la marque sélectionnée et ce nom de modèle."
+msgid "Enter the manufacturer's model designation. The internal record ID is generated from the selected make and model name."
+msgstr "Saisissez la désignation du modèle du constructeur. L'identifiant interne de la fiche est généré à partir de la marque sélectionnée et du nom du modèle."
 
 msgid "Manufacturer Details"
 msgstr "Détails du constructeur"
@@ -569,17 +569,17 @@ msgstr "Dernier relevé du compteur kilométrique, en km."
 msgid "Date the vehicle was acquired"
 msgstr "Date d'acquisition du véhicule."
 
-msgid "Purchase value in Algerian Dinars"
-msgstr "Valeur d'achat en dinars algériens."
+msgid "Purchase value in Algerian Dinars; cannot be negative."
+msgstr "Valeur d'achat en dinars algériens ; elle ne peut pas être négative."
 
 msgid "Current book value (after depreciation)"
 msgstr "Valeur comptable actuelle après amortissement."
 
-msgid "Annual depreciation rate as percentage"
-msgstr "Taux annuel d'amortissement, en pourcentage."
+msgid "Annual depreciation rate as a percentage (0 to 100)."
+msgstr "Taux annuel d'amortissement, en pourcentage (de 0 à 100)."
 
-msgid "Estimated residual value at end of useful life"
-msgstr "Valeur résiduelle estimée à la fin de la durée d'utilisation."
+msgid "Estimated residual value at end of useful life; cannot exceed Acquisition Value."
+msgstr "Valeur résiduelle estimée à la fin de la durée d'utilisation ; elle ne peut pas dépasser la valeur d'acquisition."
 
 msgid "Insured value of the vehicle"
 msgstr "Valeur assurée du véhicule."
@@ -673,6 +673,18 @@ msgstr "Taux d'amortissement (%)"
 
 msgid "Salvage Value (DZD)"
 msgstr "Valeur résiduelle (DZD)"
+
+msgid "Acquisition Value cannot be negative."
+msgstr "La valeur d'acquisition ne peut pas être négative."
+
+msgid "Salvage Value cannot be negative."
+msgstr "La valeur résiduelle ne peut pas être négative."
+
+msgid "Salvage Value cannot exceed Acquisition Value."
+msgstr "La valeur résiduelle ne peut pas dépasser la valeur d'acquisition."
+
+msgid "Depreciation Rate must be between 0 and 100 percent."
+msgstr "Le taux d'amortissement doit être compris entre 0 et 100 %."
 
 msgid "Insurance Value (DZD)"
 msgstr "Valeur assurée (DZD)"
@@ -2702,6 +2714,12 @@ msgstr "Les dossiers de conformité des conducteurs ne sont accessibles que depu
 msgid "The recipient must already have Company-scoped read access to this Fleet record."
 msgstr "Le destinataire doit déjà disposer d'un accès en lecture à cette fiche du parc dans le périmètre de sa société."
 
+msgid "Sotrama child-table rows must be accessed through their parent document."
+msgstr "Les lignes des tables enfants de Sotrama doivent être consultées depuis leur document parent."
+
+msgid "Fleet attachments inherit access from their parent record and cannot be shared independently."
+msgstr "Les pièces jointes du parc héritent des droits d'accès de leur document parent et ne peuvent pas être partagées séparément."
+
 msgid "Frappe HR's Designation DocType is unavailable. Install or enable Frappe HR first."
 msgstr "Le type de document Désignation de Frappe RH est indisponible. Installez ou activez d'abord Frappe RH."
 
@@ -3145,3 +3163,24 @@ msgstr "L’ancien champ Company {0} existe, mais n’appartient pas à Sotrama.
 
 msgid "The module {0} already belongs to app {1}. Sotrama will not change another app's module ownership. Review the existing Module Def before installing Sotrama."
 msgstr "Le module {0} appartient déjà à l’application {1}. Sotrama ne modifiera pas la propriété du module d’une autre application. Vérifiez le Module Def existant avant d’installer Sotrama."
+
+msgid "File field {0} already exists but is not owned by Sotrama. {1}"
+msgstr "Le champ Fichier {0} existe déjà, mais n’appartient pas à Sotrama. {1}"
+
+msgid "Resolve the field ownership conflict before migrating Driver attachments."
+msgstr "Résolvez le conflit de propriété du champ avant de migrer les pièces jointes des conducteurs."
+
+msgid "Resolve the field ownership conflict before migrating Fleet attachments."
+msgstr "Résolvez le conflit de propriété du champ avant de migrer les pièces jointes du parc."
+
+msgid "File content cannot be reused between Driver HR evidence and general Fleet attachments."
+msgstr "Le contenu d’un fichier ne peut pas être réutilisé entre les justificatifs RH des conducteurs et les pièces jointes générales du parc."
+
+msgid "This file content is already attached to a company-scoped Fleet record and cannot be reused on an unrelated document."
+msgstr "Le contenu de ce fichier est déjà joint à une fiche du parc rattachée à une société et ne peut pas être réutilisé dans un document hors de ce périmètre."
+
+msgid "Remote URLs cannot be attached to company-scoped Fleet records. Upload a private file instead."
+msgstr "Les URL distantes ne peuvent pas être jointes aux fiches du parc rattachées à une société. Téléversez plutôt un fichier privé."
+
+msgid "A duplicate of private Fleet attachment content cannot be attached to an unrelated document."
+msgstr "Une copie du contenu d’une pièce jointe privée du parc ne peut pas être jointe à un document hors de ce périmètre."

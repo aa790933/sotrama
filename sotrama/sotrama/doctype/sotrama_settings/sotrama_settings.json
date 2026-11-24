@@ -35,6 +35,16 @@
    "fieldname": "section_public_works_designations",
    "label": "BTPH job-title catalogue",
    "description": "Import the curated 202-title French BTPH catalogue into HRMS > Designation. Only missing titles are added; existing designations are left untouched. Manage employees and their assignments in the standard HRMS Employee form."
+  },
+  {
+   "fieldtype": "Check",
+   "fieldname": "setup_initialized",
+   "label": "Setup Initialized",
+   "default": "0",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Internal marker used to recover an interrupted first-time Sotrama setup."
   }
  ],
  "permissions": [

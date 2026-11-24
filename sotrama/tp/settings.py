@@ -155,7 +155,11 @@ def search_fleet_report_companies(
     rows = frappe.get_list(
         "Vehicle",
         fields=["company"],
-        filters=[["company", "like", f"%{txt or ''}%"]],
+        filters=[
+            ["docstatus", "=", 1],
+            ["vehicle_status", "not in", ["Retired", "Scrapped"]],
+            ["company", "like", f"%{txt or ''}%"],
+        ],
         group_by="company",
         order_by="company asc",
         start=max(int(start or 0), 0),

@@ -22,15 +22,30 @@ COMPANY_SCOPED_FLEET_DOCTYPES = {
     "Maintenance Job Card",
     "Company Classification",
 }
+COMPANY_SCOPED_FLEET_CHILD_TABLES = {
+    "Vehicle Document": ("Vehicle", "vehicle_documents"),
+    "Inspection Item": ("Vehicle Inspection", "inspection_items"),
+    "Job Card Labour": ("Maintenance Job Card", "labour"),
+    "Job Card Other Cost": ("Maintenance Job Card", "other_costs"),
+    "Job Card Part": ("Maintenance Job Card", "parts"),
+    "Job Card Photo": ("Maintenance Job Card", "photos"),
+    "Breakdown Photo": ("Breakdown Incident", "photos"),
+}
+SOTRAMA_CHILD_TABLE_DOCTYPES = set(COMPANY_SCOPED_FLEET_CHILD_TABLES) | {
+    "Driver Compliance Record",
+    "TP Company Defaults",
+}
 DRIVER_FILE_PRIVACY_FIELD = "sotrama_private_driver_attachment"
 DRIVER_FILE_PRIVACY_MARKER = "Managed by Sotrama — Driver Attachment Privacy."
+FLEET_FILE_PRIVACY_FIELD = "sotrama_private_fleet_attachment"
+FLEET_FILE_PRIVACY_MARKER = "Managed by Sotrama — Fleet Attachment Privacy."
 PRIVATE_DRIVER_ATTACHMENT_DOCTYPES = {"Driver", "Driver Compliance Record"}
 
 
-def _ensure_driver_file_privacy_field():
+def _ensure_file_privacy_field(fieldname, label, marker, insert_after, purpose):
     existing = frappe.db.get_value(
         "Custom Field",
-        {"dt": "File", "fieldname": DRIVER_FILE_PRIVACY_FIELD},
+        {"dt": "File", "fieldname": fieldname},
         ["name", "fieldtype", "module", "is_system_generated", "description"],
         as_dict=True,
     )
@@ -39,36 +54,60 @@ def _ensure_driver_file_privacy_field():
             existing.fieldtype == "Check"
             and existing.is_system_generated
             and existing.module in ("Sotrama", "Custom")
-            and DRIVER_FILE_PRIVACY_MARKER in (existing.description or "")
+            and marker in (existing.description or "")
         )
         if not owned:
             frappe.throw(
                 frappe._(
-                    "File field {0} already exists but is not owned by Sotrama. "
-                    "Resolve the field ownership conflict before migrating Driver attachments."
-                ).format(DRIVER_FILE_PRIVACY_FIELD)
+                    "File field {0} already exists but is not owned by Sotrama. {1}"
+                ).format(fieldname, purpose)
             )
     else:
         create_custom_fields(
             {
                 "File": [
                     {
-                        "fieldname": DRIVER_FILE_PRIVACY_FIELD,
+                        "fieldname": fieldname,
                         "fieldtype": "Check",
-                        "label": "Sotrama Private Driver Attachment",
+                        "label": label,
                         "module": "Custom",
-                        "insert_after": "attached_to_field",
+                        "insert_after": insert_after,
                         "default": "0",
                         "hidden": 1,
                         "read_only": 1,
                         "no_copy": 1,
-                        "description": DRIVER_FILE_PRIVACY_MARKER,
+                        "description": marker,
                     }
                 ]
             },
             update=False,
         )
     frappe.clear_cache(doctype="File")
+
+
+def _ensure_driver_file_privacy_field():
+    _ensure_file_privacy_field(
+        DRIVER_FILE_PRIVACY_FIELD,
+        "Sotrama Private Driver Attachment",
+        DRIVER_FILE_PRIVACY_MARKER,
+        "attached_to_field",
+        frappe._(
+            "Resolve the field ownership conflict before migrating Driver attachments."
+        ),
+    )
+
+
+def _ensure_fleet_file_privacy_field():
+    """Provision the persistent provenance marker used by Fleet File security."""
+    _ensure_file_privacy_field(
+        FLEET_FILE_PRIVACY_FIELD,
+        "Sotrama Private Fleet Attachment",
+        FLEET_FILE_PRIVACY_MARKER,
+        DRIVER_FILE_PRIVACY_FIELD,
+        frappe._(
+            "Resolve the field ownership conflict before migrating Fleet attachments."
+        ),
+    )
 
 
 def is_driver_private_attachment(file_doc):
@@ -108,12 +147,532 @@ def is_driver_private_attachment(file_doc):
     )
 
 
+def is_direct_company_scoped_fleet_attachment(file_doc):
+    """Identify a File directly attached to a protected Fleet parent or child row."""
+    if not file_doc:
+        return False
+    attached_doctype = file_doc.get("attached_to_doctype")
+    attached_name = file_doc.get("attached_to_name")
+    if not attached_doctype or not attached_name:
+        return False
+    return (
+        attached_doctype in COMPANY_SCOPED_FLEET_DOCTYPES
+        or attached_doctype in SOTRAMA_CHILD_TABLE_DOCTYPES
+    )
+
+
+def is_company_scoped_fleet_attachment(file_doc):
+    """Identify direct Fleet attachments and duplicate File rows sharing their content."""
+    if is_direct_company_scoped_fleet_attachment(file_doc):
+        return True
+    has_fleet_marker = frappe.get_meta("File").has_field(FLEET_FILE_PRIVACY_FIELD)
+    if has_fleet_marker and file_doc and file_doc.get(FLEET_FILE_PRIVACY_FIELD):
+        return True
+    content_hash = file_doc.get("content_hash") if file_doc else None
+    if not content_hash:
+        return False
+    attached_doctypes = sorted(
+        COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
+    )
+    return bool(
+        (
+            has_fleet_marker
+            and frappe.db.exists(
+                "File",
+                {
+                    "content_hash": content_hash,
+                    FLEET_FILE_PRIVACY_FIELD: 1,
+                },
+            )
+        )
+        or frappe.db.exists(
+            "File",
+            {
+                "content_hash": content_hash,
+                "attached_to_doctype": ["in", attached_doctypes],
+            },
+        )
+    )
+
+
+def _get_file_attachment_company(file_doc):
+    """Resolve the Company owning a protected File attachment, including child rows."""
+    doctype = file_doc.get("attached_to_doctype")
+    name = file_doc.get("attached_to_name")
+    if not doctype or not name:
+        return None
+
+    meta = frappe.get_meta(doctype)
+    if doctype in SOTRAMA_CHILD_TABLE_DOCTYPES:
+        fields = ["parenttype", "parent"]
+        if meta.has_field("company"):
+            fields.append("company")
+        child = frappe.db.get_value(doctype, name, fields, as_dict=True)
+        if not child:
+            return None
+        if child.get("company"):
+            return child.company
+        parent_doctype = child.get("parenttype")
+        parent_name = child.get("parent")
+        if not parent_doctype or not parent_name:
+            return None
+        parent_meta = frappe.get_meta(parent_doctype)
+        if not parent_meta.has_field("company"):
+            return None
+        return frappe.db.get_value(parent_doctype, parent_name, "company")
+
+    if not meta.has_field("company"):
+        return None
+    return frappe.db.get_value(doctype, name, "company")
+
+
+def _prevent_cross_company_file_reuse(file_doc, content_hash):
+    """Protect private Fleet sources from cross-company and owner-shortcut reuse."""
+    file_url = file_doc.get("file_url") or ""
+    get_previous = getattr(file_doc, "get_doc_before_save", None)
+    previous = get_previous() if get_previous else None
+    file_url_changed = bool(previous and previous.get("file_url") != file_url)
+    is_new_file = getattr(file_doc, "is_new", lambda: False)()
+    if not content_hash and not file_url.startswith(("/files/", "/private/files/")):
+        return
+
+    protected_doctypes = COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
+    fields = ["name", "attached_to_doctype", "attached_to_name", "is_private"]
+    file_meta = frappe.get_meta("File")
+    if file_meta.has_field(FLEET_FILE_PRIVACY_FIELD):
+        fields.append(FLEET_FILE_PRIVACY_FIELD)
+    if file_meta.has_field(DRIVER_FILE_PRIVACY_FIELD):
+        fields.append(DRIVER_FILE_PRIVACY_FIELD)
+
+    duplicate_rows = {}
+    url_matches = []
+    filters = {"name": ["!=", file_doc.name]}
+    if content_hash:
+        duplicate_rows.update(
+            {
+                row.name: row
+                for row in frappe.get_all(
+                    "File",
+                    filters={**filters, "content_hash": content_hash},
+                    fields=fields + ["file_url"],
+                    limit_page_length=0,
+                )
+            }
+        )
+    if file_url:
+        url_matches = frappe.get_all(
+            "File",
+            filters={**filters, "file_url": file_url},
+            fields=fields + ["file_url"],
+            limit_page_length=0,
+        )
+        duplicate_rows.update({row.name: row for row in url_matches})
+    duplicates = list(duplicate_rows.values())
+    if not duplicates:
+        if (
+            file_url.startswith("/private/files/")
+            and _get_file_attachment_company(file_doc)
+            and (is_new_file or file_url_changed)
+        ):
+            user = frappe.session.user
+            if user != "Administrator" and "System Manager" not in frappe.get_roles(
+                user
+            ):
+                frappe.throw(
+                    frappe._(
+                        "A private Fleet file URL must reference an existing File record. Upload the file or use its authorized attachment instead."
+                    ),
+                    frappe.PermissionError,
+                )
+        return
+
+    target_company = _get_file_attachment_company(file_doc)
+    target_doctype = file_doc.get("attached_to_doctype")
+    target_name = file_doc.get("attached_to_name")
+    target_is_driver = target_doctype in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES
+    for duplicate in duplicates:
+        is_protected = duplicate.attached_to_doctype in protected_doctypes or bool(
+            duplicate.get(FLEET_FILE_PRIVACY_FIELD)
+            or duplicate.get(DRIVER_FILE_PRIVACY_FIELD)
+        )
+        if not is_protected:
+            continue
+        duplicate_is_driver = (
+            duplicate.attached_to_doctype in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES
+            or bool(duplicate.get(DRIVER_FILE_PRIVACY_FIELD))
+        )
+        if (
+            target_doctype in protected_doctypes
+            and target_is_driver != duplicate_is_driver
+        ):
+            frappe.throw(
+                frappe._(
+                    "File content cannot be reused between Driver HR evidence and general Fleet attachments."
+                ),
+                frappe.PermissionError,
+            )
+        same_parent = (
+            duplicate.attached_to_doctype == target_doctype
+            and duplicate.attached_to_name == target_name
+        )
+        if not same_parent:
+            duplicate_company = _get_file_attachment_company(duplicate)
+            if (
+                not target_company
+                or not duplicate_company
+                or target_company != duplicate_company
+            ):
+                frappe.throw(
+                    frappe._(
+                        "Private Fleet attachment content cannot be reused across Companies or from a detached Fleet file."
+                    ),
+                    frappe.PermissionError,
+                )
+        if file_url and duplicate.file_url == file_url and duplicate.get("is_private"):
+            user = frappe.session.user
+            if duplicate.attached_to_doctype in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES:
+                source_access = can_access_driver_private_attachment(
+                    duplicate, user, ptype="read"
+                )
+            else:
+                source_access = can_access_company_scoped_fleet_attachment(
+                    duplicate, user, ptype="read"
+                )
+            if not source_access:
+                frappe.throw(
+                    frappe._(
+                        "You must retain read access to the original parent before reusing its private attachment."
+                    ),
+                    frappe.PermissionError,
+                )
+    if (
+        file_url.startswith("/private/files/")
+        and not url_matches
+        and _get_file_attachment_company(file_doc)
+        and (is_new_file or file_url_changed)
+    ):
+        user = frappe.session.user
+        if user != "Administrator" and "System Manager" not in frappe.get_roles(user):
+            frappe.throw(
+                frappe._(
+                    "A private Fleet file URL must reference an existing File record. Upload the file or use its authorized attachment instead."
+                ),
+                frappe.PermissionError,
+            )
+
+
+def prevent_fleet_attachment_content_reuse(file_doc, content=None):
+    """Prevent private Fleet file bytes being reattached through an unrelated parent."""
+    content_hash = file_doc.get("content_hash")
+    if content is not None:
+        from frappe.core.doctype.file.utils import get_content_hash
+
+        content_hash = get_content_hash(content)
+    file_url = file_doc.get("file_url") or ""
+    if not content_hash and not file_url.startswith(("/files/", "/private/files/")):
+        return
+
+    attached_doctype = file_doc.get("attached_to_doctype")
+    target_is_driver = attached_doctype in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES
+    is_direct_fleet_attachment = is_direct_company_scoped_fleet_attachment(file_doc)
+    _prevent_cross_company_file_reuse(file_doc, content_hash)
+    if not content_hash:
+        return
+    has_driver_marker = frappe.get_meta("File").has_field(DRIVER_FILE_PRIVACY_FIELD)
+    has_fleet_marker = frappe.get_meta("File").has_field(FLEET_FILE_PRIVACY_FIELD)
+    exclude_self = {"name": ["!=", file_doc.name]} if file_doc.get("name") else {}
+
+    if is_direct_fleet_attachment:
+        if target_is_driver:
+            non_driver_fleet_doctypes = sorted(
+                (COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES)
+                - PRIVATE_DRIVER_ATTACHMENT_DOCTYPES
+            )
+            crosses_scope = frappe.db.exists(
+                "File",
+                {
+                    **exclude_self,
+                    "content_hash": content_hash,
+                    "attached_to_doctype": ["in", non_driver_fleet_doctypes],
+                },
+            )
+            if has_fleet_marker and has_driver_marker:
+                crosses_scope = crosses_scope or frappe.db.exists(
+                    "File",
+                    {
+                        **exclude_self,
+                        "content_hash": content_hash,
+                        FLEET_FILE_PRIVACY_FIELD: 1,
+                        DRIVER_FILE_PRIVACY_FIELD: 0,
+                    },
+                )
+            if (
+                has_fleet_marker
+                and file_doc.get(FLEET_FILE_PRIVACY_FIELD)
+                and has_driver_marker
+                and not file_doc.get(DRIVER_FILE_PRIVACY_FIELD)
+            ):
+                crosses_scope = True
+        else:
+            crosses_scope = (
+                bool(has_driver_marker and file_doc.get(DRIVER_FILE_PRIVACY_FIELD))
+                or (
+                    has_driver_marker
+                    and frappe.db.exists(
+                        "File",
+                        {
+                            **exclude_self,
+                            "content_hash": content_hash,
+                            DRIVER_FILE_PRIVACY_FIELD: 1,
+                        },
+                    )
+                )
+                or frappe.db.exists(
+                    "File",
+                    {
+                        **exclude_self,
+                        "content_hash": content_hash,
+                        "attached_to_doctype": [
+                            "in",
+                            sorted(PRIVATE_DRIVER_ATTACHMENT_DOCTYPES),
+                        ],
+                    },
+                )
+            )
+        if crosses_scope:
+            frappe.throw(
+                frappe._(
+                    "File content cannot be reused between Driver HR evidence and general Fleet attachments."
+                ),
+                frappe.PermissionError,
+            )
+        return
+
+    attached_doctypes = sorted(
+        COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
+    )
+    if (
+        (has_fleet_marker and file_doc.get(FLEET_FILE_PRIVACY_FIELD))
+        or (has_driver_marker and file_doc.get(DRIVER_FILE_PRIVACY_FIELD))
+        or (
+            has_fleet_marker
+            and frappe.db.exists(
+                "File",
+                {
+                    **exclude_self,
+                    "content_hash": content_hash,
+                    FLEET_FILE_PRIVACY_FIELD: 1,
+                },
+            )
+        )
+        or frappe.db.exists(
+            "File",
+            {
+                **exclude_self,
+                "content_hash": content_hash,
+                "attached_to_doctype": ["in", attached_doctypes],
+            },
+        )
+    ):
+        frappe.throw(
+            frappe._(
+                "This file content is already attached to a company-scoped Fleet record and cannot be reused on an unrelated document."
+            ),
+            frappe.PermissionError,
+        )
+
+
+def secure_duplicate_fleet_file_rows(file_doc):
+    """Detach unrelated File rows that Frappe's content-hash lifecycle also privatized."""
+    content_hash = file_doc.get("content_hash")
+    if not content_hash:
+        return False
+
+    attached_doctypes = sorted(
+        COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
+    )
+    duplicates = frappe.get_all(
+        "File",
+        filters={
+            "content_hash": content_hash,
+            "name": ["!=", file_doc.name],
+        },
+        fields=["name", "attached_to_doctype"],
+        limit_page_length=0,
+    )
+    changed = False
+    for row in duplicates:
+        if row.attached_to_doctype in attached_doctypes:
+            continue
+
+        duplicate = frappe.get_doc("File", row.name)
+        if (
+            not duplicate.attached_to_doctype
+            and duplicate.owner == "Administrator"
+            and duplicate.is_private
+            and duplicate.get(FLEET_FILE_PRIVACY_FIELD)
+            and not (duplicate.file_url or "").startswith("/files/")
+        ):
+            continue
+
+        _redact_driver_attachment_comments(
+            duplicate.attached_to_doctype,
+            duplicate.attached_to_name,
+            duplicate,
+        )
+        _clear_attached_file_field(duplicate)
+        duplicate.attached_to_doctype = None
+        duplicate.attached_to_name = None
+        duplicate.attached_to_field = None
+        duplicate.owner = "Administrator"
+        setattr(duplicate, FLEET_FILE_PRIVACY_FIELD, 1)
+
+        if duplicate.is_private and (duplicate.file_url or "").startswith("/files/"):
+            duplicate.handle_is_private_changed()
+        duplicate.is_private = 1
+        duplicate.save(ignore_permissions=True)
+        _remove_private_driver_file_shares(duplicate.name)
+        frappe.log_error(
+            title="Duplicate Fleet attachment detached",
+            message=(
+                f"File {duplicate.name} shared content with a company-scoped Fleet attachment "
+                "but was attached to an unrelated document. It was detached and made "
+                "Administrator-owned to prevent an alternate access path."
+            ),
+        )
+        changed = True
+    return changed
+
+
+def secure_company_scoped_fleet_attachment(doc, method=None):
+    """Keep Fleet attachments private so public URLs cannot bypass company scope."""
+    get_previous = getattr(doc, "get_doc_before_save", None)
+    previous = get_previous() if get_previous else None
+    current_is_direct = is_direct_company_scoped_fleet_attachment(doc)
+    previous_was_direct = is_direct_company_scoped_fleet_attachment(previous)
+    migration = frappe.flags.get("in_fleet_attachment_migration")
+
+    protected = (
+        current_is_direct
+        or previous_was_direct
+        or bool(doc.get(FLEET_FILE_PRIVACY_FIELD))
+        or bool(previous and previous.get(FLEET_FILE_PRIVACY_FIELD))
+        or is_company_scoped_fleet_attachment(doc)
+    )
+    if not protected:
+        return
+    if not migration and _is_remote_file(doc):
+        frappe.throw(
+            frappe._(
+                "Remote URLs cannot be attached to company-scoped Fleet records. Upload a private file instead."
+            ),
+            frappe.ValidationError,
+        )
+    if (
+        not migration
+        and current_is_direct
+        and previous
+        and previous.get(FLEET_FILE_PRIVACY_FIELD)
+        and not previous_was_direct
+        and (
+            previous.get("attached_to_doctype") != doc.get("attached_to_doctype")
+            or previous.get("attached_to_name") != doc.get("attached_to_name")
+        )
+    ):
+        user = frappe.session.user
+        if user != "Administrator" and "System Manager" not in frappe.get_roles(user):
+            frappe.throw(
+                frappe._(
+                    "A detached or unrelated Fleet-protected file can only be reattached by Administrator or System Manager."
+                ),
+                frappe.PermissionError,
+            )
+    attachment_changed = bool(
+        previous
+        and (
+            previous.get("attached_to_doctype") != doc.get("attached_to_doctype")
+            or previous.get("attached_to_name") != doc.get("attached_to_name")
+        )
+    )
+    if (
+        not migration
+        and previous_was_direct
+        and current_is_direct
+        and attachment_changed
+    ):
+        user = frappe.session.user
+        roles = set(frappe.get_roles(user)) if user != "Administrator" else set()
+        if user != "Administrator" and "System Manager" not in roles:
+            previous_company = _get_file_attachment_company(previous)
+            current_company = _get_file_attachment_company(doc)
+            if (
+                not previous_company
+                or not current_company
+                or previous_company != current_company
+            ):
+                frappe.throw(
+                    frappe._(
+                        "Only Administrator or System Manager can move a protected Fleet attachment between Companies."
+                    ),
+                    frappe.PermissionError,
+                )
+            if not can_access_company_scoped_fleet_attachment(
+                previous, user, ptype="write"
+            ):
+                frappe.throw(
+                    frappe._(
+                        "You need write access to the original Fleet parent before moving its attachment."
+                    ),
+                    frappe.PermissionError,
+                )
+    if current_is_direct:
+        prevent_fleet_attachment_content_reuse(doc)
+    if (
+        not migration
+        and not current_is_direct
+        and not previous_was_direct
+        and doc.get("attached_to_doctype")
+    ):
+        frappe.throw(
+            frappe._(
+                "A duplicate of private Fleet attachment content cannot be attached to an unrelated document."
+            ),
+            frappe.PermissionError,
+        )
+    if not migration and previous_was_direct and not current_is_direct:
+        previous_attachment = frappe._dict(
+            attached_to_doctype=previous.attached_to_doctype,
+            attached_to_name=previous.attached_to_name,
+            attached_to_field=previous.attached_to_field,
+            file_url=doc.get("file_url"),
+            file_name=doc.get("file_name"),
+        )
+        _redact_driver_attachment_comments(
+            previous.attached_to_doctype, previous.attached_to_name, doc
+        )
+        _clear_attached_file_field(previous_attachment)
+        doc.attached_to_doctype = None
+        doc.attached_to_name = None
+        doc.attached_to_field = None
+        doc.owner = "Administrator"
+    setattr(doc, FLEET_FILE_PRIVACY_FIELD, 1)
+    doc.is_private = 1
+
+
+def sotrama_child_table_query_conditions(user=None, doctype=None):
+    """Prevent list/report APIs from querying child rows without a parent document."""
+    user = user or frappe.session.user
+    if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+        return None
+    return "1=0"
+
+
 def _is_remote_file(file_doc):
     """Detect remote File links across Frappe versions with different File schemas."""
     if file_doc.get("is_remote_file"):
         return True
     file_url = file_doc.get("file_url") or ""
-    return file_url.startswith(("http://", "https://"))
+    return file_url.startswith(("http://", "https://", "/api/method/"))
 
 
 def _can_read_driver_attachment_parent(doctype, name, user=None):
@@ -173,8 +732,56 @@ def can_access_driver_private_attachment(file_doc, user=None, ptype=None):
     )
 
 
+def can_access_company_scoped_fleet_attachment(file_doc, user=None, ptype=None):
+    """Require the exact Fleet parent permission; File ownership/shares are insufficient."""
+    user = user or frappe.session.user
+    if user == "Administrator":
+        return True
+    if ptype == "share" or not is_direct_company_scoped_fleet_attachment(file_doc):
+        return False
+    attached_doctype = file_doc.get("attached_to_doctype")
+    attached_name = file_doc.get("attached_to_name")
+    if not attached_doctype or not attached_name:
+        return False
+    required_permission = "write" if ptype in {"write", "create", "delete"} else "read"
+    if attached_doctype in SOTRAMA_CHILD_TABLE_DOCTYPES:
+        if not frappe.has_permission(
+            attached_doctype,
+            required_permission,
+            doc=attached_name,
+            user=user,
+        ):
+            return False
+        parent = frappe.db.get_value(
+            attached_doctype,
+            attached_name,
+            ["parenttype", "parent"],
+            as_dict=True,
+        )
+        if not parent or not parent.parenttype or not parent.parent:
+            return False
+        return bool(
+            frappe.has_permission(
+                parent.parenttype,
+                required_permission,
+                doc=parent.parent,
+                user=user,
+                ignore_share_permissions=True,
+            )
+        )
+    return bool(
+        frappe.has_permission(
+            attached_doctype,
+            required_permission,
+            doc=attached_name,
+            user=user,
+            ignore_share_permissions=True,
+        )
+    )
+
+
 def file_has_permission(doc, user=None, ptype=None, debug=False):
-    """Only HR may read or manage files attached to Driver HR/compliance records.
+    """Enforce Driver HR privacy and block unrelated duplicates of private Fleet files.
 
     Frappe v16.60.2's form docinfo returns all attachments for a readable parent,
     independent of field-level permissions. This controller permission closes the
@@ -182,9 +789,13 @@ def file_has_permission(doc, user=None, ptype=None, debug=False):
     """
     if not doc:
         return True
-    if not is_driver_private_attachment(doc):
-        return True
-    return can_access_driver_private_attachment(doc, user, ptype)
+    if is_driver_private_attachment(doc):
+        return can_access_driver_private_attachment(doc, user, ptype)
+    if is_company_scoped_fleet_attachment(doc):
+        if not is_direct_company_scoped_fleet_attachment(doc):
+            return (user or frappe.session.user) == "Administrator"
+        return can_access_company_scoped_fleet_attachment(doc, user, ptype)
+    return True
 
 
 def _has_hr_file_access(user=None):
@@ -394,7 +1005,10 @@ def _secure_duplicate_driver_file_rows(file_doc):
 
 
 def file_query_conditions(user=None):
-    """Keep Driver evidence and duplicate-content File rows out of generic lists."""
+    """Keep Driver evidence, Fleet files and duplicate-content rows out of generic lists."""
+    user = user or frappe.session.user
+    if user == "Administrator":
+        return None
     attached_parent_condition = (
         "COALESCE(`tabFile`.`attached_to_doctype`, '') "
         "NOT IN ('Driver', 'Driver Compliance Record')"
@@ -423,6 +1037,37 @@ def file_query_conditions(user=None):
         conditions.insert(
             0, f"COALESCE(`tabFile`.`{DRIVER_FILE_PRIVACY_FIELD}`, 0) = 0"
         )
+
+    fleet_doctypes = sorted(
+        COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
+    )
+    fleet_doctype_sql = ", ".join(f"'{doctype}'" for doctype in fleet_doctypes)
+    fleet_sources = [
+        f"`fleet_private_file`.`attached_to_doctype` IN ({fleet_doctype_sql})"
+    ]
+    has_fleet_marker = frappe.get_meta("File").has_field(FLEET_FILE_PRIVACY_FIELD)
+    if has_fleet_marker:
+        fleet_sources.append(
+            f"COALESCE(`fleet_private_file`.`{FLEET_FILE_PRIVACY_FIELD}`, 0) = 1"
+        )
+    fleet_hash_condition = (
+        "COALESCE(`tabFile`.`content_hash`, '') = '' OR "
+        "COALESCE(`tabFile`.`content_hash`, '') NOT IN ("
+        "SELECT `fleet_private_file`.`content_hash` FROM `tabFile` AS `fleet_private_file` "
+        "WHERE `fleet_private_file`.`content_hash` IS NOT NULL "
+        "AND `fleet_private_file`.`content_hash` <> '' AND ("
+        + " OR ".join(fleet_sources)
+        + "))"
+    )
+    fleet_duplicate_condition = f"COALESCE(`tabFile`.`attached_to_doctype`, '') NOT IN ({fleet_doctype_sql}) AND "
+    if has_fleet_marker:
+        fleet_duplicate_condition += (
+            f"COALESCE(`tabFile`.`{FLEET_FILE_PRIVACY_FIELD}`, 0) = 0 "
+            f"AND ({fleet_hash_condition})"
+        )
+    else:
+        fleet_duplicate_condition += f"({fleet_hash_condition})"
+    conditions.append(fleet_duplicate_condition)
     return " AND ".join(conditions)
 
 
@@ -468,6 +1113,65 @@ def _filter_driver_attachment_metadata(doctype, name=None):
         docinfo.attachment_logs = []
 
 
+def _file_belongs_to_parent(file_doc, doctype, name):
+    """Resolve child-row attachments to the parent document shown in Desk."""
+    if not doctype or not name:
+        return False
+    attached_doctype = file_doc.get("attached_to_doctype")
+    attached_name = file_doc.get("attached_to_name")
+    if attached_doctype == doctype and attached_name == name:
+        return True
+    if attached_doctype not in SOTRAMA_CHILD_TABLE_DOCTYPES or not attached_name:
+        return False
+    parent = frappe.db.get_value(
+        attached_doctype,
+        attached_name,
+        ["parenttype", "parent"],
+        as_dict=True,
+    )
+    return bool(parent and parent.parenttype == doctype and parent.parent == name)
+
+
+def _get_unrelated_fleet_attachment_names(attachments, doctype, name):
+    """Find Fleet-derived File rows incorrectly exposed through another parent's docinfo."""
+    names = sorted(
+        {
+            attachment.get("name")
+            for attachment in attachments or []
+            if attachment.get("name")
+        }
+    )
+    if not names:
+        return set()
+    fields = ["name", "content_hash", "attached_to_doctype", "attached_to_name"]
+    if frappe.get_meta("File").has_field(FLEET_FILE_PRIVACY_FIELD):
+        fields.append(FLEET_FILE_PRIVACY_FIELD)
+    files = frappe.get_all("File", filters={"name": ["in", names]}, fields=fields)
+    return {
+        file_doc.name
+        for file_doc in files
+        if is_company_scoped_fleet_attachment(file_doc)
+        and not _file_belongs_to_parent(file_doc, doctype, name)
+    }
+
+
+def _filter_fleet_attachment_metadata(doctype, name=None):
+    """Remove Fleet-derived duplicates from docinfo unless they belong to this parent."""
+    docinfo = frappe.response.get("docinfo")
+    if not docinfo:
+        return
+    private_names = _get_unrelated_fleet_attachment_names(
+        docinfo.get("attachments"), doctype, name
+    )
+    if private_names:
+        docinfo.attachments = [
+            attachment
+            for attachment in docinfo.get("attachments", [])
+            if attachment.get("name") not in private_names
+        ]
+        docinfo.attachment_logs = []
+
+
 def _require_driver_attachment_parent_read(doctype, name, user=None):
     """Require HR for child evidence and Company-scoped read on the parent Driver."""
     user = user or frappe.session.user
@@ -500,19 +1204,20 @@ def _require_driver_attachment_parent_read(doctype, name, user=None):
 
 @frappe.whitelist()
 def getdoc_with_driver_attachment_filter(doctype, name):
-    """Filter HR-only attachment metadata from the standard Driver form response."""
+    """Filter protected attachment metadata from the standard Desk form response."""
     if doctype in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES:
         _require_driver_attachment_parent_read(doctype, name)
     from frappe.desk.form.load import getdoc
 
     result = getdoc(doctype, name)
     _filter_driver_attachment_metadata(doctype, name)
+    _filter_fleet_attachment_metadata(doctype, name)
     return result
 
 
 @frappe.whitelist()
 def get_docinfo_with_driver_attachment_filter(*args, **kwargs):
-    """Filter HR-only attachments when the client requests docinfo separately."""
+    """Filter protected attachments when the client requests docinfo separately."""
     doc = kwargs.get("doc", args[0] if args else None)
     doctype = kwargs.get("doctype")
     if not doctype and doc:
@@ -537,12 +1242,13 @@ def get_docinfo_with_driver_attachment_filter(*args, **kwargs):
 
     result = get_docinfo(*args, **kwargs)
     _filter_driver_attachment_metadata(doctype, name)
+    _filter_fleet_attachment_metadata(doctype, name)
     return result
 
 
 @frappe.whitelist()
 def get_filtered_attachments_with_driver_attachment_filter(dt, dn, filters):
-    """Filter HR-only attachments from the standard attachment gallery endpoint."""
+    """Filter protected attachments from the standard attachment gallery endpoint."""
     if dt in PRIVATE_DRIVER_ATTACHMENT_DOCTYPES:
         _require_driver_attachment_parent_read(dt, dn)
     from frappe.desk.form.load import get_filtered_attachments
@@ -557,8 +1263,14 @@ def get_filtered_attachments_with_driver_attachment_filter(dt, dn, filters):
         return attachments
 
     private_names = _get_driver_private_attachment_names(attachments)
-    return [
+    attachments = [
         attachment for attachment in attachments if attachment.name not in private_names
+    ]
+    fleet_private_names = _get_unrelated_fleet_attachment_names(attachments, dt, dn)
+    return [
+        attachment
+        for attachment in attachments
+        if attachment.get("name") not in fleet_private_names
     ]
 
 
@@ -693,78 +1405,6 @@ def _redact_driver_attachment_comments(
             )
 
 
-def migrate_driver_private_attachments():
-    """Make existing Driver HR/compliance files private during the next migrate."""
-    _ensure_driver_file_privacy_field()
-    fields = ["name", "content_hash", "file_url", "is_private"]
-    if frappe.db.has_column("File", "is_remote_file"):
-        fields.append("is_remote_file")
-    files_by_name = {
-        row.name: row
-        for row in frappe.get_all(
-            "File",
-            filters={
-                "attached_to_doctype": ["in", ["Driver", "Driver Compliance Record"]],
-            },
-            fields=fields,
-        )
-    }
-    if frappe.get_meta("File").has_field(DRIVER_FILE_PRIVACY_FIELD):
-        for row in frappe.get_all(
-            "File", filters={DRIVER_FILE_PRIVACY_FIELD: 1}, fields=fields
-        ):
-            files_by_name[row.name] = row
-    content_hashes = {
-        row.content_hash for row in files_by_name.values() if row.content_hash
-    }
-    if content_hashes:
-        for row in frappe.get_all(
-            "File",
-            filters={"content_hash": ["in", sorted(content_hashes)]},
-            fields=fields,
-        ):
-            files_by_name[row.name] = row
-    files = list(files_by_name.values())
-    _validate_driver_private_file_paths(files)
-    for row in files:
-        file_doc = frappe.get_doc("File", row.name)
-        if not is_driver_private_attachment(file_doc):
-            continue
-        needs_save = (
-            not file_doc.is_private
-            or not file_doc.get(DRIVER_FILE_PRIVACY_FIELD)
-            or (file_doc.file_url or "").startswith("/files/")
-        )
-        setattr(file_doc, DRIVER_FILE_PRIVACY_FIELD, 1)
-        if _is_remote_file(file_doc):
-            # A remote URL cannot be made private by Frappe. Detach it from docinfo;
-            # the HR-only Driver field remains intact for HR to review/re-upload.
-            attached_doctype = file_doc.attached_to_doctype
-            attached_to_name = file_doc.attached_to_name
-            _redact_driver_attachment_comments(attached_doctype, attached_to_name)
-            file_doc.attached_to_doctype = None
-            file_doc.attached_to_name = None
-            file_doc.attached_to_field = None
-            file_doc.is_private = 1
-            file_doc.flags.allow_remote_driver_detach = True
-            file_doc.save(ignore_permissions=True)
-            _remove_private_driver_file_shares(file_doc.name)
-            frappe.log_error(
-                title="Remote Driver compliance attachment detached",
-                message=(
-                    f"File {file_doc.name} was a remote Driver HR/compliance attachment. "
-                    "It was detached from the attachment list; HR must replace it with a private upload."
-                ),
-            )
-            _secure_duplicate_driver_file_rows(file_doc)
-            continue
-        if needs_save:
-            file_doc.is_private = 1
-            file_doc.save(ignore_permissions=True)
-        _secure_duplicate_driver_file_rows(file_doc)
-        _remove_private_driver_file_shares(file_doc.name)
-
-
 def preserve_driver_file_privacy_on_uninstall():
     """Leave Driver compliance files private and Administrator-owned on uninstall."""
     _ensure_driver_file_privacy_field()
@@ -812,6 +1452,50 @@ def preserve_driver_file_privacy_on_uninstall():
         file_doc.owner = "Administrator"
         file_doc.flags.allow_remote_driver_detach = True
         file_doc.save(ignore_permissions=True)
+
+
+def preserve_fleet_file_privacy_on_uninstall():
+    """Detach Fleet-derived files before their parent DocTypes are removed."""
+    from sotrama.migrations.security import migrate_fleet_attachments_private
+
+    migrate_fleet_attachments_private()
+    files = frappe.get_all(
+        "File",
+        filters={FLEET_FILE_PRIVACY_FIELD: 1},
+        fields=["name"],
+        limit_page_length=0,
+    )
+    previous_migration_flag = frappe.flags.get("in_fleet_attachment_migration")
+    frappe.flags.in_fleet_attachment_migration = True
+    try:
+        for row in files:
+            file_doc = frappe.get_doc("File", row.name)
+            if (
+                not file_doc.attached_to_doctype
+                and not file_doc.attached_to_name
+                and file_doc.owner == "Administrator"
+                and file_doc.is_private
+                and not (file_doc.file_url or "").startswith("/files/")
+            ):
+                continue
+            _redact_driver_attachment_comments(
+                file_doc.attached_to_doctype,
+                file_doc.attached_to_name,
+                file_doc,
+            )
+            _clear_attached_file_field(file_doc)
+            if file_doc.is_private and (file_doc.file_url or "").startswith("/files/"):
+                file_doc.handle_is_private_changed()
+            file_doc.is_private = 1
+            setattr(file_doc, FLEET_FILE_PRIVACY_FIELD, 1)
+            file_doc.attached_to_doctype = None
+            file_doc.attached_to_name = None
+            file_doc.attached_to_field = None
+            file_doc.owner = "Administrator"
+            file_doc.save(ignore_permissions=True)
+            _remove_private_driver_file_shares(file_doc.name)
+    finally:
+        frappe.flags.in_fleet_attachment_migration = previous_migration_flag
 
 
 def _check_tp_settings_field_read_permission(
@@ -911,6 +1595,21 @@ def tp_settings_query_conditions(user=None):
     return "1=0"
 
 
+def _check_sotrama_child_table_rpc_access(doctype, user=None):
+    """Require parent-document access for every Sotrama child-table read."""
+    if doctype not in SOTRAMA_CHILD_TABLE_DOCTYPES:
+        return
+    user = user or frappe.session.user
+    if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+        return
+    frappe.throw(
+        frappe._(
+            "Sotrama child-table rows must be accessed through their parent document."
+        ),
+        frappe.PermissionError,
+    )
+
+
 def _check_driver_compliance_child_rpc_access(doctype, user=None):
     """Keep medical child rows out of generic list/value APIs."""
     if doctype != "Driver Compliance Record":
@@ -984,6 +1683,13 @@ def prevent_unsafe_fleet_docsharing(doc, method=None):
         if grants_access and is_driver_private_attachment(file_doc):
             frappe.throw(
                 frappe._("Driver compliance attachments cannot be shared directly."),
+                frappe.PermissionError,
+            )
+        if grants_access and is_company_scoped_fleet_attachment(file_doc):
+            frappe.throw(
+                frappe._(
+                    "Fleet attachments inherit access from their parent record and cannot be shared independently."
+                ),
                 frappe.PermissionError,
             )
     if doc.share_doctype in COMPANY_SCOPED_FLEET_DOCTYPES:
@@ -1130,8 +1836,24 @@ def remove_unsafe_fleet_docshares(user=None, owner=None, doctype=None, name=None
                 file_doc = frappe.get_doc("File", share.share_name)
             except frappe.DoesNotExistError:
                 file_doc = None
-            if not file_doc or is_driver_private_attachment(file_doc):
+            if (
+                not file_doc
+                or is_driver_private_attachment(file_doc)
+                or is_company_scoped_fleet_attachment(file_doc)
+            ):
                 frappe.db.delete("DocShare", {"name": share.name})
+
+
+def remove_unsafe_fleet_docshares_for_file(doc, method=None):
+    """Remove independent shares when a File is or was attached to a Fleet record."""
+    previous = doc.get_doc_before_save()
+    if (
+        is_driver_private_attachment(doc)
+        or is_company_scoped_fleet_attachment(doc)
+        or is_driver_private_attachment(previous)
+        or is_company_scoped_fleet_attachment(previous)
+    ):
+        frappe.db.delete("DocShare", {"share_doctype": "File", "share_name": doc.name})
 
 
 def remove_unsafe_fleet_docshares_for_user(doc, method=None):
@@ -1159,6 +1881,7 @@ def get_value_with_tp_settings_field_permissions(
     doctype, fieldname, filters=None, as_dict=True, debug=False, parent=None
 ):
     """Protect field-level TP Settings values exposed by frappe.client.get_value."""
+    _check_sotrama_child_table_rpc_access(doctype)
     _check_driver_compliance_child_rpc_access(doctype)
     _check_tp_company_defaults_child_access(doctype)
     _check_tp_settings_field_read_permission(doctype, fieldname, filters=filters)
@@ -1183,6 +1906,7 @@ def get_list_with_tp_settings_permissions(
     expand=None,
 ):
     """Protect TP Settings singleton and child-table list RPCs."""
+    _check_sotrama_child_table_rpc_access(doctype)
     _check_driver_compliance_child_rpc_access(doctype)
     if (
         doctype == "TP Settings"
@@ -1226,6 +1950,7 @@ def validate_link_and_fetch_without_tp_settings_singleton(
     doctype, docname, fields_to_fetch=None, query=None, filters=None, **search_args
 ):
     """Protect restricted singleton and HR-only child records from link-fetch RPCs."""
+    _check_sotrama_child_table_rpc_access(doctype)
     _check_driver_compliance_child_rpc_access(doctype)
     _check_tp_company_defaults_child_access(doctype)
     if doctype in {"TP Settings", "TP Company Defaults"}:

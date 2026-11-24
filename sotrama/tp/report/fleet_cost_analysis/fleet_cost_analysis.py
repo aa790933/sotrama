@@ -108,12 +108,19 @@ def _date_filters(filters, fieldname):
 
 
 def _estimate_depreciation(vehicle, filters):
-    """Estimate straight-line depreciation for the report period, capped at cost."""
+    """Estimate straight-line depreciation, capped at the remaining depreciable basis."""
     if not vehicle.acquisition_date or not vehicle.acquisition_value:
         return 0.0
 
+    acquisition_value = flt(vehicle.acquisition_value)
+    salvage_value = flt(vehicle.salvage_value)
     rate = flt(vehicle.depreciation_rate)
-    if rate <= 0:
+    if (
+        acquisition_value <= 0
+        or salvage_value < 0
+        or salvage_value > acquisition_value
+        or not 0 < rate <= 100
+    ):
         return 0.0
 
     acquisition_date = getdate(vehicle.acquisition_date)
@@ -128,8 +135,15 @@ def _estimate_depreciation(vehicle, filters):
     # Report date filters are inclusive (>= from_date and <= to_date), so a
     # one-day reporting period must accrue one day rather than zero.
     days = max(date_diff(period_end, period_start) + 1, 0)
-    depreciable_value = max(flt(vehicle.acquisition_value) - flt(vehicle.salvage_value), 0)
-    return min(depreciable_value, depreciable_value * rate / 100.0 * days / 365.0)
+    depreciable_value = acquisition_value - salvage_value
+    elapsed_days = max(date_diff(period_start, acquisition_date), 0)
+    depreciation_before_period = min(
+        depreciable_value,
+        depreciable_value * rate / 100.0 * elapsed_days / 365.0,
+    )
+    remaining_depreciable_value = max(depreciable_value - depreciation_before_period, 0)
+    period_depreciation = depreciable_value * rate / 100.0 * days / 365.0
+    return min(remaining_depreciable_value, period_depreciation)
 
 
 def get_data(filters):
@@ -199,7 +213,9 @@ def get_data(filters):
     for vehicle in vehicles:
         maintenance = costs_by_vehicle.get(vehicle.name)
         parts_and_labour = (
-            flt(maintenance.parts_cost) + flt(maintenance.labour_cost) if maintenance else 0
+            flt(maintenance.parts_cost) + flt(maintenance.labour_cost)
+            if maintenance
+            else 0
         )
         other_costs = flt(maintenance.other_cost) if maintenance else 0
         distance = distance_by_vehicle.get(vehicle.name, 0)

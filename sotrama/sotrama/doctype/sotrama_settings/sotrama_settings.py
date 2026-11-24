@@ -10,9 +10,10 @@ class SotramaSettings(Document):
 
     def on_update(self):
         if self.is_new() or self.has_value_changed("enable_algerian_company_fields"):
-            from sotrama.hooks import sync_company_fields
+            from sotrama.setup.company import sync_company_fields
 
             sync_company_fields()
+
 
 @frappe.whitelist()
 def create_missing_public_works_designations():

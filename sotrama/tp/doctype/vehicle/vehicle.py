@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 
 class Vehicle(Document):
@@ -20,6 +21,7 @@ class Vehicle(Document):
 
         validate_company_access(self.company, "Vehicle")
         self._validate_chassis()
+        self._validate_asset_values()
         self._validate_make_model()
         self._validate_company_links()
         self._validate_asset_link()
@@ -82,6 +84,28 @@ class Vehicle(Document):
         if self.chassis_no and len(str(self.chassis_no)) < 10:
             frappe.throw(_("Chassis Number seems too short — please verify"))
 
+    def _validate_asset_values(self):
+        """Keep acquisition, salvage and annual depreciation inputs coherent."""
+        previous = self.get_doc_before_save()
+        fields = ("acquisition_value", "depreciation_rate", "salvage_value")
+        if previous and all(
+            flt(previous.get(field)) == flt(self.get(field)) for field in fields
+        ):
+            return
+
+        acquisition_value = flt(self.acquisition_value)
+        depreciation_rate = flt(self.depreciation_rate)
+        salvage_value = flt(self.salvage_value)
+
+        if acquisition_value < 0:
+            frappe.throw(_("Acquisition Value cannot be negative."))
+        if salvage_value < 0:
+            frappe.throw(_("Salvage Value cannot be negative."))
+        if salvage_value > acquisition_value:
+            frappe.throw(_("Salvage Value cannot exceed Acquisition Value."))
+        if not 0 <= depreciation_rate <= 100:
+            frappe.throw(_("Depreciation Rate must be between 0 and 100 percent."))
+
     def _validate_make_model(self):
         from sotrama.tp.validation import validate_linked_document_read_permission
 
@@ -123,7 +147,9 @@ class Vehicle(Document):
             if not model or not model.active:
                 frappe.throw(_("Select an active Vehicle Model."))
             if model.vehicle_make != self.vehicle_make:
-                frappe.throw(_("Vehicle Model must belong to the selected Vehicle Make."))
+                frappe.throw(
+                    _("Vehicle Model must belong to the selected Vehicle Make.")
+                )
 
     def _set_defaults(self):
         from sotrama.tp.settings import get_tp_company_setting, get_tp_setting

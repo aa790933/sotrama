@@ -151,7 +151,7 @@
    "label": "Acquisition Value (DZD)",
    "fieldname": "acquisition_value",
    "fieldtype": "Currency",
-   "description": "Purchase value in Algerian Dinars",
+   "description": "Purchase value in Algerian Dinars; cannot be negative.",
    "permlevel": 1
   },
   {
@@ -166,14 +166,14 @@
    "fieldname": "depreciation_rate",
    "fieldtype": "Float",
    "default": "10",
-   "description": "Annual depreciation rate as percentage",
+   "description": "Annual depreciation rate as a percentage (0 to 100).",
    "permlevel": 1
   },
   {
    "label": "Salvage Value (DZD)",
    "fieldname": "salvage_value",
    "fieldtype": "Currency",
-   "description": "Estimated residual value at end of useful life",
+   "description": "Estimated residual value at end of useful life; cannot exceed Acquisition Value.",
    "permlevel": 1
   },
   {

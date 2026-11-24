@@ -27,7 +27,7 @@ hrms = ">=16.60.0,<17.0.0"
 [tool.frappe]
 app_name = "sotrama"
 app_title = "Sotrama"
-app_description = "Algerian company localization and public-works fleet management for ERPNext and Frappe HR."
+app_description = "Algerian company setup and public-works fleet management for ERPNext and Frappe HR."
 app_publisher = "dekukoda41"
 app_email = "dekukoda41@users.noreply.github.com"
 app_license = "MIT"

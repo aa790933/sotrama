@@ -46,6 +46,13 @@ Sotrama links to the standard ERPNext / Frappe HR records wherever they exist:
 The app does not create parallel general ledgers, stock ledgers, employees or
 company records.
 
+The code follows Frappe's application lifecycle boundaries: `hooks.py` contains
+framework metadata and dotted hook paths; `setup/` owns installation,
+uninstallation and optional Company configuration; `migrations/` contains
+domain-specific one-off data transformations; and `patches/` contains only
+the ordered migration entry points registered in `patches.txt`. Fleet DocTypes
+and their controllers remain grouped under `tp/doctype/`.
+
 ## Modules
 
 ### Algerian Company Setup
@@ -131,6 +138,12 @@ The TP module currently provides:
 
 Supporting child tables hold vehicle documents, job-card parts/labour/costs,
 photos, inspection items and restricted driver compliance history.
+
+Vehicle Model records use an internal deterministic key derived from the linked
+Vehicle Make record and model designation. The form and Link fields display the
+manufacturer's model designation, while the make selector scopes duplicate
+checks and model choices. This avoids collisions when different valid make/model
+names contain the same hyphen-separated text.
 
 The **Sotrama Fleet** workspace presents submitted-fleet indicators first, then
 descriptive cards for daily operations, maintenance and safety, reports, and
@@ -239,8 +252,9 @@ Company permissions; otherwise they remain assigned to Administrator. Driver
 licence numbers never appear in Fleet ToDos, and safety-training or professional
 compliance reminders are routed to an authorized HR Manager. Breakdown links on
 Maintenance Job Cards are workflow-managed and must match the same Vehicle and
-Company. The next `bench migrate` also sanitizes and reassigns legacy generated
-Fleet ToDos that were created before Company-aware routing. The restricted
+Company. The one-time 1.3.x upgrade patch sanitizes and reassigns legacy generated
+Fleet ToDos that were created before Company-aware routing; this scan does not
+run on every ordinary site migration. The restricted
 Employee name/designation lookup is limited to the target Fleet workflow and
 checks the applicable Company scope for the target record, Employee and Vehicle;
 it does not grant Fleet Manager or Workshop general Employee read access.
@@ -363,6 +377,59 @@ until any existing custom fields have been reviewed.
   Sidebars are used. Frappe 16.60 registers app modules declared in
   `modules.txt` during migration; Sotrama does not maintain a parallel module
   registry or patch the framework's Module Def lifecycle.
+- `hooks.py` is metadata-only. Install and uninstall behavior lives in
+  `setup/install.py` and `setup/uninstall.py`; Company field ownership and
+  opt-in behavior live in `setup/company.py`.
+- Pre-production 1.3.x data cleanup is consolidated into one
+  `post_model_sync` patch, registered as `never_skip_patches` because it includes
+  security-sensitive Driver attachment and DocShare remediation. Fresh installs
+  use `after_install` for default records; Frappe marks upgrade patches complete
+  during a fresh install, so legacy data scans are not run on an empty site.
+  Future patches should be added only for a real one-off data migration and
+  placed in the appropriate pre/post model-sync section.
+- The File privacy marker needed by Driver attachment security is provisioned
+  in `before_install`, before Frappe stamps the app's patches as completed; the
+  upgrade patch creates the same marker on existing sites. This keeps a fresh
+  install independent of a migration that Frappe intentionally skips.
+- `after_migrate` performs only a single-value check for the hidden
+  `Sotrama Settings.setup_initialized` marker. It retries default-master setup
+  only when an interrupted `after_install` did not finish; successful installs
+  and ordinary migrations do not repeat the seed operations.
+- Sotrama child-table rows are exposed through their parent document, not
+  generic list/value APIs. This avoids bypassing Company User Permissions on
+  parent records. Independent DocShare grants for Fleet attachments are also
+  rejected; attachments inherit access from their owning Fleet record, and the
+  migration removes legacy independent File shares. A File controller mixin
+  sets privacy before Frappe's `File.before_insert` stores uploaded bytes, and
+  a `before_validate` hook enforces privacy on updates. Its download check also
+  verifies read access to the exact Fleet parent before Frappe's File-owner
+  shortcut can grant access. Existing public local
+  files are migrated through `File.save(ignore_permissions=True)` so Frappe's
+  storage lifecycle moves the blob and updates duplicate File rows. Remote URLs
+  cannot be made private by site storage, so legacy remote Fleet attachments are
+  detached from the record and their attachment comments are redacted; replace
+  them with private uploads. The File controller also rejects copying or
+  re-uploading identical Fleet attachment content onto unrelated DocTypes, which
+  would otherwise create another permission path to the same private blob.
+  Reusing protected Fleet/Driver file content across Companies is also rejected;
+  child-row attachments resolve their Company through the owning parent record.
+  Moving an existing Fleet attachment between parents requires write access to
+  its original parent; cross-Company moves are reserved for Administrator and
+  System Manager. Reusing an existing private URL also requires current read
+  access to its source parent; a File owner shortcut is not sufficient. Detached
+  Fleet-protected files cannot be reattached by ordinary users.
+  The upgrade migration detaches legacy unrelated duplicate File rows, clears
+  their Attach fields/comments and shares, and makes them Administrator-owned.
+  The same duplicate cleanup runs when a new Fleet attachment reuses existing
+  content, so an unrelated File row cannot keep an alternate access path.
+  A persistent File marker preserves this restriction if a Fleet attachment is
+  later detached from its parent; detached Fleet-derived files remain private
+  and cannot be shared independently. File ownership and legacy DocShare grants
+  do not override the current read/write permission on the exact Fleet parent.
+  Uninstall detaches these files, keeps them private and Administrator-owned,
+  and leaves the persistent privacy marker in place. External/remote URLs are
+  detached and logged for manual replacement because Frappe cannot move an
+  externally hosted resource into private storage.
 - Optional Company fields are created only by explicit opt-in. They are not
   imported through Custom Field fixtures or synchronized during migration.
   Saving Sotrama Settings is the only operation that applies the optional

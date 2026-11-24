@@ -34,7 +34,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "reqd": 1,
-   "description": "Enter the manufacturer's model designation. The record ID combines the selected make and this model name."
+   "description": "Enter the manufacturer's model designation. The internal record ID is generated from the selected make and model name."
   },
   {
    "label": "Description",
@@ -54,7 +54,7 @@
  "is_submittable": 0,
  "track_changes": 1,
  "title_field": "model_name",
- "show_title_field_in_link": 0,
+ "show_title_field_in_link": 1,
  "naming_rule": "By script",
  "autoname": "",
  "permissions": [

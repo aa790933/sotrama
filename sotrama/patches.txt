@@ -1,9 +1,8 @@
-# Patches are run in order during `bench migrate`.
-# Each patch is run only once per site.
-# Add patch files under the relevant module's patches/ directory and reference them here.
-sotrama.tp.patches.v1_0.register_doctype_masters
-sotrama.tp.patches.v1_3.ensure_default_masters
-sotrama.tp.patches.v1_3.migrate_fleet_document_options
-sotrama.tp.patches.v1_3.simplify_fleet_reference_masters
-sotrama.tp.patches.v1_3.remove_legacy_algerian_localization_workspace
-sotrama.tp.patches.v1_3.normalize_fleet_master_names
+# Pre-production 1.3.x upgrade compatibility is consolidated into one
+# post-model-sync migration. Fresh installs are marked patched by Frappe and
+# receive defaults through setup.install.initialize_app instead.
+
+[pre_model_sync]
+
+[post_model_sync]
+sotrama.patches.v1_4.initial_data_cleanup
