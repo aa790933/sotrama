@@ -1,0 +1,1013 @@
+{
+  ".github/workflows/ci.yml": {
+    "mtime": 1795508639.4629748,
+    "seen": 1795511675.5316782,
+    "ast_hash": "7c16bc9f35cd6b757ec63a73f2cb0610",
+    "semantic_hash": "7c16bc9f35cd6b757ec63a73f2cb0610"
+  },
+  ".github/workflows/release.yml": {
+    "mtime": 1795094809.9681816,
+    "seen": 1795511675.5325491,
+    "ast_hash": "5b4daca429ceaf6008ce0bce0d729b35",
+    "semantic_hash": "5b4daca429ceaf6008ce0bce0d729b35"
+  },
+  "pyproject.toml": {
+    "mtime": 1795440837.9880583,
+    "seen": 1795511675.5332816,
+    "ast_hash": "3177742dd958c5523d12ee1d3fcb3c46",
+    "semantic_hash": "3177742dd958c5523d12ee1d3fcb3c46"
+  },
+  "skills-lock.json": {
+    "mtime": 1795511298.9195893,
+    "seen": 1795511675.5338295,
+    "ast_hash": "deafd84ce1ef8a142d7f2a46802b4a2a",
+    "semantic_hash": "deafd84ce1ef8a142d7f2a46802b4a2a",
+    "ast_empty": true
+  },
+  "sotrama/__init__.py": {
+    "mtime": 1795095289.6123257,
+    "seen": 1795511675.533836,
+    "ast_hash": "901c0d764f35f532db076d28b0456853",
+    "semantic_hash": "901c0d764f35f532db076d28b0456853"
+  },
+  "sotrama/config/__init__.py": {
+    "mtime": 1794824297.558175,
+    "seen": 1795511675.5343652,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/config/desktop.py": {
+    "mtime": 1795355502.0949242,
+    "seen": 1795511675.535022,
+    "ast_hash": "7379c35ea2f1e2edfb72318b429431ee",
+    "semantic_hash": "7379c35ea2f1e2edfb72318b429431ee"
+  },
+  "sotrama/config/docs.py": {
+    "mtime": 1795440825.3563876,
+    "seen": 1795511675.5356343,
+    "ast_hash": "c08f00db7d0c92af89a1ddf0ab77b857",
+    "semantic_hash": "c08f00db7d0c92af89a1ddf0ab77b857"
+  },
+  "sotrama/designations.py": {
+    "mtime": 1795082522.137651,
+    "seen": 1795511675.5361805,
+    "ast_hash": "20269a9dd9f9c94ce3b82e4c05df9aca",
+    "semantic_hash": "20269a9dd9f9c94ce3b82e4c05df9aca"
+  },
+  "sotrama/dock/sotrama/sotrama.json": {
+    "mtime": 1795355183.1907377,
+    "seen": 1795511675.537129,
+    "ast_hash": "f2d76f42c7c531699f4aec78f7c81ad2",
+    "semantic_hash": "f2d76f42c7c531699f4aec78f7c81ad2",
+    "ast_empty": true
+  },
+  "sotrama/hooks.py": {
+    "mtime": 1795503907.7164168,
+    "seen": 1795511675.5371382,
+    "ast_hash": "9134a0e255a23d1bbf3c046400f54842",
+    "semantic_hash": "9134a0e255a23d1bbf3c046400f54842"
+  },
+  "sotrama/migrations/__init__.py": {
+    "mtime": 1795439996.2013586,
+    "seen": 1795511675.5378938,
+    "ast_hash": "3183c54493e9d90d49c3b06c56d6b105",
+    "semantic_hash": "3183c54493e9d90d49c3b06c56d6b105"
+  },
+  "sotrama/migrations/company.py": {
+    "mtime": 1795440173.4244897,
+    "seen": 1795511675.5390043,
+    "ast_hash": "3d9f470382dd33f357d68cf6afb9c6b0",
+    "semantic_hash": "3d9f470382dd33f357d68cf6afb9c6b0"
+  },
+  "sotrama/migrations/fleet_documents.py": {
+    "mtime": 1795440502.3208127,
+    "seen": 1795511675.5397696,
+    "ast_hash": "949e7bcd485bd36683f1bcb641bf7e3b",
+    "semantic_hash": "949e7bcd485bd36683f1bcb641bf7e3b"
+  },
+  "sotrama/migrations/fleet_master_names.py": {
+    "mtime": 1795443549.6582224,
+    "seen": 1795511675.5403771,
+    "ast_hash": "50fcb8b80256739d47b810e672297483",
+    "semantic_hash": "50fcb8b80256739d47b810e672297483"
+  },
+  "sotrama/migrations/fleet_reference_masters.py": {
+    "mtime": 1795440502.3649788,
+    "seen": 1795511675.5411508,
+    "ast_hash": "9ada67b942704bed15174216775ef590",
+    "semantic_hash": "9ada67b942704bed15174216775ef590"
+  },
+  "sotrama/migrations/navigation.py": {
+    "mtime": 1795440688.227931,
+    "seen": 1795511675.5417812,
+    "ast_hash": "0d3d48161a61263bb496a56715bbd15f",
+    "semantic_hash": "0d3d48161a61263bb496a56715bbd15f"
+  },
+  "sotrama/migrations/security.py": {
+    "mtime": 1795508139.2934847,
+    "seen": 1795511675.5422482,
+    "ast_hash": "023a113b0e08bf81c34ebb3664d9879d",
+    "semantic_hash": "023a113b0e08bf81c34ebb3664d9879d"
+  },
+  "sotrama/overrides/__init__.py": {
+    "mtime": 1795096303.1617959,
+    "seen": 1795511675.5428007,
+    "ast_hash": "ef37215814682b215e237c341c3ee779",
+    "semantic_hash": "ef37215814682b215e237c341c3ee779"
+  },
+  "sotrama/overrides/file.py": {
+    "mtime": 1795507826.542923,
+    "seen": 1795511675.5433505,
+    "ast_hash": "5259538c29e7d9fe448b4de9d6226d32",
+    "semantic_hash": "5259538c29e7d9fe448b4de9d6226d32"
+  },
+  "sotrama/patches/__init__.py": {
+    "mtime": 1795440225.2569184,
+    "seen": 1795511675.544079,
+    "ast_hash": "6500647672b2a30a2df78db467596da7",
+    "semantic_hash": "6500647672b2a30a2df78db467596da7"
+  },
+  "sotrama/patches/v1_4/__init__.py": {
+    "mtime": 1795440225.2606738,
+    "seen": 1795511675.544663,
+    "ast_hash": "2964b410fbd10ccf70f7cccd714bbe33",
+    "semantic_hash": "2964b410fbd10ccf70f7cccd714bbe33"
+  },
+  "sotrama/patches/v1_4/initial_data_cleanup.py": {
+    "mtime": 1795445229.316336,
+    "seen": 1795511675.5452044,
+    "ast_hash": "8d34ccf00a73fbb8b5b289a317d80aa5",
+    "semantic_hash": "8d34ccf00a73fbb8b5b289a317d80aa5"
+  },
+  "sotrama/permissions.py": {
+    "mtime": 1795508796.5858076,
+    "seen": 1795511675.5457423,
+    "ast_hash": "02fa06bb68d2ea1028fcac846f125fd0",
+    "semantic_hash": "02fa06bb68d2ea1028fcac846f125fd0"
+  },
+  "sotrama/public/js/breakdown.js": {
+    "mtime": 1795351850.1074781,
+    "seen": 1795511675.5462732,
+    "ast_hash": "21340407f38746e0942764214ee8b2c2",
+    "semantic_hash": "21340407f38746e0942764214ee8b2c2"
+  },
+  "sotrama/public/js/company_classification.js": {
+    "mtime": 1795351399.8076923,
+    "seen": 1795511675.5468693,
+    "ast_hash": "0c2d25d5ad37c336b9234e64018a2a11",
+    "semantic_hash": "0c2d25d5ad37c336b9234e64018a2a11"
+  },
+  "sotrama/public/js/driver.js": {
+    "mtime": 1795351801.863796,
+    "seen": 1795511675.5474107,
+    "ast_hash": "a479e9a33dad6fd6431407f345431899",
+    "semantic_hash": "a479e9a33dad6fd6431407f345431899"
+  },
+  "sotrama/public/js/inspection.js": {
+    "mtime": 1795423302.3644383,
+    "seen": 1795511675.5479596,
+    "ast_hash": "199911ee995b7fb169f3591f71ca5963",
+    "semantic_hash": "199911ee995b7fb169f3591f71ca5963"
+  },
+  "sotrama/public/js/job_card.js": {
+    "mtime": 1795423302.3644383,
+    "seen": 1795511675.5487,
+    "ast_hash": "d2d37e7b366e35bad7eab3386dab013a",
+    "semantic_hash": "d2d37e7b366e35bad7eab3386dab013a"
+  },
+  "sotrama/public/js/maintenance_schedule.js": {
+    "mtime": 1795351801.870798,
+    "seen": 1795511675.549273,
+    "ast_hash": "e16020aaa18573116a655cdd7e3cb466",
+    "semantic_hash": "e16020aaa18573116a655cdd7e3cb466"
+  },
+  "sotrama/public/js/operational_task.js": {
+    "mtime": 1795349637.7250867,
+    "seen": 1795511675.5498023,
+    "ast_hash": "7bfafa3de025d49ce444f1f97708cb9b",
+    "semantic_hash": "7bfafa3de025d49ce444f1f97708cb9b"
+  },
+  "sotrama/public/js/sotrama_settings.js": {
+    "mtime": 1795423302.3644383,
+    "seen": 1795511675.5503218,
+    "ast_hash": "d2e50a418a12573f68103e540722ee32",
+    "semantic_hash": "d2e50a418a12573f68103e540722ee32"
+  },
+  "sotrama/public/js/tp_settings.js": {
+    "mtime": 1795338850.224562,
+    "seen": 1795511675.5507722,
+    "ast_hash": "3759e657b2f423c9de941d49e99ca610",
+    "semantic_hash": "3759e657b2f423c9de941d49e99ca610"
+  },
+  "sotrama/public/js/vehicle.js": {
+    "mtime": 1795351477.403788,
+    "seen": 1795511675.551213,
+    "ast_hash": "141e0328172e27d68833529acfb95f0d",
+    "semantic_hash": "141e0328172e27d68833529acfb95f0d"
+  },
+  "sotrama/public/js/vehicle_model.js": {
+    "mtime": 1795337813.1750562,
+    "seen": 1795511675.5517542,
+    "ast_hash": "7b564e83ad7a810c7f183279856f46f9",
+    "semantic_hash": "7b564e83ad7a810c7f183279856f46f9"
+  },
+  "sotrama/setup/__init__.py": {
+    "mtime": 1795440568.641717,
+    "seen": 1795511675.552272,
+    "ast_hash": "d53a197557817fc0a2ebe3ef2093be59",
+    "semantic_hash": "d53a197557817fc0a2ebe3ef2093be59"
+  },
+  "sotrama/setup/company.py": {
+    "mtime": 1795440026.3375466,
+    "seen": 1795511675.552836,
+    "ast_hash": "7d4c40501f3f58698279f8f182af78a5",
+    "semantic_hash": "7d4c40501f3f58698279f8f182af78a5"
+  },
+  "sotrama/setup/install.py": {
+    "mtime": 1795506514.69534,
+    "seen": 1795511675.5536592,
+    "ast_hash": "c00c5fdabd3ac8fd83567a53e6d90e2b",
+    "semantic_hash": "c00c5fdabd3ac8fd83567a53e6d90e2b"
+  },
+  "sotrama/setup/masters.py": {
+    "mtime": 1795441819.279565,
+    "seen": 1795511675.5545404,
+    "ast_hash": "34e04ca6eccbec53b0107919ced0ae4f",
+    "semantic_hash": "34e04ca6eccbec53b0107919ced0ae4f"
+  },
+  "sotrama/setup/uninstall.py": {
+    "mtime": 1795505963.8017702,
+    "seen": 1795511675.555575,
+    "ast_hash": "bc2134817ddf8dfdb0ec6ec4d8062b1b",
+    "semantic_hash": "bc2134817ddf8dfdb0ec6ec4d8062b1b"
+  },
+  "sotrama/sotrama/__init__.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5563214,
+    "ast_hash": "879a5adbe362fa87ca4aad5594b81ece",
+    "semantic_hash": "879a5adbe362fa87ca4aad5594b81ece"
+  },
+  "sotrama/sotrama/doctype/__init__.py": {
+    "mtime": 1795008587.490502,
+    "seen": 1795511675.5571537,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/doctype/sotrama_settings/__init__.py": {
+    "mtime": 1795008587.492501,
+    "seen": 1795511675.5575557,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.json": {
+    "mtime": 1795441819.275568,
+    "seen": 1795511675.557921,
+    "ast_hash": "b9b49f54419131748c23598279e5edea",
+    "semantic_hash": "b9b49f54419131748c23598279e5edea",
+    "ast_empty": true
+  },
+  "sotrama/sotrama/doctype/sotrama_settings/sotrama_settings.py": {
+    "mtime": 1795440428.3854692,
+    "seen": 1795511675.557927,
+    "ast_hash": "89ce10b062ae175d0d7905a18b50ac1b",
+    "semantic_hash": "89ce10b062ae175d0d7905a18b50ac1b"
+  },
+  "sotrama/sotrama/sidebar/__init__.py": {
+    "mtime": 1795080153.3989127,
+    "seen": 1795511675.5582914,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/sidebar/sotrama/__init__.py": {
+    "mtime": 1795080153.400914,
+    "seen": 1795511675.5587194,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/sidebar/sotrama/sotrama.json": {
+    "mtime": 1795355193.980693,
+    "seen": 1795511675.5590744,
+    "ast_hash": "9733f1a0b09b18a7554757bc7aac530b",
+    "semantic_hash": "9733f1a0b09b18a7554757bc7aac530b",
+    "ast_empty": true
+  },
+  "sotrama/sotrama/workspace/__init__.py": {
+    "mtime": 1795008587.518501,
+    "seen": 1795511675.5590801,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/workspace/sotrama/__init__.py": {
+    "mtime": 1795008587.5205002,
+    "seen": 1795511675.559488,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/sotrama/workspace/sotrama/sotrama.json": {
+    "mtime": 1795355212.946514,
+    "seen": 1795511675.5598505,
+    "ast_hash": "9b10a917352c99b974e5b182317d7634",
+    "semantic_hash": "9b10a917352c99b974e5b182317d7634",
+    "ast_empty": true
+  },
+  "sotrama/tests/__init__.py": {
+    "mtime": 1794832202.4357016,
+    "seen": 1795511675.5598557,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tests/helpers.py": {
+    "mtime": 1795440802.6433692,
+    "seen": 1795511675.5601947,
+    "ast_hash": "8d7fae6b62c7aad5726ef6b0802aff09",
+    "semantic_hash": "8d7fae6b62c7aad5726ef6b0802aff09"
+  },
+  "sotrama/tests/test_breakdown.py": {
+    "mtime": 1795443981.744277,
+    "seen": 1795511675.5605478,
+    "ast_hash": "976c438a9ea42384e4db37a82b32aa7b",
+    "semantic_hash": "976c438a9ea42384e4db37a82b32aa7b"
+  },
+  "sotrama/tests/test_company_classification.py": {
+    "mtime": 1795443981.7472663,
+    "seen": 1795511675.5608864,
+    "ast_hash": "b47581376dd7efa3f82a0571e286b72f",
+    "semantic_hash": "b47581376dd7efa3f82a0571e286b72f"
+  },
+  "sotrama/tests/test_driver.py": {
+    "mtime": 1795443981.7682667,
+    "seen": 1795511675.5614886,
+    "ast_hash": "d2cd02f384f62e21f95a9fa6b0e3e49a",
+    "semantic_hash": "d2cd02f384f62e21f95a9fa6b0e3e49a"
+  },
+  "sotrama/tests/test_maintenance.py": {
+    "mtime": 1795443981.743266,
+    "seen": 1795511675.5618846,
+    "ast_hash": "7c6d91c1f90464ae7f47ad3061deacc3",
+    "semantic_hash": "7c6d91c1f90464ae7f47ad3061deacc3"
+  },
+  "sotrama/tests/test_permissions.py": {
+    "mtime": 1795508734.839386,
+    "seen": 1795511675.5624707,
+    "ast_hash": "bdd9eaa35db821032f8deb4c7c6b9f29",
+    "semantic_hash": "bdd9eaa35db821032f8deb4c7c6b9f29"
+  },
+  "sotrama/tests/test_reports.py": {
+    "mtime": 1795506389.5519695,
+    "seen": 1795511675.563033,
+    "ast_hash": "85d934bf42bd1fd09ba28b7876f267c9",
+    "semantic_hash": "85d934bf42bd1fd09ba28b7876f267c9"
+  },
+  "sotrama/tests/test_scheduler.py": {
+    "mtime": 1795441745.110073,
+    "seen": 1795511675.5635815,
+    "ast_hash": "dcbd2a76ecd74d25cebea438c7f3e19a",
+    "semantic_hash": "dcbd2a76ecd74d25cebea438c7f3e19a"
+  },
+  "sotrama/tests/test_setup.py": {
+    "mtime": 1795508150.259321,
+    "seen": 1795511675.5641239,
+    "ast_hash": "e3b142c91fb5656390bfccccd2d2e1b5",
+    "semantic_hash": "e3b142c91fb5656390bfccccd2d2e1b5"
+  },
+  "sotrama/tests/test_vehicle.py": {
+    "mtime": 1795444584.8065906,
+    "seen": 1795511675.564578,
+    "ast_hash": "ffca6856351ed109da11910cec27b2ff",
+    "semantic_hash": "ffca6856351ed109da11910cec27b2ff"
+  },
+  "sotrama/tp/__init__.py": {
+    "mtime": 1794832202.4377022,
+    "seen": 1795511675.5650954,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/__init__.py": {
+    "mtime": 1794832202.4387033,
+    "seen": 1795511675.5656438,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/breakdown_incident/__init__.py": {
+    "mtime": 1794824297.5761683,
+    "seen": 1795511675.5661657,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/breakdown_incident/breakdown_incident.json": {
+    "mtime": 1795423302.380066,
+    "seen": 1795511675.5667171,
+    "ast_hash": "10085e99fb886ad71ab2797bc479fedd",
+    "semantic_hash": "10085e99fb886ad71ab2797bc479fedd",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/breakdown_incident/breakdown_incident.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5667236,
+    "ast_hash": "ddd45775692dcb8d0d13fb1603f10950",
+    "semantic_hash": "ddd45775692dcb8d0d13fb1603f10950"
+  },
+  "sotrama/tp/doctype/breakdown_photo/__init__.py": {
+    "mtime": 1794832202.442701,
+    "seen": 1795511675.5672674,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/breakdown_photo/breakdown_photo.json": {
+    "mtime": 1795423302.380066,
+    "seen": 1795511675.5676644,
+    "ast_hash": "9863ebd0de3f708fde52bf5243b481f7",
+    "semantic_hash": "9863ebd0de3f708fde52bf5243b481f7",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/breakdown_photo/breakdown_photo.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.56767,
+    "ast_hash": "02c5a5d55b98890e3d6a7810289b6777",
+    "semantic_hash": "02c5a5d55b98890e3d6a7810289b6777"
+  },
+  "sotrama/tp/doctype/company_classification/__init__.py": {
+    "mtime": 1794824297.5831683,
+    "seen": 1795511675.568201,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/company_classification/company_classification.json": {
+    "mtime": 1795423302.380066,
+    "seen": 1795511675.5687523,
+    "ast_hash": "8aa6f8c5b12a33dfab314477bf1c7c0c",
+    "semantic_hash": "8aa6f8c5b12a33dfab314477bf1c7c0c",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/company_classification/company_classification.py": {
+    "mtime": 1795271838.7305963,
+    "seen": 1795511675.5687585,
+    "ast_hash": "3ca02e01a24e6887afa84bd557a12926",
+    "semantic_hash": "3ca02e01a24e6887afa84bd557a12926"
+  },
+  "sotrama/tp/doctype/driver/__init__.py": {
+    "mtime": 1794824297.5861733,
+    "seen": 1795511675.5692918,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/driver/driver.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5698373,
+    "ast_hash": "4a73a2601940fbf519cc109331ecdfea",
+    "semantic_hash": "4a73a2601940fbf519cc109331ecdfea",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/driver/driver.py": {
+    "mtime": 1795271838.7560048,
+    "seen": 1795511675.5698438,
+    "ast_hash": "99dc8ca6e407f2c251213fbe6b79519f",
+    "semantic_hash": "99dc8ca6e407f2c251213fbe6b79519f"
+  },
+  "sotrama/tp/doctype/driver_compliance_record/__init__.py": {
+    "mtime": 1794925582.6562393,
+    "seen": 1795511675.5708895,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/tp/doctype/driver_compliance_record/driver_compliance_record.json": {
+    "mtime": 1794926415.478909,
+    "seen": 1795511675.5719042,
+    "ast_hash": "88e168336304862588552790b56148f5",
+    "semantic_hash": "88e168336304862588552790b56148f5",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/driver_compliance_record/driver_compliance_record.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5719159,
+    "ast_hash": "28ccaf3e195e26b56dde5578c41f4329",
+    "semantic_hash": "28ccaf3e195e26b56dde5578c41f4329"
+  },
+  "sotrama/tp/doctype/inspection_item/__init__.py": {
+    "mtime": 1794832202.449702,
+    "seen": 1795511675.5727813,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/inspection_item/inspection_item.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5733833,
+    "ast_hash": "08da57130b120a9c89acffb433dd8b81",
+    "semantic_hash": "08da57130b120a9c89acffb433dd8b81",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/inspection_item/inspection_item.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5733895,
+    "ast_hash": "83f26d05b182e71702d4304fb93d3757",
+    "semantic_hash": "83f26d05b182e71702d4304fb93d3757"
+  },
+  "sotrama/tp/doctype/job_card_labour/__init__.py": {
+    "mtime": 1794832202.4507017,
+    "seen": 1795511675.5740297,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/job_card_labour/job_card_labour.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5746005,
+    "ast_hash": "b53c1ec91c3ddd0c3e42f9a488a4601c",
+    "semantic_hash": "b53c1ec91c3ddd0c3e42f9a488a4601c",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/job_card_labour/job_card_labour.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5746064,
+    "ast_hash": "22a6fc2f5ada1f6e9b24a003c398a227",
+    "semantic_hash": "22a6fc2f5ada1f6e9b24a003c398a227"
+  },
+  "sotrama/tp/doctype/job_card_other_cost/__init__.py": {
+    "mtime": 1794832202.4526992,
+    "seen": 1795511675.5751684,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/job_card_other_cost/job_card_other_cost.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5759223,
+    "ast_hash": "791181743cf6d4cd5797424699c61885",
+    "semantic_hash": "791181743cf6d4cd5797424699c61885",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/job_card_other_cost/job_card_other_cost.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5759299,
+    "ast_hash": "81467f5d18b5fdb18b464443402b254c",
+    "semantic_hash": "81467f5d18b5fdb18b464443402b254c"
+  },
+  "sotrama/tp/doctype/job_card_part/__init__.py": {
+    "mtime": 1794832202.4547007,
+    "seen": 1795511675.5765564,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/job_card_part/job_card_part.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5771003,
+    "ast_hash": "704e38652291fc5a26d76a819f98a8fa",
+    "semantic_hash": "704e38652291fc5a26d76a819f98a8fa",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/job_card_part/job_card_part.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5771062,
+    "ast_hash": "ccb2c76222330b49df96ac5c2a98508c",
+    "semantic_hash": "ccb2c76222330b49df96ac5c2a98508c"
+  },
+  "sotrama/tp/doctype/job_card_photo/__init__.py": {
+    "mtime": 1794832202.4587026,
+    "seen": 1795511675.5776482,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/job_card_photo/job_card_photo.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5781724,
+    "ast_hash": "cdd35324ba39e515673ec4febbf6f822",
+    "semantic_hash": "cdd35324ba39e515673ec4febbf6f822",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/job_card_photo/job_card_photo.py": {
+    "mtime": 1795440825.3720152,
+    "seen": 1795511675.5781777,
+    "ast_hash": "0440cd45ca3c219e6f66f65370fb7e7a",
+    "semantic_hash": "0440cd45ca3c219e6f66f65370fb7e7a"
+  },
+  "sotrama/tp/doctype/maintenance_job_card/__init__.py": {
+    "mtime": 1794824297.60317,
+    "seen": 1795511675.5787663,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/maintenance_job_card/maintenance_job_card.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5793269,
+    "ast_hash": "54dc540f817d4f009af1582a2ca77dc9",
+    "semantic_hash": "54dc540f817d4f009af1582a2ca77dc9",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/maintenance_job_card/maintenance_job_card.py": {
+    "mtime": 1795440825.3876412,
+    "seen": 1795511675.5793328,
+    "ast_hash": "837dbc68d89678636591ea92473717ec",
+    "semantic_hash": "837dbc68d89678636591ea92473717ec"
+  },
+  "sotrama/tp/doctype/maintenance_job_type/__init__.py": {
+    "mtime": 1794832202.4627004,
+    "seen": 1795511675.579884,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/maintenance_job_type/maintenance_job_type.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5804377,
+    "ast_hash": "8d62c332537c34970f3dd0f4f595e523",
+    "semantic_hash": "8d62c332537c34970f3dd0f4f595e523",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/maintenance_job_type/maintenance_job_type.py": {
+    "mtime": 1795440825.3876412,
+    "seen": 1795511675.580444,
+    "ast_hash": "3070e7fdd641add8392e77ad432407dd",
+    "semantic_hash": "3070e7fdd641add8392e77ad432407dd"
+  },
+  "sotrama/tp/doctype/maintenance_schedule/__init__.py": {
+    "mtime": 1794824297.610169,
+    "seen": 1795511675.5809793,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/maintenance_schedule/maintenance_schedule.json": {
+    "mtime": 1795423302.3956892,
+    "seen": 1795511675.5815244,
+    "ast_hash": "a3880da72b6b5b3d61442e5ab5cf0b74",
+    "semantic_hash": "a3880da72b6b5b3d61442e5ab5cf0b74",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/maintenance_schedule/maintenance_schedule.py": {
+    "mtime": 1795440825.3876412,
+    "seen": 1795511675.5815306,
+    "ast_hash": "520fc36878084d582402d817f6aa6ebe",
+    "semantic_hash": "520fc36878084d582402d817f6aa6ebe"
+  },
+  "sotrama/tp/doctype/operational_task/__init__.py": {
+    "mtime": 1794824297.6121693,
+    "seen": 1795511675.5820773,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/operational_task/operational_task.json": {
+    "mtime": 1795423302.4113152,
+    "seen": 1795511675.5824668,
+    "ast_hash": "af318c3658dfe55a76424126ff354c88",
+    "semantic_hash": "af318c3658dfe55a76424126ff354c88",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/operational_task/operational_task.py": {
+    "mtime": 1795440825.3876412,
+    "seen": 1795511675.5824728,
+    "ast_hash": "4cbf27cc5c6ddb32925807319ce8a9f3",
+    "semantic_hash": "4cbf27cc5c6ddb32925807319ce8a9f3"
+  },
+  "sotrama/tp/doctype/tp_company_defaults/__init__.py": {
+    "mtime": 1794924854.170225,
+    "seen": 1795511675.5829346,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/tp/doctype/tp_company_defaults/tp_company_defaults.json": {
+    "mtime": 1795336292.2430422,
+    "seen": 1795511675.5834873,
+    "ast_hash": "241ad8076b5321c66a980bebae565573",
+    "semantic_hash": "241ad8076b5321c66a980bebae565573",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/tp_company_defaults/tp_company_defaults.py": {
+    "mtime": 1794924854.1722255,
+    "seen": 1795511675.583494,
+    "ast_hash": "0e5b16eb4248ec8b2bf586b91cd5d4d6",
+    "semantic_hash": "0e5b16eb4248ec8b2bf586b91cd5d4d6"
+  },
+  "sotrama/tp/doctype/tp_settings/__init__.py": {
+    "mtime": 1794921653.58486,
+    "seen": 1795511675.5840237,
+    "ast_hash": "68b329da9893e34099c7d8ad5cb9c940",
+    "semantic_hash": "68b329da9893e34099c7d8ad5cb9c940"
+  },
+  "sotrama/tp/doctype/tp_settings/tp_settings.json": {
+    "mtime": 1795339485.125259,
+    "seen": 1795511675.584571,
+    "ast_hash": "6853447243ba450fdd212e5b34938828",
+    "semantic_hash": "6853447243ba450fdd212e5b34938828",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/tp_settings/tp_settings.py": {
+    "mtime": 1795338811.9988034,
+    "seen": 1795511675.5845778,
+    "ast_hash": "f602b8f343db7e6cd45e6b90b4846a8d",
+    "semantic_hash": "f602b8f343db7e6cd45e6b90b4846a8d"
+  },
+  "sotrama/tp/doctype/vehicle/__init__.py": {
+    "mtime": 1794824297.6151688,
+    "seen": 1795511675.585105,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/vehicle/vehicle.json": {
+    "mtime": 1795443834.3949509,
+    "seen": 1795511675.5855591,
+    "ast_hash": "5885ccdf44f60fb67f6c8d5280aecda7",
+    "semantic_hash": "5885ccdf44f60fb67f6c8d5280aecda7",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/vehicle/vehicle.py": {
+    "mtime": 1795443887.1265376,
+    "seen": 1795511675.585565,
+    "ast_hash": "90af88fc27b3e3af97bcb8a352010bcd",
+    "semantic_hash": "90af88fc27b3e3af97bcb8a352010bcd"
+  },
+  "sotrama/tp/doctype/vehicle_document/__init__.py": {
+    "mtime": 1794832202.4687004,
+    "seen": 1795511675.586088,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/vehicle_document/vehicle_document.json": {
+    "mtime": 1795423302.417033,
+    "seen": 1795511675.5868235,
+    "ast_hash": "13375178ff16f9a49465e87ca0614949",
+    "semantic_hash": "13375178ff16f9a49465e87ca0614949",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/vehicle_document/vehicle_document.py": {
+    "mtime": 1795423302.419031,
+    "seen": 1795511675.5868304,
+    "ast_hash": "c958b3d795091a2628cd10209ede7bbc",
+    "semantic_hash": "c958b3d795091a2628cd10209ede7bbc"
+  },
+  "sotrama/tp/doctype/vehicle_inspection/__init__.py": {
+    "mtime": 1794824297.6211703,
+    "seen": 1795511675.5877333,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/vehicle_inspection/vehicle_inspection.json": {
+    "mtime": 1795423302.4200356,
+    "seen": 1795511675.5888157,
+    "ast_hash": "d1bb3a77cadb8d26920a0e520d43c0a3",
+    "semantic_hash": "d1bb3a77cadb8d26920a0e520d43c0a3",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/vehicle_inspection/vehicle_inspection.py": {
+    "mtime": 1795341005.5612876,
+    "seen": 1795511675.5888271,
+    "ast_hash": "cfedcd7e4c9966201c28b0fcf83b9d89",
+    "semantic_hash": "cfedcd7e4c9966201c28b0fcf83b9d89"
+  },
+  "sotrama/tp/doctype/vehicle_make/__init__.py": {
+    "mtime": 1794832202.474706,
+    "seen": 1795511675.5896022,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/vehicle_make/vehicle_make.json": {
+    "mtime": 1795423302.4240327,
+    "seen": 1795511675.5903273,
+    "ast_hash": "937e8a20630c77c8beb53bbfb0b86ef5",
+    "semantic_hash": "937e8a20630c77c8beb53bbfb0b86ef5",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/vehicle_make/vehicle_make.py": {
+    "mtime": 1795423302.4250338,
+    "seen": 1795511675.5903342,
+    "ast_hash": "148414801e4640262a620ae9eea351e1",
+    "semantic_hash": "148414801e4640262a620ae9eea351e1"
+  },
+  "sotrama/tp/doctype/vehicle_model/__init__.py": {
+    "mtime": 1794832202.476704,
+    "seen": 1795511675.5907345,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/doctype/vehicle_model/vehicle_model.json": {
+    "mtime": 1795443417.1036298,
+    "seen": 1795511675.5912843,
+    "ast_hash": "83b46bcb374b8a95e4e5253188cd63c3",
+    "semantic_hash": "83b46bcb374b8a95e4e5253188cd63c3",
+    "ast_empty": true
+  },
+  "sotrama/tp/doctype/vehicle_model/vehicle_model.py": {
+    "mtime": 1795443527.6472397,
+    "seen": 1795511675.5912905,
+    "ast_hash": "d20c5ed2e5114bdaff38338dea71c4d9",
+    "semantic_hash": "d20c5ed2e5114bdaff38338dea71c4d9"
+  },
+  "sotrama/tp/number_card/__init__.py": {
+    "mtime": 1794832202.4797027,
+    "seen": 1795511675.592177,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/number_card/active_maintenance_plans/active_maintenance_plans.json": {
+    "mtime": 1795349752.1438808,
+    "seen": 1795511675.5927472,
+    "ast_hash": "61c72b9b38b5e579de168b3f59ec21d2",
+    "semantic_hash": "61c72b9b38b5e579de168b3f59ec21d2",
+    "ast_empty": true
+  },
+  "sotrama/tp/number_card/active_vehicles/active_vehicles.json": {
+    "mtime": 1795349752.1438808,
+    "seen": 1795511675.5927541,
+    "ast_hash": "66956812b58d3438e6cf8acd23e1f6fc",
+    "semantic_hash": "66956812b58d3438e6cf8acd23e1f6fc",
+    "ast_empty": true
+  },
+  "sotrama/tp/number_card/vehicles_out_of_service/vehicles_out_of_service.json": {
+    "mtime": 1795349752.1438808,
+    "seen": 1795511675.5927594,
+    "ast_hash": "e6925460143dd7a9676f4201ca716685",
+    "semantic_hash": "e6925460143dd7a9676f4201ca716685",
+    "ast_empty": true
+  },
+  "sotrama/tp/print_format/__init__.py": {
+    "mtime": 1794832202.491704,
+    "seen": 1795511675.5927637,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/print_format/maintenance_job_card_report/maintenance_job_card_report.json": {
+    "mtime": 1795084252.3184817,
+    "seen": 1795511675.5932796,
+    "ast_hash": "6b750fbe53296555893c04930c107883",
+    "semantic_hash": "6b750fbe53296555893c04930c107883",
+    "ast_empty": true
+  },
+  "sotrama/tp/print_format/vehicle_inspection_report/vehicle_inspection_report.json": {
+    "mtime": 1795336478.2089744,
+    "seen": 1795511675.5932853,
+    "ast_hash": "8699af78c41ce21187afb7ee137f2000",
+    "semantic_hash": "8699af78c41ce21187afb7ee137f2000",
+    "ast_empty": true
+  },
+  "sotrama/tp/report/__init__.py": {
+    "mtime": 1794824297.6341689,
+    "seen": 1795511675.59329,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/report/fleet_cost_analysis/__init__.py": {
+    "mtime": 1794832202.4957025,
+    "seen": 1795511675.5938196,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/report/fleet_cost_analysis/fleet_cost_analysis.js": {
+    "mtime": 1795506383.6249077,
+    "seen": 1795511675.594346,
+    "ast_hash": "391d5bbb95f6cb8af2b3c19cc0b4d770",
+    "semantic_hash": "391d5bbb95f6cb8af2b3c19cc0b4d770"
+  },
+  "sotrama/tp/report/fleet_cost_analysis/fleet_cost_analysis.json": {
+    "mtime": 1795011269.3455093,
+    "seen": 1795511675.5949469,
+    "ast_hash": "f081e4c8248e11d4afc1780a3453c01f",
+    "semantic_hash": "f081e4c8248e11d4afc1780a3453c01f",
+    "ast_empty": true
+  },
+  "sotrama/tp/report/fleet_cost_analysis/fleet_cost_analysis.py": {
+    "mtime": 1795443759.2422602,
+    "seen": 1795511675.594953,
+    "ast_hash": "27626a395524220fd36d3b59900c5867",
+    "semantic_hash": "27626a395524220fd36d3b59900c5867"
+  },
+  "sotrama/tp/report/upcoming_document_expiries/__init__.py": {
+    "mtime": 1794832202.4977024,
+    "seen": 1795511675.595509,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/report/upcoming_document_expiries/upcoming_document_expiries.js": {
+    "mtime": 1795506383.6319046,
+    "seen": 1795511675.5960543,
+    "ast_hash": "18936a16068b29fda150b29a59a2f97d",
+    "semantic_hash": "18936a16068b29fda150b29a59a2f97d"
+  },
+  "sotrama/tp/report/upcoming_document_expiries/upcoming_document_expiries.json": {
+    "mtime": 1795095289.6123257,
+    "seen": 1795511675.5966148,
+    "ast_hash": "eabc79153271010f5d1161a5123a5dfd",
+    "semantic_hash": "eabc79153271010f5d1161a5123a5dfd",
+    "ast_empty": true
+  },
+  "sotrama/tp/report/upcoming_document_expiries/upcoming_document_expiries.py": {
+    "mtime": 1795440825.3876412,
+    "seen": 1795511675.5966213,
+    "ast_hash": "6edf8def2d6301856a5383f95358ba93",
+    "semantic_hash": "6edf8def2d6301856a5383f95358ba93"
+  },
+  "sotrama/tp/role_profile/__init__.py": {
+    "mtime": 1794832202.5007062,
+    "seen": 1795511675.5971475,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/role_profile/driver/__init__.py": {
+    "mtime": 1794832202.5017066,
+    "seen": 1795511675.597713,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/role_profile/driver/driver.json": {
+    "mtime": 1795340426.7849643,
+    "seen": 1795511675.598244,
+    "ast_hash": "bbad1665d8967b2f82a9bbb57dda3f9b",
+    "semantic_hash": "bbad1665d8967b2f82a9bbb57dda3f9b",
+    "ast_empty": true
+  },
+  "sotrama/tp/role_profile/fleet_manager/__init__.py": {
+    "mtime": 1794832202.5037014,
+    "seen": 1795511675.5982509,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/role_profile/fleet_manager/fleet_manager.json": {
+    "mtime": 1795340426.7849643,
+    "seen": 1795511675.598806,
+    "ast_hash": "dd30912b4391b2f300b33a54b30294b4",
+    "semantic_hash": "dd30912b4391b2f300b33a54b30294b4",
+    "ast_empty": true
+  },
+  "sotrama/tp/role_profile/workshop/__init__.py": {
+    "mtime": 1794832202.506703,
+    "seen": 1795511675.598812,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "sotrama/tp/role_profile/workshop/workshop.json": {
+    "mtime": 1795340426.7849643,
+    "seen": 1795511675.5993454,
+    "ast_hash": "1c5a59c9f9276164c23abd286482e176",
+    "semantic_hash": "1c5a59c9f9276164c23abd286482e176",
+    "ast_empty": true
+  },
+  "sotrama/tp/scheduler/__init__.py": {
+    "mtime": 1795441375.0496185,
+    "seen": 1795511675.5993516,
+    "ast_hash": "dedf16ea700e118e5705beec0a5dac17",
+    "semantic_hash": "dedf16ea700e118e5705beec0a5dac17"
+  },
+  "sotrama/tp/scheduler/common.py": {
+    "mtime": 1795440621.941283,
+    "seen": 1795511675.5998201,
+    "ast_hash": "66b48a028d67e4c5b48cce32553dc10b",
+    "semantic_hash": "66b48a028d67e4c5b48cce32553dc10b"
+  },
+  "sotrama/tp/scheduler/documents.py": {
+    "mtime": 1795440687.7119956,
+    "seen": 1795511675.60026,
+    "ast_hash": "b6567134de520e8e12d936794ae25e3c",
+    "semantic_hash": "b6567134de520e8e12d936794ae25e3c"
+  },
+  "sotrama/tp/scheduler/drivers.py": {
+    "mtime": 1795440687.7432396,
+    "seen": 1795511675.600811,
+    "ast_hash": "5d02154b3bac827c56208af71f861fa7",
+    "semantic_hash": "5d02154b3bac827c56208af71f861fa7"
+  },
+  "sotrama/tp/scheduler/maintenance.py": {
+    "mtime": 1795440687.7432396,
+    "seen": 1795511675.6013236,
+    "ast_hash": "40cab4719f346df0941d94dd2d9d4da2",
+    "semantic_hash": "40cab4719f346df0941d94dd2d9d4da2"
+  },
+  "sotrama/tp/settings.py": {
+    "mtime": 1795506377.51465,
+    "seen": 1795511675.6018705,
+    "ast_hash": "6a6a95d0d9c5149fe8b4d53d2e4215ea",
+    "semantic_hash": "6a6a95d0d9c5149fe8b4d53d2e4215ea"
+  },
+  "sotrama/tp/sidebar/tp/tp.json": {
+    "mtime": 1795355716.4351907,
+    "seen": 1795511675.6023962,
+    "ast_hash": "bae93fc2a0a01d3a0d3b58afd923e1fd",
+    "semantic_hash": "bae93fc2a0a01d3a0d3b58afd923e1fd",
+    "ast_empty": true
+  },
+  "sotrama/tp/validation.py": {
+    "mtime": 1795340988.4009182,
+    "seen": 1795511675.602402,
+    "ast_hash": "ef6a6175e665f034f94722b3d6b2b66d",
+    "semantic_hash": "ef6a6175e665f034f94722b3d6b2b66d"
+  },
+  "sotrama/tp/workspace/fleet_management_reports/fleet_management_reports.json": {
+    "mtime": 1795355656.4352388,
+    "seen": 1795511675.6028674,
+    "ast_hash": "eb0ea61a455f6c19cf394e256d2fd1a1",
+    "semantic_hash": "eb0ea61a455f6c19cf394e256d2fd1a1",
+    "ast_empty": true
+  },
+  "sotrama/tp/workspace/sotrama_fleet/sotrama_fleet.json": {
+    "mtime": 1795355716.4351907,
+    "seen": 1795511675.6028736,
+    "ast_hash": "bff93d8aee0c70518cc20a02e4264b91",
+    "semantic_hash": "bff93d8aee0c70518cc20a02e4264b91",
+    "ast_empty": true
+  },
+  "tests/js/test_fleet_form_permissions.js": {
+    "mtime": 1795423302.4365056,
+    "seen": 1795511675.6028779,
+    "ast_hash": "a11c47d5121e70d3e13951290e8546ab",
+    "semantic_hash": "a11c47d5121e70d3e13951290e8546ab"
+  },
+  "tests/js/test_report_filter_dependencies.js": {
+    "mtime": 1795506383.6369052,
+    "seen": 1795511675.6037574,
+    "ast_hash": "1e00a5b923abd619c5c9dd6ec4210278",
+    "semantic_hash": "1e00a5b923abd619c5c9dd6ec4210278"
+  }
+}

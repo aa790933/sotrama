@@ -1009,5 +1009,47 @@
     "seen": 1795511675.6037574,
     "ast_hash": "1e00a5b923abd619c5c9dd6ec4210278",
     "semantic_hash": "1e00a5b923abd619c5c9dd6ec4210278"
+  },
+  ".agents/skills/find-skills/SKILL.md": {
+    "mtime": 1795511298.906592,
+    "seen": 1795513992.3342524,
+    "ast_hash": "62b297abdee9aea84c577ab2e04e1974",
+    "semantic_hash": ""
+  },
+  ".clinerules/architecture.md": {
+    "mtime": 1795512234.2478118,
+    "seen": 1795513992.3342574,
+    "ast_hash": "b667e7b4cedcb39eedd71200bb60f190",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1795508644.196003,
+    "seen": 1795513992.334261,
+    "ast_hash": "e4679a40ff30781a8e1de91fe166f4a1",
+    "semantic_hash": ""
+  },
+  "license.txt": {
+    "mtime": 1794824297.553171,
+    "seen": 1795513992.3342645,
+    "ast_hash": "7cd28d3b76031e2fa54ba1bf13f3d180",
+    "semantic_hash": ""
+  },
+  "sotrama/modules.txt": {
+    "mtime": 1795439855.3681917,
+    "seen": 1795513992.3342683,
+    "ast_hash": "30681a014ee66ab83f194b06e54dc380",
+    "semantic_hash": ""
+  },
+  "sotrama/patches.txt": {
+    "mtime": 1795440225.2666798,
+    "seen": 1795513992.3342717,
+    "ast_hash": "5c678202dcec301d3223f6a5cec3509a",
+    "semantic_hash": ""
+  },
+  "sotrama/public/images/sotrama-logo.svg": {
+    "mtime": 1794907355.9506924,
+    "seen": 1795513992.334275,
+    "ast_hash": "3370ad90f24feb88de6987149d38f725",
+    "semantic_hash": ""
   }
 }
