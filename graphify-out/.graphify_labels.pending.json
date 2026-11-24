@@ -1,22 +1,10 @@
 {
   "6": "TestSotramaSetup",
   "23": "validate_company_access",
-  "25": "TestDriverFileMetadataPrivacy",
-  "31": ".test_french_catalog_covers_custom_doctype_labels_options_and_ui_messages",
-  "32": "upcoming_document_expiries.py",
-  "34": "breakdown_incident.py",
-  "38": "frappe_utils",
-  "42": "TestMaintenanceScheduleWorkflow",
-  "113": "TestFleetSystemManagedFields",
-  "114": "migrate_fleet_attachments_private",
-  "115": "VehicleModel",
-  "116": "migrate_legacy_company_nif",
-  "117": "TestCompanyClassification",
-  "118": "TestDriverStatusWorkflow",
-  "119": "prevent_submitted_fleet_record_deletion",
-  "120": "fleet_documents.py",
-  "121": ".test_vehicle_license_plate_required",
-  "122": ".test_vehicle_chassis_too_short",
-  "123": ".setUp",
-  "124": "validate_and_sanitize_search_inputs"
+  "25": "is_driver_private_attachment",
+  "31": "_sotrama_package_path",
+  "32": "get_tp_setting",
+  "34": "validation.py",
+  "38": "validate_active_driver",
+  "42": "get_tp_company_setting"
 }
