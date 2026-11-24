@@ -17,3 +17,10 @@ uv.lock
 *.db
 *.egg-info/
 .pytest_cache/
+
+# Local agent/tooling artifacts — not part of the Frappe app build
+.agents/
+.clinerules/
+graphify-out/
+memory-bank/
+skills-lock.json
