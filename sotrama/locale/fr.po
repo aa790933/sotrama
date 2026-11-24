@@ -2126,6 +2126,33 @@ msgstr "Les requêtes filtrées de valeurs des paramètres TP ne sont pas autori
 msgid "Fleet records cannot be shared with everyone."
 msgstr "Les fiches du parc ne peuvent pas être partagées avec tout le monde."
 
+msgid "A detached or unrelated Fleet-protected file can only be reattached by Administrator or System Manager."
+msgstr "Un fichier protégé du parc détaché ou non lié ne peut être rattaché que par un Administrateur ou un Gestionnaire système."
+
+msgid "A private Fleet file URL must reference an existing File record. Upload the file or use its authorized attachment instead."
+msgstr "L'URL d'un fichier privé du parc doit référencer un enregistrement Fichier existant. Téléchargez le fichier ou utilisez sa pièce jointe autorisée."
+
+msgid "Created from Vehicle Inspection {0}.\n\n{1}"
+msgstr "Créé à partir de l'inspection du véhicule {0}.\n\n{1}"
+
+msgid "Driver private-file migration stopped because file paths need manual resolution:\n{0}"
+msgstr "La migration des fichiers privés du conducteur s'est arrêtée car les chemins de fichiers nécessitent une résolution manuelle :\n{0}"
+
+msgid "Maintenance Due: {0} (Vehicle: {1})\n{2}"
+msgstr "Maintenance à effectuer : {0} (véhicule : {1})\n{2}"
+
+msgid "Only Administrator or System Manager can move a protected Fleet attachment between Companies."
+msgstr "Seul un Administrateur ou un Gestionnaire système peut déplacer une pièce jointe protégée du parc entre sociétés."
+
+msgid "Private Fleet attachment content cannot be reused across Companies or from a detached Fleet file."
+msgstr "Le contenu d'une pièce jointe privée du parc ne peut pas être réutilisé entre sociétés ni à partir d'un fichier du parc détaché."
+
+msgid "You must retain read access to the original parent before reusing its private attachment."
+msgstr "Vous devez conserver un accès en lecture au parent d'origine avant de réutiliser sa pièce jointe privée."
+
+msgid "You need write access to the original Fleet parent before moving its attachment."
+msgstr "Vous avez besoin d'un accès en écriture au parent du parc d'origine avant de déplacer sa pièce jointe."
+
 msgid "Legacy Company field needs review"
 msgstr "Le champ Société historique nécessite une vérification."
 
