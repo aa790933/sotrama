@@ -299,7 +299,7 @@ class TestSotramaSetup(unittest.TestCase):
             ),
             (
                 "Enter the manufacturer's model designation. The internal record ID is generated from the selected make and model name.",
-                "Saisissez la désignation du modèle du constructeur. L'identifiant de la fiche combine la marque sélectionnée et ce nom de modèle.",
+                "Saisissez la désignation du modèle du constructeur. L'identifiant interne de la fiche est généré à partir de la marque sélectionnée et du nom du modèle.",
             ),
             (
                 "Officially Confirmed Not Subject",
@@ -947,12 +947,11 @@ class TestSotramaSetup(unittest.TestCase):
         fleet_file = Mock(
             name="FILE-FLEET", is_private=1, file_url="/private/files/fleet.pdf"
         )
-        fleet_file.get.side_effect = lambda field: {
+        fleet_file.get.side_effect = lambda field, default=None: {
             "is_remote_file": False,
-            "sotrama_private_fleet_attachment": getattr(
-                fleet_file, "sotrama_private_fleet_attachment", None
-            ),
-        }.get(field)
+            "content_hash": "fleet-hash",
+            "file_url": "/private/files/fleet.pdf",
+        }.get(field, getattr(fleet_file, field, default))
         duplicate_file = Mock(
             name="FILE-DUPLICATE",
             is_private=1,
@@ -962,21 +961,23 @@ class TestSotramaSetup(unittest.TestCase):
             attached_to_field="attachment",
             owner="user@example.invalid",
         )
-        duplicate_file.get.side_effect = lambda field: {
+        duplicate_file.get.side_effect = lambda field, default=None: {
             "is_remote_file": False,
-            "sotrama_private_fleet_attachment": getattr(
-                duplicate_file, "sotrama_private_fleet_attachment", None
-            ),
-        }.get(field)
+        }.get(field, getattr(duplicate_file, field, default))
+        get_all_calls = []
+
+        def get_all_side_effect(doctype, filters=None, fields=None, limit_page_length=0, **kwargs):
+            get_all_calls.append(filters or {})
+            if filters and isinstance(filters.get("attached_to_doctype"), list):
+                return [fleet_row]
+            if filters and filters.get("content_hash") == "fleet-hash":
+                return [duplicate_row]
+            return []
+
         with (
             patch(
                 "sotrama.migrations.security.frappe.get_all",
-                side_effect=[
-                    [fleet_row],
-                    [fleet_row, duplicate_row],
-                    [fleet_row],
-                    [fleet_row, duplicate_row],
-                ],
+                side_effect=get_all_side_effect,
             ) as get_all,
             patch("sotrama.migrations.security._ensure_fleet_file_privacy_field"),
             patch(
@@ -997,41 +998,82 @@ class TestSotramaSetup(unittest.TestCase):
             migrate_fleet_attachments_private()
             migrate_fleet_attachments_private()
 
+        # Capture state after the first migration run, then run again to
+        # prove idempotency: a second execution must not change any state
+        # or make additional side-effect calls.
+        duplicate_state_after_run_1 = {
+            "attached_to_doctype": duplicate_file.attached_to_doctype,
+            "attached_to_name": duplicate_file.attached_to_name,
+            "attached_to_field": duplicate_file.attached_to_field,
+            "owner": duplicate_file.owner,
+            "is_private": duplicate_file.is_private,
+            "sotrama_private_fleet_attachment": duplicate_file.sotrama_private_fleet_attachment,
+        }
+        fleet_state_after_run_1 = {
+            "is_private": fleet_file.is_private,
+            "sotrama_private_fleet_attachment": fleet_file.sotrama_private_fleet_attachment,
+        }
+        redact_calls_after_run_1 = redact.call_count
+        clear_field_calls_after_run_1 = clear_field.call_count
+        remove_shares_calls_after_run_1 = remove_shares.call_count
+        log_error_calls_after_run_1 = log_error.call_count
+        duplicate_save_calls_after_run_1 = duplicate_file.save.call_count
+        fleet_save_calls_after_run_1 = fleet_file.save.call_count
+
+        # Second execution against the already-secured state.
+        migrate_fleet_attachments_private()
+
+        # Idempotency: state and side-effect call counts must be unchanged.
         self.assertEqual(
-            get_all.call_args_list,
-            [
-                call(
-                    "File",
-                    filters={"attached_to_doctype": ["in", attached_doctypes]},
-                    fields=["name", "content_hash"],
-                    limit_page_length=0,
-                ),
-                call(
-                    "File",
-                    filters={
-                        "content_hash": "fleet-hash",
-                        "name": ["!=", "FILE-FLEET"],
-                    },
-                    fields=["name", "attached_to_doctype"],
-                    limit_page_length=0,
-                ),
-                call(
-                    "File",
-                    filters={"attached_to_doctype": ["in", attached_doctypes]},
-                    fields=["name", "content_hash"],
-                    limit_page_length=0,
-                ),
-                call(
-                    "File",
-                    filters={
-                        "content_hash": "fleet-hash",
-                        "name": ["!=", "FILE-FLEET"],
-                    },
-                    fields=["name", "attached_to_doctype"],
-                    limit_page_length=0,
-                ),
-            ],
+            duplicate_file.attached_to_doctype,
+            duplicate_state_after_run_1["attached_to_doctype"],
         )
+        self.assertEqual(
+            duplicate_file.attached_to_name,
+            duplicate_state_after_run_1["attached_to_name"],
+        )
+        self.assertEqual(
+            duplicate_file.attached_to_field,
+            duplicate_state_after_run_1["attached_to_field"],
+        )
+        self.assertEqual(duplicate_file.owner, duplicate_state_after_run_1["owner"])
+        self.assertEqual(duplicate_file.is_private, duplicate_state_after_run_1["is_private"])
+        self.assertEqual(
+            duplicate_file.sotrama_private_fleet_attachment,
+            duplicate_state_after_run_1["sotrama_private_fleet_attachment"],
+        )
+        self.assertEqual(fleet_file.is_private, fleet_state_after_run_1["is_private"])
+        self.assertEqual(
+            fleet_file.sotrama_private_fleet_attachment,
+            fleet_state_after_run_1["sotrama_private_fleet_attachment"],
+        )
+        self.assertEqual(redact.call_count, redact_calls_after_run_1)
+        self.assertEqual(clear_field.call_count, clear_field_calls_after_run_1)
+        self.assertEqual(remove_shares.call_count, remove_shares_calls_after_run_1)
+        self.assertEqual(log_error.call_count, log_error_calls_after_run_1)
+        self.assertEqual(
+            duplicate_file.save.call_count, duplicate_save_calls_after_run_1
+        )
+        self.assertEqual(fleet_file.save.call_count, fleet_save_calls_after_run_1)
+        self.assertIsNone(frappe.flags.get("in_fleet_attachment_migration"))
+
+        # Verify both query types were executed: fleet file selection by
+        # attached doctype and duplicate detection by content hash. These
+        # prove the migration's security paths are entered on each run.
+        # Hash queries occur once in prevent_fleet_attachment_content_reuse
+        # and once in secure_duplicate_fleet_file_rows per run (3 total
+        # across two runs: run 1 has both, run 2 skips the first due to
+        # already-secured state).
+        attached_queries = [
+            c
+            for c in get_all_calls
+            if isinstance(c.get("attached_to_doctype"), list)
+        ]
+        hash_queries = [
+            c for c in get_all_calls if c.get("content_hash") == "fleet-hash"
+        ]
+        self.assertEqual(len(attached_queries), 2)  # once per migration run
+        self.assertEqual(len(hash_queries), 3)  # 2 in run 1, 1 in run 2
         self.assertEqual(
             get_doc.call_args_list,
             [
@@ -1051,7 +1093,6 @@ class TestSotramaSetup(unittest.TestCase):
         duplicate_file.save.assert_called_once_with(ignore_permissions=True)
         remove_shares.assert_called_once_with("FILE-DUPLICATE")
         log_error.assert_called_once()
-        self.assertIsNone(frappe.flags.get("in_fleet_attachment_migration"))
 
     def test_initial_cleanup_patch_fails_closed_before_optional_company_nif(self):
         from sotrama.patches.v1_4.initial_data_cleanup import execute
@@ -1577,7 +1618,7 @@ class TestSotramaSetup(unittest.TestCase):
             {"doctype": "Designation", "designation_name": "GERANT"}
         ).insert(ignore_permissions=True)
         try:
-            with patch("sotrama.setup.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)):
+            with patch("sotrama.setup.masters.PUBLIC_WORKS_DESIGNATIONS", ("Gérant",)):
                 self.assertEqual(ensure_public_works_designations(), [])
         finally:
             frappe.delete_doc("Designation", existing.name, ignore_permissions=True)

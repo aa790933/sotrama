@@ -2032,46 +2032,117 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
     def test_legacy_fleet_file_shares_are_removed_during_migration_cleanup(self):
         from sotrama.permissions import remove_unsafe_fleet_docshares
 
-        share = frappe._dict(name="SHARE-FLEET-FILE", share_name="FILE-FLEET")
-        file_doc = frappe._dict(
-            name="FILE-FLEET", attached_to_doctype="Vehicle Document"
+        fleet_share = frappe._dict(name="SHARE-FLEET-FILE", share_name="FILE-FLEET")
+        non_fleet_share = frappe._dict(name="SHARE-NON-FLEET", share_name="FILE-NON-FLEET")
+        fleet_file_doc = frappe._dict(
+            name="FILE-FLEET", attached_to_doctype="Vehicle Document", attached_to_name="VD-001"
         )
+        non_fleet_file_doc = frappe._dict(
+            name="FILE-NON-FLEET", attached_to_doctype="Communication", attached_to_name="COMM-001"
+        )
+
+        # Mutable share list to model database state transitions.
+        shares = [fleet_share]
+
+        def get_all_side_effect(doctype, filters=None, **kwargs):
+            return list(shares)
+
+        # First run: Fleet file share exists and is removed.
         with (
-            patch("frappe.get_all", return_value=[share]),
-            patch("frappe.get_doc", return_value=file_doc),
+            patch("frappe.get_all", side_effect=get_all_side_effect),
+            patch("frappe.get_doc", return_value=fleet_file_doc),
             patch("frappe.db.delete") as delete,
         ):
             remove_unsafe_fleet_docshares(doctype="File", name="FILE-FLEET")
+            delete.assert_called_once_with("DocShare", {"name": "SHARE-FLEET-FILE"})
 
-        delete.assert_called_once_with("DocShare", {"name": "SHARE-FLEET-FILE"})
+        # Simulate the deletion persisting in the database.
+        shares.clear()
+
+        # Second run: share is gone, no deletion attempted (idempotent).
+        with (
+            patch("frappe.get_all", side_effect=get_all_side_effect),
+            patch("frappe.get_doc", return_value=fleet_file_doc),
+            patch("frappe.db.delete") as delete_again,
+        ):
+            remove_unsafe_fleet_docshares(doctype="File", name="FILE-FLEET")
+            delete_again.assert_not_called()
+
+        # Non-fleet file shares are preserved across both runs.
+        shares.append(non_fleet_share)
+        with (
+            patch("frappe.get_all", side_effect=get_all_side_effect),
+            patch("frappe.get_doc", return_value=non_fleet_file_doc),
+            patch("frappe.db.delete") as delete_non_fleet,
+        ):
+            remove_unsafe_fleet_docshares(doctype="File", name="FILE-NON-FLEET")
+            delete_non_fleet.assert_not_called()
 
     def test_file_updates_remove_shares_when_attached_to_or_detached_from_fleet(self):
         from sotrama import hooks as app_hooks
         from sotrama.permissions import remove_unsafe_fleet_docshares_for_file
 
-        for file_doc in (
-            frappe._dict(
-                name="FILE-ATTACHED",
+        # A File becoming attached to a Fleet document triggers share cleanup.
+        # No previous attachment (new file); current doc has fleet metadata.
+        attached_file = frappe._dict(
+            name="FILE-ATTACHED",
+            attached_to_doctype="Vehicle",
+            attached_to_name="VEH-001",
+            get_doc_before_save=lambda: None,
+        )
+        with patch("frappe.db.delete") as delete:
+            remove_unsafe_fleet_docshares_for_file(attached_file)
+            delete.assert_called_once_with(
+                "DocShare",
+                {"share_doctype": "File", "share_name": "FILE-ATTACHED"},
+            )
+
+        # A File detaching from a Fleet document: previous doc carries the
+        # old attachment metadata; current doc is detached.
+        detached_file = frappe._dict(
+            name="FILE-DETACHED",
+            attached_to_doctype=None,
+            attached_to_name=None,
+            get_doc_before_save=lambda: frappe._dict(
+                attached_to_doctype="Vehicle Document",
+                attached_to_name="VD-001",
+            ),
+        )
+        with patch("frappe.db.delete") as delete:
+            remove_unsafe_fleet_docshares_for_file(detached_file)
+            delete.assert_called_once_with(
+                "DocShare",
+                {"share_doctype": "File", "share_name": "FILE-DETACHED"},
+            )
+
+        # A File moving between Fleet documents: previous fleet metadata
+        # triggers cleanup even though current doc is also fleet-scoped.
+        moved_file = frappe._dict(
+            name="FILE-MOVED",
+            attached_to_doctype="Vehicle",
+            attached_to_name="VEH-002",
+            get_doc_before_save=lambda: frappe._dict(
                 attached_to_doctype="Vehicle",
-                get_doc_before_save=lambda: None,
+                attached_to_name="VEH-001",
             ),
-            frappe._dict(
-                name="FILE-DETACHED",
-                attached_to_doctype=None,
-                get_doc_before_save=lambda: frappe._dict(
-                    attached_to_doctype="Vehicle Document"
-                ),
-            ),
-        ):
-            with (
-                self.subTest(file_name=file_doc.name),
-                patch("frappe.db.delete") as delete,
-            ):
-                remove_unsafe_fleet_docshares_for_file(file_doc)
-                delete.assert_called_once_with(
-                    "DocShare",
-                    {"share_doctype": "File", "share_name": file_doc.name},
-                )
+        )
+        with patch("frappe.db.delete") as delete:
+            remove_unsafe_fleet_docshares_for_file(moved_file)
+            delete.assert_called_once_with(
+                "DocShare",
+                {"share_doctype": "File", "share_name": "FILE-MOVED"},
+            )
+
+        # An unrelated file (not fleet-scoped) must not have its shares deleted.
+        unrelated_file = frappe._dict(
+            name="FILE-UNRELATED",
+            attached_to_doctype="Communication",
+            attached_to_name="COMM-001",
+            get_doc_before_save=lambda: None,
+        )
+        with patch("frappe.db.delete") as delete:
+            remove_unsafe_fleet_docshares_for_file(unrelated_file)
+            delete.assert_not_called()
 
         self.assertEqual(
             app_hooks.doc_events["File"]["before_validate"],
@@ -2145,11 +2216,40 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
 
         remote_file = frappe._dict(
             attached_to_doctype="Vehicle",
+            attached_to_name="VEH-001",
             file_url="https://files.example.invalid/vehicle.pdf",
             is_private=0,
         )
         with self.assertRaises(frappe.ValidationError):
             secure_company_scoped_fleet_attachment(remote_file)
+
+        # A file with only a doctype (no attached document name) is not yet
+        # attached to a specific company-scoped record, so this hook does not
+        # apply the remote-URL rejection.
+        partial_file = frappe._dict(
+            attached_to_doctype="Vehicle",
+            file_url="https://files.example.invalid/vehicle.pdf",
+            is_private=0,
+        )
+        secure_company_scoped_fleet_attachment(partial_file)
+
+        # An unattached file is not company-scoped either.
+        unattached_file = frappe._dict(
+            file_url="https://files.example.invalid/file.pdf",
+            is_private=0,
+        )
+        secure_company_scoped_fleet_attachment(unattached_file)
+
+        # A local private file attached to a company-scoped Fleet record is
+        # accepted (not rejected): it has no remote URL to block.
+        local_private_file = frappe._dict(
+            attached_to_doctype="Vehicle",
+            attached_to_name="VEH-001",
+            file_url="/private/files/fleet.pdf",
+            is_private=1,
+        )
+        secure_company_scoped_fleet_attachment(local_private_file)
+        self.assertEqual(local_private_file.is_private, 1)
 
     def test_fleet_file_download_checks_parent_scope_before_owner_shortcut(self):
         from sotrama.overrides.file import DriverPrivateFileMixin
@@ -2235,6 +2335,7 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
                 self.name = "FILE-TEST"
                 self.attached_to_doctype = attached_to_doctype
                 self.attached_to_name = "PARENT-001"
+                self.file_url = None
                 self.is_private = 0
                 self.copy_existing = copy_existing
 
@@ -2317,6 +2418,7 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
 
         class TestFile(DriverPrivateFileMixin, FileBase):
             def __init__(self):
+                self.name = "FILE-TEST"
                 self.attached_to_doctype = "Communication"
                 self.content_hash = "existing-fleet-hash"
                 self.is_private = 0
@@ -2475,9 +2577,11 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
         meta = Mock()
         meta.has_field.return_value = True
         vehicle_file = frappe._dict(
+            name="VEH-FILE-001",
             attached_to_doctype="Vehicle",
             attached_to_name="VEH-001",
             content_hash="driver-hash",
+            is_new=lambda: False,
         )
         with (
             patch("frappe.get_meta", return_value=meta),
@@ -2493,9 +2597,11 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
             prevent_fleet_attachment_content_reuse(vehicle_file)
 
         driver_file = frappe._dict(
+            name="DRV-FILE-001",
             attached_to_doctype="Driver",
             attached_to_name="DRV-001",
             content_hash="fleet-hash",
+            is_new=lambda: False,
         )
         with (
             patch("frappe.get_meta", return_value=meta),
@@ -2533,6 +2639,7 @@ class TestFleetChildTableAndAttachmentSecurity(unittest.TestCase):
             attached_to_doctype="Vehicle Document",
             attached_to_name="VD-A",
             content_hash="shared-fleet-content",
+            is_new=lambda: False,
         )
         duplicate = frappe._dict(
             name="FILE-OTHER-COMPANY",
