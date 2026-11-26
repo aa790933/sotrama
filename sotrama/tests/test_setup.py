@@ -954,6 +954,9 @@ class TestSotramaSetup(unittest.TestCase):
             attached_to_field="attachment",
             owner="user@example.invalid",
         )
+        # Mock's name= argument sets the repr name, not the attribute. The
+        # migration code reads duplicate.name, so set it explicitly.
+        duplicate_file.name = "FILE-DUPLICATE"
         duplicate_file.get.side_effect = lambda field, default=None: {
             "is_remote_file": False,
         }.get(field, getattr(duplicate_file, field, default))
