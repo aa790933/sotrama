@@ -988,16 +988,16 @@ class TestSotramaSetup(unittest.TestCase):
                 "sotrama.migrations.security.frappe.get_doc",
                 side_effect=[fleet_file, duplicate_file, fleet_file, duplicate_file],
             ) as get_doc,
+            # secure_duplicate_fleet_file_rows lives in sotrama.permissions and
+            # resolves these helpers from that module, so patch them there.
             patch(
-                "sotrama.migrations.security._redact_driver_attachment_comments"
+                "sotrama.permissions._redact_driver_attachment_comments"
             ) as redact,
+            patch("sotrama.permissions._clear_attached_file_field") as clear_field,
             patch(
-                "sotrama.migrations.security._clear_attached_file_field"
-            ) as clear_field,
-            patch(
-                "sotrama.migrations.security._remove_private_driver_file_shares"
+                "sotrama.permissions._remove_private_driver_file_shares"
             ) as remove_shares,
-            patch("sotrama.migrations.security.frappe.log_error") as log_error,
+            patch("sotrama.permissions.frappe.log_error") as log_error,
         ):
             migrate_fleet_attachments_private()
             migrate_fleet_attachments_private()
