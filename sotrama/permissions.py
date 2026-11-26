@@ -232,7 +232,8 @@ def _prevent_cross_company_file_reuse(file_doc, content_hash):
     get_previous = getattr(file_doc, "get_doc_before_save", None)
     previous = get_previous() if get_previous else None
     file_url_changed = bool(previous and previous.get("file_url") != file_url)
-    is_new_file = getattr(file_doc, "is_new", lambda: False)()
+    _is_new = getattr(file_doc, "is_new", None)
+    is_new_file = _is_new() if callable(_is_new) else False
     if not content_hash and not file_url.startswith(("/files/", "/private/files/")):
         return
 

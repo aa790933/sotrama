@@ -932,14 +932,7 @@ class TestSotramaSetup(unittest.TestCase):
 
     def test_fleet_attachment_migration_detaches_unrelated_duplicate_file_rows(self):
         from sotrama.migrations.security import migrate_fleet_attachments_private
-        from sotrama.permissions import (
-            COMPANY_SCOPED_FLEET_DOCTYPES,
-            SOTRAMA_CHILD_TABLE_DOCTYPES,
-        )
 
-        attached_doctypes = sorted(
-            COMPANY_SCOPED_FLEET_DOCTYPES | SOTRAMA_CHILD_TABLE_DOCTYPES
-        )
         fleet_row = frappe._dict(name="FILE-FLEET", content_hash="fleet-hash")
         duplicate_row = frappe._dict(
             name="FILE-DUPLICATE", attached_to_doctype="Communication"
@@ -978,7 +971,11 @@ class TestSotramaSetup(unittest.TestCase):
             patch(
                 "sotrama.migrations.security.frappe.get_all",
                 side_effect=get_all_side_effect,
-            ) as get_all,
+            ),
+            patch(
+                "sotrama.migrations.security.frappe.get_meta",
+                return_value=Mock(has_field=Mock(return_value=False)),
+            ),
             patch("sotrama.migrations.security._ensure_fleet_file_privacy_field"),
             patch(
                 "sotrama.migrations.security.frappe.get_doc",
@@ -1057,13 +1054,8 @@ class TestSotramaSetup(unittest.TestCase):
         self.assertEqual(fleet_file.save.call_count, fleet_save_calls_after_run_1)
         self.assertIsNone(frappe.flags.get("in_fleet_attachment_migration"))
 
-        # Verify both query types were executed: fleet file selection by
-        # attached doctype and duplicate detection by content hash. These
-        # prove the migration's security paths are entered on each run.
-        # Hash queries occur once in prevent_fleet_attachment_content_reuse
-        # and once in secure_duplicate_fleet_file_rows per run (3 total
-        # across two runs: run 1 has both, run 2 skips the first due to
-        # already-secured state).
+        # Both migration runs enter the content-reuse check and the
+        # duplicate sweep, so each run issues one hash query (4 total).
         attached_queries = [
             c
             for c in get_all_calls
@@ -1073,7 +1065,7 @@ class TestSotramaSetup(unittest.TestCase):
             c for c in get_all_calls if c.get("content_hash") == "fleet-hash"
         ]
         self.assertEqual(len(attached_queries), 2)  # once per migration run
-        self.assertEqual(len(hash_queries), 3)  # 2 in run 1, 1 in run 2
+        self.assertEqual(len(hash_queries), 4)  # 2 per migration run
         self.assertEqual(
             get_doc.call_args_list,
             [
