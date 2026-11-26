@@ -976,6 +976,13 @@ class TestSotramaSetup(unittest.TestCase):
                 "sotrama.migrations.security.frappe.get_meta",
                 return_value=Mock(has_field=Mock(return_value=False)),
             ),
+            # frappe.db.exists is exercised by the content-reuse check with
+            # real SQL; mock it so the migration's security paths run against
+            # the test doubles instead of the live database.
+            patch(
+                "sotrama.migrations.security.frappe.db.exists",
+                return_value=False,
+            ),
             patch("sotrama.migrations.security._ensure_fleet_file_privacy_field"),
             patch(
                 "sotrama.migrations.security.frappe.get_doc",
